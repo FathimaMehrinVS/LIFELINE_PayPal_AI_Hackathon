@@ -26,10 +26,11 @@ describe("API foundation", () => {
     ["/api/finance/evaluate", "finance-request.json"],
     ["/api/commerce/basket", "commerce-request.json"],
     ["/api/cases", "situation-request.json"],
-  ])("%s accepts the sample request (NOT_IMPLEMENTED until built)", async (path, file) => {
+  ])("%s accepts the sample request", async (path, file) => {
+    // Only checks that the sample passes validation, so this stays true before and after each module is built.
+    // Tests never load .env, so a built module answers 502 (no LLM configured) here instead of calling it.
     const res = await request(app).post(path).send(sample(file));
-    expect(res.status).toBe(501);
-    expect(res.body.error.code).toBe("NOT_IMPLEMENTED");
+    expect(res.status).not.toBe(400);
   });
 
   it.each([

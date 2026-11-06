@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { SituationRequestSchema } from "@lifeline/contracts";
+import { llm } from "../ai/llm-client";
 import { validateBody } from "../middleware/validate";
-import { notImplemented } from "./not-implemented";
+import { analyzeSituation } from "../modules/situation/situation.service";
 
 // Owner: Member 1 (feature/situation-agent)
 export const situationRouter = Router();
 
-situationRouter.post("/analyze", validateBody(SituationRequestSchema), notImplemented("Situation analysis"));
+situationRouter.post("/analyze", validateBody(SituationRequestSchema), async (req, res) => {
+  res.json(await analyzeSituation(req.body, llm));
+});
