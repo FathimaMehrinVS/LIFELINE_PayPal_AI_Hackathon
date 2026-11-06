@@ -38,4 +38,28 @@ describe("assessRouteEligibility", () => {
       flags: [feeWarning],
     });
   });
+
+  it("passes a clean verified route and reviews unknown required access", () => {
+    const walletRoute: FinancialRoute = {
+      id: "route_paypal", name: "PayPal route", type: "paypal", fee_fixed: 0,
+      fee_percent: 5, fee_label: "estimate", requires: ["wallet_acceptance"], eligibility: "verified",
+    };
+    expect(assessRouteEligibility(walletRoute, access, [])).toEqual({ verdict: "pass", flags: [] });
+    expect(assessRouteEligibility(
+      walletRoute,
+      { ...access, wallet_acceptance: "unknown" },
+      [],
+    )).toEqual({ verdict: "review", flags: [] });
+  });
+
+  it("blocks unsupported corridors with a critical flag", () => {
+    const unsupportedRoute: FinancialRoute = {
+      ...bankRoute,
+      eligibility: "unsupported",
+    };
+    expect(assessRouteEligibility(unsupportedRoute, access, [])).toMatchObject({
+      verdict: "block",
+      flags: [{ code: "ROUTE_UNSUPPORTED", severity: "critical" }],
+    });
+  });
 });
