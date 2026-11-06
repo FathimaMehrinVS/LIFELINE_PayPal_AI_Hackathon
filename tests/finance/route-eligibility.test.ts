@@ -22,4 +22,20 @@ describe("assessRouteEligibility", () => {
       }],
     });
   });
+
+  it("sends unverified or warning-flagged routes for review", () => {
+    const agentRoute: FinancialRoute = {
+      id: "route_agent", name: "Local agent", type: "cash_agent", fee_fixed: 0,
+      fee_percent: 20, fee_label: "illustrative", requires: ["cash_availability"], eligibility: "unverified",
+    };
+    const feeWarning = {
+      code: "FEE_ABOVE_REFERENCE",
+      severity: "warning" as const,
+      message: "Fee appears higher than the reference range; review recommended.",
+    };
+    expect(assessRouteEligibility(agentRoute, access, [feeWarning])).toMatchObject({
+      verdict: "review",
+      flags: [feeWarning],
+    });
+  });
 });
