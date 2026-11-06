@@ -1,55 +1,84 @@
-# PayPal integration (Sandbox)
+# PayPal Sandbox donor checkout
 
-| Part                              | Owner    | Code                                                         |
-| --------------------------------- | -------- | ------------------------------------------------------------ |
-| OAuth token + `paypalFetch`       | shared   | `integrations/paypal/client.ts`                              |
-| Donor orders (create, capture)    | Member 3 | `integrations/paypal/orders.ts`, `routes/donation.routes.ts` |
-| Webhooks                          | Member 2 | `integrations/paypal/webhooks.ts`, `routes/payout.routes.ts` |
-| Allocation approval               | Member 2 | `rules/approval.ts`, `routes/allocation.routes.ts`           |
-| Payouts                           | Member 2 | `integrations/paypal/payouts.ts`, `routes/payout.routes.ts`  |
+Member 3's donation flow uses PayPal Sandbox only. `PAYPAL_BASE_URL` must be exactly
+`https://api-m.sandbox.paypal.com`; the Orders integration rejects other hosts. Client credentials stay on the API
+server and are never sent to the browser.
 
-Availability depends on country, account type and product enablement. Verify each capability in the sandbox
-before presenting it as implemented.
+## Configuration
 
-## Priorities
+Set these server-side in the ignored `.env` file:
 
-| Priority | Integration                                                   | Endpoint                                   |
-| -------- | ------------------------------------------------------------- | ------------------------------------------ |
-| First    | Orders: create and capture donor contributions                | `POST /api/payments/donations`, `POST /api/payments/donations/:id/capture` |
-| First    | Webhooks: verify signature, store event, process once         | `POST /api/payments/webhooks/paypal`       |
-| Second   | Payouts: check access on day one; real sandbox payout if enabled | `POST /api/payments/payouts`            |
-| Third    | Transaction Search for reconciliation                         | (integration phase)                        |
+```env
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+WEB_ORIGIN=http://localhost:3000
+DATABASE_URL=
+```
 
-## Donor contribution flow
+Create a REST app under the **Sandbox** tab in the PayPal Developer Dashboard. Use its Sandbox client ID and
+secret. Create a Sandbox Personal buyer account for approval. `PAYPAL_WEBHOOK_ID` is for Member 2's separately
+owned webhook work; it is not required for this donor create/approve/capture flow.
 
-1. Frontend calls `POST /api/payments/donations`.
-2. Backend gets an OAuth token, creates a PayPal order, stores a `Donation` (`CREATED`), returns `approval_url`.
-3. Donor approves on PayPal.
-4. Frontend calls `POST /api/payments/donations/:id/capture`; backend captures and stores `CAPTURED`.
-5. Webhook `PAYMENT.CAPTURE.COMPLETED` arrives; backend verifies the signature with `PAYPAL_WEBHOOK_ID`, stores a
-   `WebhookEvent` (unique `eventId` stops duplicates) and confirms the donation.
+## Create, approve, capture
 
-A payment is never marked complete because the browser reached a success page.
+```text
+Browser                         LIFELINE API / database             PayPal Sandbox
+   |                                      |                                |
+   | POST /api/payments/donations         |                                |
+   |------------------------------------->| OAuth via shared client        |
+   |                                      | POST /v2/checkout/orders       |
+   |                                      |------------------------------->|
+   |                                      | order ID + approval URL         |
+   |                                      |<-------------------------------|
+   | 201 Donation (CREATED) + URL         |                                |
+   |<-------------------------------------|                                |
+   | redirect donor to approval URL                                        |
+   |---------------------------------------------------------------------->|
+   |                 Sandbox buyer approves                                |
+   |<----------------------------------------------------------------------|
+   | /donate/return?donation_id=...                                         |
+   | POST /api/payments/donations/:id/capture                               |
+   |------------------------------------->| POST order capture             |
+   |                                      |------------------------------->|
+   |                                      | completed capture + ID         |
+   |                                      |<-------------------------------|
+   |                                      | save capture ID/status          |
+   |                                      | status = CAPTURED                |
+   | captured response                   |                                |
+   |<-------------------------------------|                                |
+```
 
-## Approval and payouts
+The API uses the shared `paypal.paypalFetch(...)` client for cached OAuth and authenticated REST requests.
+`POST /api/payments/donations` validates an active campaign and matching currency, creates a CAPTURE order, then
+stores the Donation as `CREATED` with its PayPal order ID. The response includes `donation_id`,
+`paypal_order_id`, `status`, `amount`, `currency`, and `approval_url`.
 
-1. The NGO presses **Approve** on the dashboard → `POST /api/allocations/approve`.
-2. Backend rule: approve only if `amount ≤ captured donations for the campaign − amount already allocated`. It
-   stores an `AidAllocation` (`APPROVED`, approver, time) and an `AuditLog` row.
-3. `POST /api/payments/payouts` runs only for an `AidAllocation` with status `APPROVED`. If Payouts is not available for the account, the payout is
-recorded with `mode: SIMULATED` and the UI must label it "Demo fallback: simulated payout".
+The return page calls `POST /api/payments/donations/:id/capture`. The API only records `CAPTURED` and
+`paypalCaptureId` after PayPal reports a completed capture with a matching order, amount and currency. A repeated
+capture returns the already captured donation. An incomplete or mismatched capture is an error and does not set
+the captured state. Reaching the return URL alone never signals success.
 
-## Must never
+The cancel URL returns to `/donate?state=cancelled`; this displays cancellation without changing the Donation to
+`CAPTURED`.
 
-- Expose `PAYPAL_CLIENT_SECRET` to the browser.
-- Describe authorisation as escrow, or the internal ledger as PayPal-held money.
-- Imply a pooled fund or split settlement that the account model doesn't support.
-- Help bypass KYC, identity checks or restrictions.
+## API endpoints
 
-## Setup
+- `POST /api/payments/donations` — body `{ "campaign_id": "camp_demo", "amount": 25, "currency": "EUR" }`.
+- `POST /api/payments/donations/:id/capture` — no body; returns the Donation status and, after capture,
+  `paypal_capture_id`.
 
-1. developer.paypal.com → Apps & Credentials → Sandbox → create an app.
-2. Copy client ID and secret into `.env`.
-3. Add a webhook pointing at `<API URL>/api/payments/webhooks/paypal`; copy its ID into `PAYPAL_WEBHOOK_ID`.
-   For local testing, expose port 4000 with a tunnel.
-4. Create sandbox buyer and business accounts for testing.
+Request and response schemas live in `packages/contracts/src/payment.ts`. The demo seed creates campaign
+`camp_demo` in EUR.
+
+## Local run
+
+After configuring Supabase and Sandbox values in `.env` and seeding the database:
+
+```bash
+npm run dev:api
+npm run dev:web
+```
+
+Open `http://localhost:3000/donate`, submit a donation, approve it using the Sandbox Personal buyer, and verify
+the backend-confirmed result and database row. Do not use Live credentials or Live endpoints for the hackathon.

@@ -21,7 +21,7 @@ export const BasketItemSchema = z.object({
   category: NeedCategorySchema,
   merchant_id: z.string(),
   merchant_name: z.string(),
-  /** channel3 = online catalogue; local_registry = verified local merchant (synthetic in the demo). */
+  /** channel3 = online catalogue; local_registry = synthetic demo merchant data. */
   source: z.enum(["channel3", "local_registry"]),
   availability: AvailabilitySchema,
   quantity: z.number().int().positive(),

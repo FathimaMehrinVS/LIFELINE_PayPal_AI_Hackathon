@@ -19,6 +19,7 @@ export type CreateDonationRequest = z.infer<typeof CreateDonationRequestSchema>;
 export const DonationResultSchema = z.object({
   donation_id: z.string(),
   paypal_order_id: z.string(),
+  paypal_capture_id: z.string().optional(),
   status: DonationStatusSchema,
   amount: AmountSchema,
   currency: CurrencySchema,

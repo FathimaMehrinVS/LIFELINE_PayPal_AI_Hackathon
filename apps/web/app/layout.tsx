@@ -12,6 +12,7 @@ const NAV = [
   { href: "/situation", label: "Situation" },
   { href: "/finance", label: "Financial access" },
   { href: "/commerce", label: "Essentials" },
+  { href: "/donate", label: "Donate" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 
