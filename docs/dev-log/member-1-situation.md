@@ -268,3 +268,59 @@ How it decides:
   crisis is only why normal banking failed. Voice dropped for the hackathon (maybe "future work"). Everything left
   for Member 1 is about getting the payment flow to work in the demo.
 - Also: voice can't help when the family has no internet; that's why the users are the sender abroad and NGO workers.
+
+### Hackathon rules check (from the official Devpost page)
+- Deadline **13 Nov 2026, 1:30 am IST** (= 12 Nov, 12:00 PT). Aim to submit on 12 Nov.
+- Must meaningfully use PayPal **and** AI; judges must be able to run it (setup instructions **or** a hosted URL);
+  public repo with a licence in the About section; video under 3 min on YouTube; a "Tools" section in the submission.
+- Five judging criteria: technical implementation, design, potential impact, innovation, presentation.
+- **Prizes that match my work:** Best Use of AG Grid ($5k / $2k / $1k), Best Use of Render (credits), Best Demo
+  Delivery ($5k). Elastic has no prize, so Elastic is dropped.
+- The impact criterion asks for "a credible, specific case … for a real audience": keep the story specific (people
+  abroad sending money to family where banking failed, and the NGOs coordinating it), not "all disasters".
+
+### Step B (part 1) + Step C: cases API and the AG Grid dashboard
+
+| File | What it does |
+| ---- | ------------ |
+| `apps/api/src/orchestration/case-store.ts` | `CaseStore` interface + in-memory version (newest first, max 200). Supabase version next |
+| `apps/api/src/routes/cases.routes.ts` | `POST /api/cases` runs the Orchestrator and saves; `GET /api/cases` lists; `GET /api/cases/samples` |
+| `apps/api/src/orchestration/sample-cases.ts` | 4 sample cases built from the shared contract samples, for previewing before merge |
+| `apps/web/app/dashboard/page.tsx` | Stats tiles, search box, status filter buttons, grid, case detail panel, Approve flow |
+| `apps/web/app/dashboard/cases-grid.tsx` | The AG Grid: columns, cell renderers, sorting, filters, pinned columns, row colours |
+| `apps/web/app/dashboard/case-row.ts` | Row type, labels and money/route formatting shared by the page and the grid |
+
+AG Grid features used (all Community, free): custom React cell renderers (urgency badge, needs chips, status pill,
+Approve button), default sort by urgency with a custom comparator, quick-filter search, external filter (status
+buttons), column filters on location and amount, pinned urgency (left) and approval (right) columns, row colours by
+urgency, tooltips, single-row selection with a detail panel, Quartz theme matched to the app's colours.
+
+Open the preview at `http://localhost:3000/dashboard?sample=1` (always shows a "Sample data" banner).
+
+### Challenges
+
+#### 16. Nothing complete to show before the merge
+- **Problem:** Finance and Commerce aren't merged, so every real case either needs information or stops with
+  "not merged yet". The grid's money columns and Approve button would never appear.
+- **Fix:** `GET /api/cases/samples` builds 4 cases from the shared contract samples. The dashboard shows them only
+  with `?sample=1`, under a clear "Sample data … not real cases" banner, and never mixes them into the real list.
+- **Lesson:** sample data is fine for building and previewing, as long as it's always labelled and kept separate.
+
+#### 17. Almost edited a shared file for row colours
+- Added CSS classes to `apps/web/app/globals.css`, then noticed it's shared (a merge-conflict risk). Reverted it and
+  used AG Grid's `getRowStyle`, which sets the colours from my own file.
+- **Lesson:** before touching a file, ask "who owns this?". There is usually a way to stay inside your own folder.
+
+#### 18. Fitting 10 columns on a laptop screen (four screenshot rounds)
+- Round 1: page column only ~1000 px wide, so the money columns were off-screen. Widened the dashboard (only this
+  page) to up to 1400 px.
+- Round 2: chips not vertically centred; error text cut off; "Paypal" spelling. Fixed.
+- Round 3: Basket still off-screen at 1440 px. Tightened widths, moved Reserve to the detail panel.
+- Round 4: tried wrapping the situation text. Rows got tall and Basket fell off again, so reverted: the full text
+  is in the tooltip and the detail panel. Kept short status labels ("Ready", "Needs info", "No route").
+- **Lesson:** design for the judges' screen (a normal laptop), check with screenshots, and undo an idea that makes
+  it worse instead of stacking fixes on it.
+
+#### 19. Approve before Member 2's endpoint exists
+- The button calls `POST /api/allocations/approve`, which still answers 501. The cell shows "Retry · Not merged"
+  instead of failing silently. After merge it will show "Approved".
