@@ -189,6 +189,25 @@ Design choices:
 - The Currency box's placeholder "EUR" looked like a filled-in value in the screenshot. Changed to "3-letter code".
 - **Lesson:** look at the page, don't only trust the build. Screenshots catch things tests can't.
 
+#### 12. The form's location was thrown away
+- **Found by:** testing the page myself. Message "My family in Kerala…" + Location box "ernakulam" → result "Kerala".
+- **Cause:** our Day 1 rule said "the message wins, the form only fills gaps". Here that lost the more precise answer.
+- **Why it matters:** Member 3 searches for shops near the family. "Kerala" is a whole state; "Ernakulam" is a district.
+  And a person who types an answer and sees it ignored stops trusting the tool.
+- **Fix, in two layers (AI suggests, code guarantees):**
+  - prompt: combine hint + message from most to least specific → "Ernakulam, Kerala"; write names with capitals
+  - `situation-checks.ts`: if the model's location doesn't contain the form's value, put the form's value in front.
+    The person's typed location can never be lost.
+- **Conflict case found while testing the fix:** form "Nairobi" + message "Kerala" → location "Nairobi", but the
+  summary still said "Family in Kerala" and nobody would notice the mismatch. Now the summary ends with "The message
+  mentions Kerala, which does not match the location given; please confirm."
+- **Currency left as it was on purpose:** the amount ("€300") and its currency belong together, so a different
+  currency in the form must not silently relabel the amount.
+- **Evaluation:** new fixture `form-location-more-specific`; 13/13, 0/65 hallucinated.
+- **Lessons:**
+  - A rule that sounds right ("the message is the main input") can be wrong for a specific field. Real use finds it.
+  - When fixing one case, try the opposite case too (here: places that don't fit together).
+
 #### 10. Slow calls during evaluation (7–32 s)
 - Free-plan rate limit again. The script waits 30 s and retries once, so the run still finished. Each full run takes
   about 2–3 minutes.
