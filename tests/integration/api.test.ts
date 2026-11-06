@@ -44,9 +44,10 @@ describe("API foundation", () => {
     expect(res.status).toBe(501);
   });
 
-  it("GET /api/cases is mounted (NOT_IMPLEMENTED until built)", async () => {
+  it("GET /api/cases lists cases", async () => {
     const res = await request(app).get("/api/cases");
-    expect(res.status).toBe(501);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
   it("returns NOT_FOUND for unknown routes", async () => {
