@@ -169,6 +169,26 @@ POST /api/situation/analyze
 - **Lesson:** a clear prompt with definitions and examples matters more than model size for structured extraction.
 - **Decision:** keep `gpt-oss-120b` for messier real messages; switch to 20b if rate limits hurt the demo.
 
+### Situation page (`apps/web/app/situation/`)
+
+| File | What it does |
+| ---- | ------------ |
+| `page.tsx` | Form (message, optional location and currency, example buttons), loading and error states |
+| `situation-result.tsx` | Shows one result: urgency badge, confidence, summary, needs, budget, location, six access cards, "We still need to know". Reused by the dashboard on Day 3 |
+
+Design choices:
+- **Unknown looks different:** grey, dashed border, "Unknown — not stated". Red means the message said it doesn't
+  work. Never mix the two up: that's the whole point of the module.
+- **Missing fields become questions** ("Is there a working ATM they can reach?"), so the next step for the user is clear.
+- **Friendly errors:** 400 → "describe the situation", 502 → "AI busy, try again in a minute", no connection →
+  "is the API running?".
+- Currency box only accepts letters and turns them into a 3-letter uppercase code, so the request always passes validation.
+- Checked visually with headless Chrome driven by the DevTools protocol: fill the form, click Analyse, screenshot.
+
+#### 11. Small UI catch
+- The Currency box's placeholder "EUR" looked like a filled-in value in the screenshot. Changed to "3-letter code".
+- **Lesson:** look at the page, don't only trust the build. Screenshots catch things tests can't.
+
 #### 10. Slow calls during evaluation (7–32 s)
 - Free-plan rate limit again. The script waits 30 s and retries once, so the run still finished. Each full run takes
   about 2–3 minutes.
