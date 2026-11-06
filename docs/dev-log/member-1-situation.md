@@ -324,3 +324,54 @@ Open the preview at `http://localhost:3000/dashboard?sample=1` (always shows a "
 #### 19. Approve before Member 2's endpoint exists
 - The button calls `POST /api/allocations/approve`, which still answers 501. The cell shows "Retry · Not merged"
   instead of failing silently. After merge it will show "Approved".
+
+### Merging Member 3's work (6 Nov, afternoon)
+
+Member 3 was busy, so I merged her branch into `main` for her, learning the commands myself:
+
+```bash
+git fetch origin
+git checkout main && git pull origin main
+git merge --no-ff origin/feature/commerce-payments -m "Merge feature/commerce-payments (…)"
+npm install && npm run typecheck && npm test      # never push main without this
+git push origin main
+git checkout feature/situation-agent              # back to my own branch
+git merge origin/main -m "Merge main into feature/situation-agent (…)"
+npm install && npm test && git push
+```
+
+- Before touching `main`, did a **trial merge in a separate folder** (`git worktree`): no conflicts, typecheck, 43
+  tests and the build all passed. Then did it for real.
+- **Her commits keep her name** (asiiyaah); only the merge commit is mine. 9 commits on `main` afterwards.
+- `git merge-tree --write-tree origin/main feature/situation-agent` checks for conflicts **without changing any files**.
+  Used it before merging `main` into my branch: none. After the merge: 85 tests passed.
+- **Chose merging one branch at a time** (Member 3 → Member 2 → me last) over all three at once: conflicts get
+  fixed on a branch by the person who knows the code, `main` always works, and my Orchestrator has to go last because
+  it connects the other two modules.
+
+### Challenges
+
+#### 20. Member 3's setup steps could have wiped the shared database
+- Her note said to check out her branch and run `npm run db:migrate`. That runs `prisma migrate dev`. On a branch
+  without the migration files, Prisma sees unknown tables and offers to **reset the database** for everyone.
+- She had already applied the migration, so I didn't need to run anything. Checked the connection with a small
+  script instead: both URLs connect, 14 tables, demo user and `camp_demo` seeded.
+- **Rule:** only the person who writes a migration runs `migrate dev`. Everyone else uses `npx prisma migrate deploy`.
+
+#### 21. My `.env` edits weren't saved
+- The connection check said both URLs were empty. The file's modified time was still 10:20 that morning: the edits
+  were only in the editor. Ctrl+S fixed it.
+- **Lesson:** look at the file on disk (its modified time), not at what the editor shows.
+
+#### 22. Member 3 changed shared files
+- Small, additive contract change (`paypal_capture_id` optional), Donate link in the shared nav, and an edit to
+  Member 2's `docs/integration-status.md`. All fine this time, but shared changes should be announced first.
+
+#### 23. Connecting Member 3's basket to the Orchestrator
+- Her `createCommerceBasket()` also saves to the database, creating its **own** `AssistanceRequest` ("Commerce
+  basket: …") on every call, unlinked to the case, and fails without a database.
+- **Fix, without changing her files:** `modules.ts` uses her three building blocks directly: `productSource.search()`
+  → `rankProducts()` (Ranking Agent) → `buildBasket()` (rules). My case store will save the basket with the case.
+- Her registry has **EUR prices only**, so an INR case gets `unmet_needs` instead of invented products: honest, and a
+  good thing to show. The demo story uses EUR.
+- Test without network or database: real basket from the registry, total within 80% of €285, reserve at least 20%.
