@@ -26,3 +26,17 @@ await saveFinancialAssessment(assistanceRequest.id, finance);
 `saveFinancialAssessment()` upserts the `FinancialAssessment` row by `requestId`, stores all route assessments as
 JSON, and records the score version. The `AssistanceRequest` must exist first because the schema enforces a foreign
 key. Repeated evaluation for the same request updates its assessment instead of creating a duplicate.
+
+The Orchestrator can connect the finance module and route catalogue directly:
+
+```ts
+import { evaluateRoutes } from "../modules/finance/finance.service";
+import { getDemoRouteCatalogue } from "../modules/finance/route-catalogue";
+
+evaluateRoutes: (input) => evaluateRoutes(input, llm),
+routesFor: () => getDemoRouteCatalogue(),
+```
+
+The current Member 1 case store is in memory and creates `case_id` values without an `AssistanceRequest` row. To
+persist finance results, case creation must first create that request row, then pass its database ID to
+`saveFinancialAssessment()`. No finance contract field is needed; the request ID belongs to orchestration.
