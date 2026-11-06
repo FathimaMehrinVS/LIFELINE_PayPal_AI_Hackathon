@@ -80,4 +80,27 @@ describe("saveFinancialAssessment", () => {
       },
     });
   });
+
+  it("keeps a nullable recommendation and uses the default score version when there are no routes", async () => {
+    const { prisma, calls } = createPrismaStub();
+    const resultWithoutRoutes: FinanceResult = {
+      recommended_route_id: null,
+      currency: "EUR",
+      routes: [],
+      explanation: "No route passed the checks.",
+    };
+
+    await saveFinancialAssessment("request_no_route", resultWithoutRoutes, prisma);
+
+    expect(calls[0]).toMatchObject({
+      where: { requestId: "request_no_route" },
+      create: {
+        requestId: "request_no_route",
+        recommendedRouteId: null,
+        currency: "EUR",
+        routes: [],
+        scoreVersion: "v1",
+      },
+    });
+  });
 });
