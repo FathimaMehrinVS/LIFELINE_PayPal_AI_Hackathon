@@ -4,10 +4,10 @@
 
 | Branch                           | Owner    | Owns                                                                                   |
 | -------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `feature/situation-agent`        | Member 1 | `apps/api/src/modules/situation/`, `routes/situation.routes.ts`, `apps/web/app/situation/`, `tests/situation/` |
+| `feature/situation-agent`        | Member 1 | `apps/api/src/modules/situation/`, `routes/situation.routes.ts`, `apps/web/app/situation/`, `tests/situation/`, `orchestration/` (after merges) |
 | `feature/financial-intelligence` | Member 2 | `apps/api/src/modules/finance/`, `rules/accessibility-score.ts`, `rules/fees.ts`, `rules/route-eligibility.ts`, `routes/finance.routes.ts`, `apps/web/app/finance/`, `tests/finance/` |
-| `feature/commerce-payments`      | Member 3 | `apps/api/src/modules/commerce/`, `rules/basket.ts`, `integrations/channel3/`, `integrations/paypal/`, `routes/commerce.routes.ts`, `routes/payment.routes.ts`, `apps/web/app/commerce/`, `tests/commerce/` |
-| `main`                           | Everyone, via PR only | Everything else, plus integration (`orchestration/`, `apps/web/app/dashboard/`) |
+| `feature/commerce-payments`      | Member 3 | `apps/api/src/modules/commerce/`, `rules/basket.ts`, `integrations/channel3/`, `integrations/paypal/`, `routes/commerce.routes.ts`, `routes/payment.routes.ts`, `prisma/seed.ts`, `apps/web/app/commerce/`, `tests/commerce/` |
+| `main`                           | Everyone, via PR only | Everything else, plus the shared dashboard (`apps/web/app/dashboard/`) |
 
 ## Shared files: change only through a small PR to `main`
 
