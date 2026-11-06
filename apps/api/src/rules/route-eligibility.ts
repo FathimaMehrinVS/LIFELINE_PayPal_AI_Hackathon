@@ -13,7 +13,7 @@ export function assessRouteEligibility(
   feeFlags: RiskFlag[],
 ): EligibilityAssessment {
   const flags = [...feeFlags];
-  const unavailable = route.requires.filter((factor) => access[factor] === "unavailable");
+  const unavailable = route.requires.find((factor) => access[factor] === "unavailable");
   const unknown = route.requires.some((factor) => access[factor] === "unknown");
 
   if (route.eligibility === "unsupported") {
@@ -25,12 +25,12 @@ export function assessRouteEligibility(
     return { verdict: "block", flags };
   }
 
-  if (unavailable.length > 0) {
+  if (unavailable) {
     flags.push({
       code: "REQUIRED_ACCESS_UNAVAILABLE",
       severity: "critical",
       message: "A required access method for this route is unavailable.",
-      evidence: { factor: unavailable[0], status: "unavailable" },
+      evidence: { factor: unavailable, status: "unavailable" },
     });
     return { verdict: "block", flags };
   }
