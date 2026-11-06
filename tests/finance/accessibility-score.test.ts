@@ -21,4 +21,16 @@ describe("assessAccessibility", () => {
     ]);
     expect(score.factors.reduce((sum, factor) => sum + factor.weight, 0)).toBeCloseTo(1);
   });
+
+  it("gives unknown access only partial credit", () => {
+    const score = assessAccessibility(
+      route,
+      { ...access, wallet_acceptance: "unknown" },
+      assessFees(300, route),
+    );
+    const wallet = score.factors.find((factor) => factor.factor === "wallet_acceptance");
+    expect(wallet?.status).toBe("unknown");
+    expect(wallet?.points).toBeCloseTo((wallet?.weight ?? 0) * 25);
+    expect(score.score).toBeLessThan(100);
+  });
 });
