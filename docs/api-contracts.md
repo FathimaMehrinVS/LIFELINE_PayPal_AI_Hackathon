@@ -82,8 +82,15 @@ Response: `recommended_route_id` (or `null`), and per route: `estimated_fee`, `u
 Request: `{ needs[], budget, currency, location, reserve_ratio? }` (default reserve 20%). See
 `samples/commerce-request.json`.
 
-Response: `items[]` and `alternatives[]` (each with `source` `channel3` · `local_registry`, availability and
-`price_label`), `total`, `reserve`, `unmet_needs`, `explanation`. See `samples/commerce-result.json`.
+The handler persists an AssistanceRequest, Basket, selected BasketItems and their Merchant/Product catalogue rows.
+Response is `CommerceResult`: `items[]` and `alternatives[]` (each with `source` `channel3` · `local_registry`,
+availability and `price_label`), `total`, `reserve`, `unmet_needs`, `explanation`. See
+`samples/commerce-request.json` and `samples/commerce-result.json`. A 20% reserve is the default; all money
+selection and arithmetic is deterministic. Local registry prices are illustrative.
+
+The one-call Commerce Ranking Agent returns product IDs and short reasons. It does not set prices, quantities,
+totals, reserve, or payment state. If the LLM or Channel3 is unavailable, deterministic ranking and the local
+synthetic registry are used.
 
 ## Cases (Member 1)
 
@@ -112,7 +119,8 @@ Response: `items[]` and `alternatives[]` (each with `source` `channel3` · `loca
 
 ## Payments (donations: Member 3, payouts: Member 2)
 
-- Donation: `{ campaign_id, amount, currency }` → `{ donation_id, paypal_order_id, status, amount, currency, approval_url? }`
+- Donation: `{ campaign_id, amount, currency }` → `{ donation_id, paypal_order_id, status, amount, currency, approval_url? }`; creation validates an active campaign and matching currency and stores status `created`.
+- Capture: no request body → `{ donation_id, paypal_order_id, paypal_capture_id?, status, amount, currency }`; `paypal_capture_id` is present after PayPal confirms a completed capture. The return page does not infer success from the redirect.
 - Donation status: `created` · `approved` · `captured` · `failed` · `cancelled` · `refunded`
 - Payout: `{ allocation_id, amount, currency }` → `{ payout_id, allocation_id, status, amount, currency, mode, paypal_batch_id? }`
 - Payout `mode`: `sandbox` (real PayPal Sandbox) or `simulated` (demo fallback, must be labelled in the UI)

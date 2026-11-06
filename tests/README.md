@@ -7,8 +7,9 @@
 | `commerce/`    | Member 3 |
 | `contracts/`   | Shared — samples must always match the contracts |
 | `ai/`          | Shared — LLM client |
-| `paypal/`      | Shared — PayPal client (`client.ts`) |
-| `integration/` | Shared — API-level tests; `end-to-end.test.ts` is Member 3's |
+| `paypal/`      | Shared PayPal client and Member 3 Orders/donation-route tests |
+| `integration/` | Shared API-level route mounting and contract validation |
 
-Tests never call real LLMs, Channel3 or PayPal. Mock `fetch` or pass a fake client (see `ai/llm-client.test.ts`).
-Run everything with `npm test`.
+Tests never call real LLMs, Channel3, PayPal or PostgreSQL. Mock `fetch` or pass fake clients/route dependencies.
+Commerce tests cover deterministic basket arithmetic, budget and reserve, alternatives, unmet needs, source fallback,
+LLM failure handling and API validation. Run the complete suite from the repository root with `npm test`.

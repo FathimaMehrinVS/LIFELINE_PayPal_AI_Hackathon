@@ -24,7 +24,6 @@ describe("API foundation", () => {
   it.each([
     ["/api/situation/analyze", "situation-request.json"],
     ["/api/finance/evaluate", "finance-request.json"],
-    ["/api/commerce/basket", "commerce-request.json"],
     ["/api/cases", "situation-request.json"],
   ])("%s accepts the sample request", async (path, file) => {
     // Only checks that the sample passes validation, so this stays true before and after each module is built.
@@ -35,8 +34,6 @@ describe("API foundation", () => {
 
   it.each([
     ["/api/allocations/approve", { case_id: "case_1", campaign_id: "camp_demo", amount: 285, currency: "EUR" }],
-    ["/api/payments/donations", { campaign_id: "camp_demo", amount: 300, currency: "EUR" }],
-    ["/api/payments/donations/don_1/capture", undefined],
     ["/api/payments/payouts", { allocation_id: "alloc_1", amount: 285, currency: "EUR" }],
     ["/api/payments/webhooks/paypal", {}],
   ])("%s is mounted (NOT_IMPLEMENTED until built)", async (path, body) => {

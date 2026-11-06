@@ -12,8 +12,9 @@ merchants don't accept the wallet. **Sending money is not the same as making mon
    recipient's practical financial access, keeping anything unstated as "unknown".
 2. **Route** (Financial Intelligence): compare routes on fees, usable value, accessibility and risk; flag
    unusual fees; recommend only routes that can actually be used.
-3. **Shop** (Commerce Intelligence): build a basket of essentials from Channel3 and verified local merchants
-   within the usable budget, keeping an emergency reserve.
+3. **Shop** (Commerce Intelligence): rank essentials from Channel3 and a 25-product local synthetic registry,
+   then build a basket within the usable budget and keep an emergency reserve. Demo merchants are not represented
+   as verified businesses.
 4. **Approve and pay**: donor and NGO approve; the backend checks the rules; PayPal Sandbox processes the payment;
    webhooks update the ledger; the dashboard shows the outcome.
 
