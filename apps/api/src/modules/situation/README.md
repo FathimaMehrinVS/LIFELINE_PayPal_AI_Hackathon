@@ -57,4 +57,4 @@ What each change fixed:
 
 The larger and smaller models score the same on this set, so the prompt matters more than model size here. We keep
 `gpt-oss-120b` as the default for unseen, messier messages; `gpt-oss-20b` is faster if rate limits become a problem.
-12 messages is a small set: add every new failure you find as a fixture.
+13 messages is a small set: add every new failure you find as a fixture.
