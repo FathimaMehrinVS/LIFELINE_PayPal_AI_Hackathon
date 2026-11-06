@@ -21,6 +21,14 @@ Return one JSON object with exactly these keys and no others:
   - "limited": the message says it partly works ("internet is intermittent", "only one shop is open", "cash is scarce")
   - "unavailable": the message says it does not work ("bank is closed", "no ATM", "no signal")
   - "unknown": the message does not say
+  What each access key means (always about the recipient's location, never about the sender):
+  - "bank_availability": the recipient can use a bank branch or bank account
+  - "atm_access": there is a working ATM the recipient can reach
+  - "wallet_acceptance": the recipient can receive or pay with a mobile wallet (for example UPI, M-Pesa, the PayPal app)
+  - "cash_availability": physical cash can be obtained locally (cash points, cash agents, cash in circulation)
+  - "merchant_acceptance": local shops are open and accept payment
+  - "connectivity": the recipient has internet or phone signal
+  The sender's budget, or a lack of money, says nothing about any access key.
 - "missing_information": array of the key names that are null or "unknown", for example "budget", "location", "wallet_acceptance". Use only key names from this output.
 - "confidence": a number from 0 to 1 for how clearly the message states the facts you extracted. A clear, specific message is about 0.8 to 0.9. A vague one is 0.3 or lower.
 
