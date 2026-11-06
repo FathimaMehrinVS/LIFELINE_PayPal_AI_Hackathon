@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../../apps/api/src/app";
 
 const app = createApp();
+const sample = (file: string) =>
+  JSON.parse(readFileSync(join(import.meta.dirname, "../../packages/contracts/samples", file), "utf8"));
 
 describe("API foundation", () => {
   it("responds to /health", async () => {
@@ -17,10 +21,12 @@ describe("API foundation", () => {
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns NOT_IMPLEMENTED for valid requests until the module is built", async () => {
-    const res = await request(app)
-      .post("/api/situation/analyze")
-      .send({ message: "My family needs food and medicine.", currency: "INR" });
+  it.each([
+    ["/api/situation/analyze", "situation-request.json"],
+    ["/api/finance/evaluate", "finance-request.json"],
+    ["/api/commerce/basket", "commerce-request.json"],
+  ])("%s accepts the sample request (NOT_IMPLEMENTED until built)", async (path, file) => {
+    const res = await request(app).post(path).send(sample(file));
     expect(res.status).toBe(501);
     expect(res.body.error.code).toBe("NOT_IMPLEMENTED");
   });

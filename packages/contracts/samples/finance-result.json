@@ -1,0 +1,73 @@
+{
+  "recommended_route_id": "route_paypal",
+  "currency": "EUR",
+  "routes": [
+    {
+      "route_id": "route_bank",
+      "estimated_fee": 6,
+      "fee_label": "illustrative",
+      "usable_value": 294,
+      "accessibility": {
+        "score": 30,
+        "version": "v0-illustrative",
+        "factors": [
+          { "factor": "bank_availability", "status": "unavailable", "weight": 0.6, "points": 0 },
+          { "factor": "connectivity", "status": "limited", "weight": 0.2, "points": 10 },
+          { "factor": "cash_out_affordability", "status": "available", "weight": 0.2, "points": 20 }
+        ]
+      },
+      "verdict": "block",
+      "flags": [
+        {
+          "code": "REQUIRED_ACCESS_UNAVAILABLE",
+          "severity": "critical",
+          "message": "This route needs a working bank account, which is unavailable.",
+          "evidence": { "factor": "bank_availability", "status": "unavailable" }
+        }
+      ]
+    },
+    {
+      "route_id": "route_agent",
+      "estimated_fee": 60,
+      "fee_label": "illustrative",
+      "usable_value": 240,
+      "accessibility": {
+        "score": 65,
+        "version": "v0-illustrative",
+        "factors": [
+          { "factor": "cash_availability", "status": "limited", "weight": 0.5, "points": 25 },
+          { "factor": "merchant_acceptance", "status": "available", "weight": 0.3, "points": 30 },
+          { "factor": "cash_out_affordability", "status": "limited", "weight": 0.2, "points": 10 }
+        ]
+      },
+      "verdict": "review",
+      "flags": [
+        {
+          "code": "FEE_ABOVE_REFERENCE",
+          "severity": "warning",
+          "message": "Fee appears higher than the reference range; review recommended.",
+          "evidence": { "observed_percent": 20, "reference_min_percent": 3, "reference_max_percent": 6 }
+        }
+      ]
+    },
+    {
+      "route_id": "route_paypal",
+      "estimated_fee": 15,
+      "fee_label": "estimate",
+      "usable_value": 285,
+      "accessibility": {
+        "score": 90,
+        "version": "v0-illustrative",
+        "factors": [
+          { "factor": "wallet_acceptance", "status": "available", "weight": 0.4, "points": 40 },
+          { "factor": "merchant_acceptance", "status": "available", "weight": 0.3, "points": 30 },
+          { "factor": "connectivity", "status": "limited", "weight": 0.2, "points": 10 },
+          { "factor": "cash_out_affordability", "status": "available", "weight": 0.1, "points": 10 }
+        ]
+      },
+      "verdict": "pass",
+      "flags": []
+    }
+  ],
+  "explanation": "The PayPal-supported route keeps about €285 usable and works with intermittent internet. The bank route is cheaper but unusable because the bank is inaccessible. The local agent's 20% fee is well above the 3–6% reference range."
+}

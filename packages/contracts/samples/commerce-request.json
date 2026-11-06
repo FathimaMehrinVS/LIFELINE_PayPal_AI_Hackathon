@@ -1,0 +1,7 @@
+{
+  "needs": ["food", "water", "medicine", "baby_supplies"],
+  "budget": 285,
+  "currency": "EUR",
+  "location": "Demo region (synthetic)",
+  "reserve_ratio": 0.2
+}

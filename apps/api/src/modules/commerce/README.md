@@ -1,6 +1,13 @@
 # Commerce Intelligence — Member 3 (`feature/commerce-payments`)
 
-Builds a basket from needs and budget and returns a `CommerceResult` (see `packages/contracts/src/commerce.ts`):
-items, total and remaining budget. The merchant/product catalogue lives here too.
+Agents: **Commerce Agent**, **Decision Agent**, **PayPal Agent**.
 
-Wire it into `src/routes/commerce.routes.ts` in place of the `notImplemented` handler.
+Input `CommerceRequest` → output `CommerceResult` (`packages/contracts/src/commerce.ts`):
+basket items, alternatives, total, reserve, unmet needs, explanation.
+
+- Products come from Channel3 (`src/integrations/channel3/`) and the local merchant registry
+  (synthetic data in PostgreSQL, searched with PostgreSQL full-text search).
+- The LLM matches and ranks products. Totals, reserve and "does it fit" are code in `src/rules/basket.ts`.
+- If the basket doesn't fit, substitute cheaper items, list `unmet_needs`, and return the revised plan.
+- Payments: `src/integrations/paypal/` + `src/routes/payment.routes.ts`.
+- Frontend: `apps/web/app/commerce/`. Tests: `tests/commerce/`.

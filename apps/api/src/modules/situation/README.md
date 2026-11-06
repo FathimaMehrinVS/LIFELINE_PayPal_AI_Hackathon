@@ -1,7 +1,12 @@
-# Situation Agent — Member 1 (`feature/situation-agent`)
+# Situation Intelligence — Member 1 (`feature/situation-agent`)
 
-Turns a free-text message into a structured `SituationResult` (see `packages/contracts/src/situation.ts`):
-needs, budget, urgency, missing information and confidence.
+Agents: **Situation Agent** and **Orchestrator**.
 
-Implementation (prompts, Groq calls, output validation) goes in this folder.
-Wire it into `src/routes/situation.routes.ts` in place of the `notImplemented` handler.
+Input `SituationRequest` → output `SituationResult` (`packages/contracts/src/situation.ts`):
+summary, needs, budget, currency, location, urgency, access factors, missing information, confidence.
+
+- Build the prompt in `prompts.ts` and call the shared client in `src/ai/llm-client.ts`.
+- Anything the message doesn't state stays `"unknown"` / `null` and goes into `missing_information`.
+- Replace the `notImplemented` handler in `src/routes/situation.routes.ts`.
+- Frontend: `apps/web/app/situation/`. Tests: `tests/situation/`.
+- At integration time the Orchestrator in `src/orchestration/` chains Situation → Financial → Commerce.

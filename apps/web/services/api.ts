@@ -1,11 +1,13 @@
 import type {
   ApiError,
-  CommerceRequest,
+  CommerceRequestInput,
   CommerceResult,
-  CreatePaymentRequest,
+  CreateDonationRequest,
+  CreatePayoutRequest,
+  DonationResult,
   FinanceRequest,
   FinanceResult,
-  PaymentResult,
+  PayoutResult,
   SituationRequest,
   SituationResult,
 } from "@lifeline/contracts";
@@ -32,7 +34,9 @@ async function post<TResponse>(path: string, body?: unknown): Promise<TResponse>
 export const api = {
   analyzeSituation: (body: SituationRequest) => post<SituationResult>("/api/situation/analyze", body),
   evaluateFinance: (body: FinanceRequest) => post<FinanceResult>("/api/finance/evaluate", body),
-  buildBasket: (body: CommerceRequest) => post<CommerceResult>("/api/commerce/basket", body),
-  createPayment: (body: CreatePaymentRequest) => post<PaymentResult>("/api/payments", body),
-  capturePayment: (paymentId: string) => post<PaymentResult>(`/api/payments/${encodeURIComponent(paymentId)}/capture`),
+  buildBasket: (body: CommerceRequestInput) => post<CommerceResult>("/api/commerce/basket", body),
+  createDonation: (body: CreateDonationRequest) => post<DonationResult>("/api/payments/donations", body),
+  captureDonation: (donationId: string) =>
+    post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/capture`),
+  createPayout: (body: CreatePayoutRequest) => post<PayoutResult>("/api/payments/payouts", body),
 };

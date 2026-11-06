@@ -1,5 +1,7 @@
-// Shared database schema. Changes go through a small PR to main, not inside a feature branch.
+// Shared database schema (PostgreSQL on Supabase).
+// Changes go through a small PR to main, not inside a feature branch.
 // Money columns use Decimal(12, 2) to match AmountSchema in packages/contracts.
+// The internal ledger is an accounting record, never a PayPal balance.
 
 generator client {
   provider = "prisma-client"
@@ -10,33 +12,57 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Shared ──────────────────────────────────────────────────────────────
+
+enum Role {
+  DONOR
+  RECIPIENT
+  NGO
+  MERCHANT
+}
+
+/// Demo accounts; the app uses a role switch instead of real sign-up.
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+
+  campaigns   Campaign[]
+  donations   Donation[]
+  allocations AidAllocation[] @relation("ApprovedBy")
+  auditLogs   AuditLog[]
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  currency    String   @db.Char(3)
+  goalAmount  Decimal  @db.Decimal(12, 2)
+  active      Boolean  @default(true)
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner       User            @relation(fields: [ownerId], references: [id])
+  donations   Donation[]
+  allocations AidAllocation[]
+}
+
 enum RequestStatus {
   RECEIVED
   ANALYZED
   ROUTED
   BASKET_READY
-  PAYMENT_PENDING
-  COMPLETED
-  FAILED
-}
-
-enum Urgency {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum PaymentStatus {
-  CREATED
+  AWAITING_APPROVAL
   APPROVED
-  CAPTURED
-  FAILED
-  CANCELLED
+  COMPLETED
+  REJECTED
 }
 
-/// One help request from a user; every module's output hangs off this.
-model Request {
+/// One help request; every module's output hangs off this.
+model AssistanceRequest {
   id        String        @id @default(cuid())
   message   String
   location  String?
@@ -45,86 +71,225 @@ model Request {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  situation           Situation?
-  financialAssessment FinancialAssessment?
-  basket              Basket?
-  payments            Payment[]
+  situation  SituationAssessment?
+  financial  FinancialAssessment?
+  basket     Basket?
+  allocation AidAllocation?
 }
 
-/// Member 1 — output of the Situation Agent.
-model Situation {
+// ─── Member 1: Situation Intelligence ───────────────────────────────────
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model SituationAssessment {
   id                 String   @id @default(cuid())
   requestId          String   @unique
+  summary            String
   needs              String[]
   budget             Decimal? @db.Decimal(12, 2)
-  currency           String   @db.Char(3)
+  currency           String?  @db.Char(3)
   location           String?
   urgency            Urgency
+  /// AccessFactors from the contract: { bank_availability: "unavailable", ... }
+  access             Json
   missingInformation String[]
   confidence         Float
   createdAt          DateTime @default(now())
 
-  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request AssistanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
-/// Member 2 — output of Financial Intelligence.
+// ─── Member 2: Financial Intelligence ───────────────────────────────────
+
 model FinancialAssessment {
   id                 String   @id @default(cuid())
   requestId          String   @unique
-  recommendedRouteId String
-  estimatedFee       Decimal  @db.Decimal(12, 2)
+  recommendedRouteId String?
   currency           String   @db.Char(3)
-  accessibilityScore Int
-  riskFlags          Json
+  /// RouteAssessment[] from the contract, including score breakdown and flags
+  routes             Json
+  scoreVersion       String
   explanation        String
   createdAt          DateTime @default(now())
 
-  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request AssistanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
-/// Member 3 — basket built by Commerce Intelligence.
-model Basket {
-  id              String       @id @default(cuid())
-  requestId       String       @unique
-  total           Decimal      @db.Decimal(12, 2)
-  remainingBudget Decimal      @db.Decimal(12, 2)
-  currency        String       @db.Char(3)
-  createdAt       DateTime     @default(now())
-  items           BasketItem[]
+// ─── Member 3: Commerce Intelligence ────────────────────────────────────
 
-  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+model Merchant {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  verified  Boolean  @default(false)
+  /// Payment methods the merchant accepts, e.g. ["paypal", "cash"]
+  accepts   String[]
+  createdAt DateTime @default(now())
+
+  products Product[]
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  merchantId   String
+  name         String
+  description  String
+  category     String
+  price        Decimal  @db.Decimal(12, 2)
+  currency     String   @db.Char(3)
+  availability String   @default("available")
+  updatedAt    DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([merchantId])
+}
+
+model Basket {
+  id          String       @id @default(cuid())
+  requestId   String       @unique
+  total       Decimal      @db.Decimal(12, 2)
+  reserve     Decimal      @db.Decimal(12, 2)
+  currency    String       @db.Char(3)
+  unmetNeeds  String[]
+  explanation String
+  createdAt   DateTime     @default(now())
+  items       BasketItem[]
+
+  request AssistanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 }
 
 model BasketItem {
-  id         String  @id @default(cuid())
-  basketId   String
-  productId  String
-  merchantId String
-  name       String
-  category   String
-  quantity   Int
-  unitPrice  Decimal @db.Decimal(12, 2)
-  subtotal   Decimal @db.Decimal(12, 2)
+  id           String  @id @default(cuid())
+  basketId     String
+  productId    String
+  name         String
+  category     String
+  merchantId   String
+  merchantName String
+  source       String
+  quantity     Int
+  unitPrice    Decimal @db.Decimal(12, 2)
+  subtotal     Decimal @db.Decimal(12, 2)
+  priceLabel   String
+  purchaseUrl  String?
 
   basket Basket @relation(fields: [basketId], references: [id], onDelete: Cascade)
 
   @@index([basketId])
 }
 
-/// Member 3 — PayPal Sandbox payment for a request.
-model Payment {
-  id              String        @id @default(cuid())
-  requestId       String
-  provider        String        @default("paypal")
-  providerOrderId String?       @unique
-  routeId         String
-  status          PaymentStatus @default(CREATED)
-  amount          Decimal       @db.Decimal(12, 2)
-  currency        String        @db.Char(3)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+// ─── Money movement (Member 3) ──────────────────────────────────────────
+// Donations received, allocations approved and payouts completed are separate states.
 
-  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+enum DonationStatus {
+  CREATED
+  APPROVED
+  CAPTURED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
 
-  @@index([requestId])
+model Donation {
+  id              String         @id @default(cuid())
+  campaignId      String
+  donorId         String?
+  amount          Decimal        @db.Decimal(12, 2)
+  currency        String         @db.Char(3)
+  status          DonationStatus @default(CREATED)
+  paypalOrderId   String         @unique
+  paypalCaptureId String?        @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  donor    User?    @relation(fields: [donorId], references: [id])
+}
+
+enum AllocationStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+/// NGO decision to direct funds to a request. Nothing is paid out without an APPROVED allocation.
+model AidAllocation {
+  id           String           @id @default(cuid())
+  campaignId   String
+  requestId    String           @unique
+  amount       Decimal          @db.Decimal(12, 2)
+  currency     String           @db.Char(3)
+  status       AllocationStatus @default(PROPOSED)
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime         @default(now())
+
+  campaign   Campaign          @relation(fields: [campaignId], references: [id])
+  request    AssistanceRequest @relation(fields: [requestId], references: [id])
+  approvedBy User?             @relation("ApprovedBy", fields: [approvedById], references: [id])
+  payouts    Payout[]
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETURNED
+}
+
+enum PayoutMode {
+  SANDBOX
+  SIMULATED
+}
+
+model Payout {
+  id             String       @id @default(cuid())
+  allocationId   String
+  amount         Decimal      @db.Decimal(12, 2)
+  currency       String       @db.Char(3)
+  status         PayoutStatus @default(PENDING)
+  /// SIMULATED payouts must be labelled as a demo fallback in the UI.
+  mode           PayoutMode
+  paypalBatchId  String?
+  paypalItemId   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  allocation AidAllocation @relation(fields: [allocationId], references: [id])
+
+  @@index([allocationId])
+}
+
+/// Every PayPal webhook received. The unique eventId stops duplicate events from being processed twice.
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  eventId     String    @unique
+  eventType   String
+  verified    Boolean
+  payload     Json
+  processedAt DateTime?
+  receivedAt  DateTime  @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
 }

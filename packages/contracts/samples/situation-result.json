@@ -1,0 +1,18 @@
+{
+  "summary": "Parents in a conflict-affected area need food and medicine. Their bank is inaccessible and internet is intermittent. €300 is available.",
+  "needs": ["food", "medicine"],
+  "budget": 300,
+  "currency": "EUR",
+  "location": null,
+  "urgency": "high",
+  "access": {
+    "bank_availability": "unavailable",
+    "atm_access": "unknown",
+    "wallet_acceptance": "unknown",
+    "cash_availability": "unknown",
+    "merchant_acceptance": "unknown",
+    "connectivity": "limited"
+  },
+  "missing_information": ["location", "wallet_acceptance", "local_merchant_availability"],
+  "confidence": 0.84
+}

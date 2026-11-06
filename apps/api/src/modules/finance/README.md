@@ -1,7 +1,11 @@
 # Financial Intelligence — Member 2 (`feature/financial-intelligence`)
 
-Compares `available_routes` and returns a `FinanceResult` (see `packages/contracts/src/finance.ts`):
-recommended route, estimated fee, accessibility score, risk flags and an explanation.
+Agents: **Financial Route**, **Accessibility**, **Cost & Anomaly**, **Risk & Compliance**.
 
-Fee calculations and risk rules must be deterministic code. The LLM may only rank and explain.
-Wire it into `src/routes/finance.routes.ts` in place of the `notImplemented` handler.
+Input `FinanceRequest` → output `FinanceResult` (`packages/contracts/src/finance.ts`):
+per-route fee, usable value, accessibility score with factor breakdown, risk flags, verdict, recommendation.
+
+- Scores, fees and verdicts are deterministic code in `src/rules/`. The LLM only writes `explanation`.
+- Never recommend a route with verdict `block`, an `unsupported` route, or one whose required access is `unavailable`.
+- Replace the `notImplemented` handler in `src/routes/finance.routes.ts`.
+- Frontend: `apps/web/app/finance/`. Tests: `tests/finance/`.

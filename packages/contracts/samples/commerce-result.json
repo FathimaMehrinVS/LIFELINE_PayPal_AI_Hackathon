@@ -1,0 +1,77 @@
+{
+  "items": [
+    {
+      "product_id": "p_rice_lentils",
+      "name": "Rice and lentils family pack",
+      "category": "food",
+      "merchant_id": "m_local_01",
+      "merchant_name": "Verified Grocer (synthetic)",
+      "source": "local_registry",
+      "availability": "available",
+      "quantity": 2,
+      "unit_price": 40,
+      "subtotal": 80,
+      "price_label": "illustrative"
+    },
+    {
+      "product_id": "p_water_10l",
+      "name": "Drinking water 10 L",
+      "category": "water",
+      "merchant_id": "m_local_01",
+      "merchant_name": "Verified Grocer (synthetic)",
+      "source": "local_registry",
+      "availability": "available",
+      "quantity": 4,
+      "unit_price": 5,
+      "subtotal": 20,
+      "price_label": "illustrative"
+    },
+    {
+      "product_id": "p_first_aid",
+      "name": "Basic medicine and first-aid kit",
+      "category": "medicine",
+      "merchant_id": "m_pharmacy_02",
+      "merchant_name": "Verified Pharmacy (synthetic)",
+      "source": "local_registry",
+      "availability": "limited",
+      "quantity": 1,
+      "unit_price": 50,
+      "subtotal": 50,
+      "price_label": "illustrative"
+    },
+    {
+      "product_id": "c3_baby_formula",
+      "name": "Infant formula and nappies bundle",
+      "category": "baby_supplies",
+      "merchant_id": "c3_retailer_17",
+      "merchant_name": "Online retailer via Channel3",
+      "source": "channel3",
+      "availability": "unknown",
+      "quantity": 1,
+      "unit_price": 71,
+      "subtotal": 71,
+      "price_label": "estimate",
+      "purchase_url": "https://example.com/product/baby-bundle"
+    }
+  ],
+  "alternatives": [
+    {
+      "product_id": "p_rice_only",
+      "name": "Rice 5 kg",
+      "category": "food",
+      "merchant_id": "m_local_01",
+      "merchant_name": "Verified Grocer (synthetic)",
+      "source": "local_registry",
+      "availability": "available",
+      "quantity": 2,
+      "unit_price": 28,
+      "subtotal": 56,
+      "price_label": "illustrative"
+    }
+  ],
+  "total": 221,
+  "reserve": 64,
+  "currency": "EUR",
+  "unmet_needs": [],
+  "explanation": "All four needs fit within €285 with €64 kept as an emergency reserve. Baby supplies come from an online retailer, so local availability is unknown."
+}

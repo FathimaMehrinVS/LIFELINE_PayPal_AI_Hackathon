@@ -1,14 +1,18 @@
 import { z } from "zod";
 
-/** ISO 4217 currency code, e.g. "INR", "USD". */
+/** ISO 4217 currency code, e.g. "EUR", "INR". */
 export const CurrencySchema = z.string().regex(/^[A-Z]{3}$/, "Must be a 3-letter ISO 4217 code");
 export type Currency = z.infer<typeof CurrencySchema>;
 
 /**
- * Monetary amount in major units (e.g. 4200.50 INR), at most 2 decimal places.
+ * Monetary amount in major units (e.g. 285.50 EUR), at most 2 decimal places.
  * Fee and payment maths must be done deterministically in code, never by the LLM.
  */
 export const AmountSchema = z.number().nonnegative().multipleOf(0.01);
+
+/** Every amount shown to a user says whether it is an estimate, confirmed, or an illustrative example. */
+export const AmountLabelSchema = z.enum(["estimate", "confirmed", "illustrative"]);
+export type AmountLabel = z.infer<typeof AmountLabelSchema>;
 
 export const UrgencySchema = z.enum(["low", "medium", "high", "critical"]);
 export type Urgency = z.infer<typeof UrgencySchema>;
@@ -19,11 +23,32 @@ export const NeedCategorySchema = z.enum([
   "medicine",
   "shelter",
   "hygiene",
+  "baby_supplies",
   "clothing",
   "transport",
   "other",
 ]);
 export type NeedCategory = z.infer<typeof NeedCategorySchema>;
+
+/** Missing data stays "unknown"; it is never silently turned into "available". */
+export const AvailabilitySchema = z.enum(["available", "limited", "unavailable", "unknown"]);
+export type Availability = z.infer<typeof AvailabilitySchema>;
+
+/**
+ * Practical financial access around the recipient.
+ * Produced by the Situation module (Member 1), consumed by the Financial module (Member 2).
+ */
+export const AccessFactorsSchema = z.object({
+  bank_availability: AvailabilitySchema,
+  atm_access: AvailabilitySchema,
+  wallet_acceptance: AvailabilitySchema,
+  cash_availability: AvailabilitySchema,
+  merchant_acceptance: AvailabilitySchema,
+  connectivity: AvailabilitySchema,
+});
+export type AccessFactors = z.infer<typeof AccessFactorsSchema>;
+export const AccessFactorKeySchema = AccessFactorsSchema.keyof();
+export type AccessFactorKey = z.infer<typeof AccessFactorKeySchema>;
 
 export const ErrorCodeSchema = z.enum([
   "VALIDATION_ERROR",

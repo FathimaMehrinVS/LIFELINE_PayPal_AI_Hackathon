@@ -12,6 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @lifeline/api\" \"npm run dev -w @lifeline/web\"",
     "dev:api": "npm run dev -w @lifeline/api",
     "dev:web": "npm run dev -w @lifeline/web",
@@ -21,7 +22,8 @@
     "test:watch": "vitest",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

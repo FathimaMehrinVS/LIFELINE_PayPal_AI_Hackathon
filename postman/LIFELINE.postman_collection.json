@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "LIFELINE API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Situation (Member 1)",
+      "item": [
+        {
+          "name": "Analyze situation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/situation/analyze",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"My parents are in a conflict-affected area. Their bank is inaccessible and internet is intermittent. I have €300 to send. They need food and medicine.\",\n  \"currency\": \"EUR\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financial (Member 2)",
+      "item": [
+        {
+          "name": "Evaluate routes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/finance/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 300,\n  \"currency\": \"EUR\",\n  \"access\": {\n    \"bank_availability\": \"unavailable\",\n    \"atm_access\": \"unavailable\",\n    \"wallet_acceptance\": \"available\",\n    \"cash_availability\": \"limited\",\n    \"merchant_acceptance\": \"available\",\n    \"connectivity\": \"limited\"\n  },\n  \"routes\": [\n    {\n      \"id\": \"route_bank\",\n      \"name\": \"Bank transfer\",\n      \"type\": \"bank_transfer\",\n      \"fee_fixed\": 0,\n      \"fee_percent\": 2,\n      \"fee_label\": \"illustrative\",\n      \"requires\": [\n        \"bank_availability\"\n      ],\n      \"eligibility\": \"verified\",\n      \"estimated_minutes\": 2880\n    },\n    {\n      \"id\": \"route_agent\",\n      \"name\": \"Local cash-out agent\",\n      \"type\": \"cash_agent\",\n      \"fee_fixed\": 0,\n      \"fee_percent\": 20,\n      \"fee_label\": \"illustrative\",\n      \"requires\": [\n        \"cash_availability\"\n      ],\n      \"eligibility\": \"unverified\",\n      \"estimated_minutes\": 120\n    },\n    {\n      \"id\": \"route_paypal\",\n      \"name\": \"PayPal-supported route\",\n      \"type\": \"paypal\",\n      \"fee_fixed\": 0,\n      \"fee_percent\": 5,\n      \"fee_label\": \"estimate\",\n      \"requires\": [\n        \"wallet_acceptance\",\n        \"connectivity\"\n      ],\n      \"eligibility\": \"verified\",\n      \"estimated_minutes\": 10\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commerce (Member 3)",
+      "item": [
+        {
+          "name": "Build basket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/commerce/basket",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"needs\": [\n    \"food\",\n    \"water\",\n    \"medicine\",\n    \"baby_supplies\"\n  ],\n  \"budget\": 285,\n  \"currency\": \"EUR\",\n  \"location\": \"Demo region (synthetic)\",\n  \"reserve_ratio\": 0.2\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments (Member 3)",
+      "item": [
+        {
+          "name": "Create donation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/payments/donations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaign_id\": \"camp_demo\",\n  \"amount\": 300,\n  \"currency\": \"EUR\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Capture donation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/payments/donations/:id/capture"
+          }
+        },
+        {
+          "name": "Create payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/payments/payouts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allocation_id\": \"alloc_demo\",\n  \"amount\": 285,\n  \"currency\": \"EUR\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,22 @@
 # API contracts
 
-The source of truth is `packages/contracts/src/`. This page shows the same shapes as examples.
-To change a contract, open a small PR to `main` and tell the team first.
+Source of truth: `packages/contracts/src/`. Complete example payloads: `packages/contracts/samples/`
+(tested against the schemas). To change a contract, tell the team, open a small PR to `main`, and update the
+samples in the same PR.
 
 Base URL: `http://localhost:4000`
+
+## Shared values
+
+| Name           | Values                                                                               |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `currency`     | 3-letter ISO 4217 code, e.g. `EUR`                                                   |
+| amounts        | numbers in major units, at most 2 decimals                                           |
+| amount label   | `estimate` · `confirmed` · `illustrative`                                             |
+| `urgency`      | `low` · `medium` · `high` · `critical`                                               |
+| need category  | `food` · `water` · `medicine` · `shelter` · `hygiene` · `baby_supplies` · `clothing` · `transport` · `other` |
+| availability   | `available` · `limited` · `unavailable` · `unknown`                                  |
+| access factors | `bank_availability` · `atm_access` · `wallet_acceptance` · `cash_availability` · `merchant_acceptance` · `connectivity` |
 
 ## Errors (all endpoints)
 
@@ -11,151 +24,67 @@ Base URL: `http://localhost:4000`
 { "error": { "code": "VALIDATION_ERROR", "message": "Request body does not match the contract", "details": [] } }
 ```
 
-| Code              | HTTP |
-| ----------------- | ---- |
-| `VALIDATION_ERROR`| 400  |
-| `NOT_FOUND`       | 404  |
-| `INTERNAL_ERROR`  | 500  |
-| `NOT_IMPLEMENTED` | 501  |
-| `UPSTREAM_ERROR`  | 502  |
+| Code               | HTTP |
+| ------------------ | ---- |
+| `VALIDATION_ERROR` | 400  |
+| `NOT_FOUND`        | 404  |
+| `INTERNAL_ERROR`   | 500  |
+| `NOT_IMPLEMENTED`  | 501  |
+| `UPSTREAM_ERROR`   | 502  |
 
-Shared values:
+## Endpoints
 
-- `currency`: 3-letter ISO 4217 code, e.g. `"INR"`
-- `urgency`: `low` · `medium` · `high` · `critical`
-- `needs` / `category`: `food` · `water` · `medicine` · `shelter` · `hygiene` · `clothing` · `transport` · `other`
-- Amounts: numbers in major units, at most 2 decimal places
+| Method | Path                                  | Request                | Response           | Owner    |
+| ------ | ------------------------------------- | ---------------------- | ------------------ | -------- |
+| GET    | `/health`                             | —                      | `{status:"ok"}`    | Shared   |
+| POST   | `/api/situation/analyze`              | `SituationRequest`     | `SituationResult`  | Member 1 |
+| POST   | `/api/finance/evaluate`               | `FinanceRequest`       | `FinanceResult`    | Member 2 |
+| POST   | `/api/commerce/basket`                | `CommerceRequest`      | `CommerceResult`   | Member 3 |
+| POST   | `/api/payments/donations`             | `CreateDonationRequest`| `DonationResult`   | Member 3 |
+| POST   | `/api/payments/donations/:id/capture` | —                      | `DonationResult`   | Member 3 |
+| POST   | `/api/payments/payouts`               | `CreatePayoutRequest`  | `PayoutResult`     | Member 3 |
+| POST   | `/api/payments/webhooks/paypal`       | PayPal event           | `200`              | Member 3 |
 
-## `GET /health`
+## Situation (Member 1)
 
-```json
-{ "status": "ok" }
-```
+Request: `{ message, location?, currency? }` → see `samples/situation-request.json`.
 
-## `POST /api/situation/analyze` — Member 1
-
-Request (`SituationRequest`):
-
-```json
-{
-  "message": "My family needs food and medicine. I have a budget of 5000 INR.",
-  "location": "Kerala",
-  "currency": "INR"
-}
-```
-
-Response (`SituationResult`):
+Response highlights (`samples/situation-result.json`):
 
 ```json
 {
+  "summary": "Parents in a conflict-affected area need food and medicine. ...",
   "needs": ["food", "medicine"],
-  "budget": 5000,
-  "currency": "INR",
-  "location": "Kerala",
+  "budget": 300,
+  "currency": "EUR",
+  "location": null,
   "urgency": "high",
-  "missing_information": [],
-  "confidence": 0.91
+  "access": { "bank_availability": "unavailable", "connectivity": "limited", "wallet_acceptance": "unknown", "...": "..." },
+  "missing_information": ["location", "wallet_acceptance", "local_merchant_availability"],
+  "confidence": 0.84
 }
 ```
 
-`budget` and `location` are `null` when not stated; add them to `missing_information`.
+## Financial (Member 2)
 
-## `POST /api/finance/evaluate` — Member 2
+Request: `{ amount, currency, access, routes[] }`. Each route has fees, `fee_label`, the access factors it
+`requires` and its `eligibility` (`verified` · `unverified` · `unsupported`). See `samples/finance-request.json`.
 
-Request (`FinanceRequest`):
+Response: `recommended_route_id` (or `null`), and per route: `estimated_fee`, `usable_value`, `accessibility`
+(score, version, factor breakdown), `verdict` (`pass` · `review` · `block`) and `flags`. See
+`samples/finance-result.json`.
 
-```json
-{
-  "budget": 5000,
-  "currency": "INR",
-  "available_routes": [
-    {
-      "id": "route_a",
-      "name": "PayPal",
-      "type": "paypal",
-      "fee_fixed": 0,
-      "fee_percent": 1,
-      "estimated_minutes": 5,
-      "accessibility_features": ["smartphone", "low_bandwidth"]
-    }
-  ],
-  "accessibility_requirements": ["low_bandwidth"]
-}
-```
+## Commerce (Member 3)
 
-`type`: `paypal` · `bank_transfer` · `mobile_wallet` · `cash_pickup` · `other`
+Request: `{ needs[], budget, currency, location, reserve_ratio? }` (default reserve 20%). See
+`samples/commerce-request.json`.
 
-Response (`FinanceResult`):
+Response: `items[]` and `alternatives[]` (each with `source` `channel3` · `local_registry`, availability and
+`price_label`), `total`, `reserve`, `unmet_needs`, `explanation`. See `samples/commerce-result.json`.
 
-```json
-{
-  "recommended_route": "route_a",
-  "estimated_fee": 50,
-  "accessibility_score": 85,
-  "risk_flags": [{ "code": "HIGH_FEE", "severity": "warning", "message": "Fee is above 5% of budget" }],
-  "explanation": "PayPal has the lowest fee and works on low bandwidth."
-}
-```
+## Payments (Member 3)
 
-`severity`: `info` · `warning` · `critical`
-
-## `POST /api/commerce/basket` — Member 3
-
-Request (`CommerceRequest`):
-
-```json
-{
-  "needs": ["food", "medicine"],
-  "budget": 4950,
-  "currency": "INR",
-  "location": "Kerala"
-}
-```
-
-Response (`CommerceResult`):
-
-```json
-{
-  "items": [
-    {
-      "product_id": "p_rice_5kg",
-      "name": "Rice 5 kg",
-      "merchant_id": "m_kochi_01",
-      "category": "food",
-      "quantity": 2,
-      "unit_price": 450,
-      "subtotal": 900
-    }
-  ],
-  "total": 4200,
-  "currency": "INR",
-  "remaining_budget": 750
-}
-```
-
-## `POST /api/payments` — Member 3
-
-Request (`CreatePaymentRequest`):
-
-```json
-{ "request_id": "req_123", "route_id": "route_a", "amount": 4200, "currency": "INR" }
-```
-
-Response (`PaymentResult`):
-
-```json
-{
-  "payment_id": "pay_123",
-  "provider": "paypal",
-  "status": "created",
-  "amount": 4200,
-  "currency": "INR",
-  "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=..."
-}
-```
-
-## `POST /api/payments/:id/capture` — Member 3
-
-No body. Returns a `PaymentResult` with `status` `captured` or `failed`.
-
-`status`: `created` · `approved` · `captured` · `failed` · `cancelled`
+- Donation: `{ campaign_id, amount, currency }` → `{ donation_id, paypal_order_id, status, amount, currency, approval_url? }`
+- Donation status: `created` · `approved` · `captured` · `failed` · `cancelled` · `refunded`
+- Payout: `{ allocation_id, amount, currency }` → `{ payout_id, allocation_id, status, amount, currency, mode, paypal_batch_id? }`
+- Payout `mode`: `sandbox` (real PayPal Sandbox) or `simulated` (demo fallback, must be labelled in the UI)

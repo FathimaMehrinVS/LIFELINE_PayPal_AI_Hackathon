@@ -1,0 +1,51 @@
+# Render Blueprint: two free web services from this monorepo.
+# Secrets are set in the Render dashboard (sync: false), never in this file.
+services:
+  - type: web
+    name: lifeline-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run start -w @lifeline/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: WEB_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_BASE_URL
+        value: https://api-m.sandbox.paypal.com
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+
+  - type: web
+    name: lifeline-web
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build -w @lifeline/web
+    startCommand: npm run start -w @lifeline/web
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
