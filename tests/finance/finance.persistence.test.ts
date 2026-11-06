@@ -59,4 +59,25 @@ describe("saveFinancialAssessment", () => {
       },
     });
   });
+
+  it("updates the same row when the assessment is recalculated", async () => {
+    const { prisma, calls } = createPrismaStub();
+    const revisedResult: FinanceResult = {
+      ...financeResult,
+      recommended_route_id: null,
+      explanation: "No route passed the checks.",
+    };
+
+    await saveFinancialAssessment("request_123", financeResult, prisma);
+    await saveFinancialAssessment("request_123", revisedResult, prisma);
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toMatchObject({
+      where: { requestId: "request_123" },
+      update: {
+        recommendedRouteId: null,
+        explanation: "No route passed the checks.",
+      },
+    });
+  });
 });
