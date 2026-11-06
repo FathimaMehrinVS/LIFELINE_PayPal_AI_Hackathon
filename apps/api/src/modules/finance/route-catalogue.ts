@@ -1,0 +1,43 @@
+import type { FinancialRoute } from "@lifeline/contracts";
+
+/** Synthetic demo routes; all fees are illustrative and are not provider quotes. */
+const DEMO_ROUTE_CATALOGUE: readonly FinancialRoute[] = [
+  {
+    id: "route_bank",
+    name: "Bank transfer",
+    type: "bank_transfer",
+    fee_fixed: 0,
+    fee_percent: 2,
+    fee_label: "illustrative",
+    requires: ["bank_availability"],
+    eligibility: "verified",
+    estimated_minutes: 2880,
+  },
+  {
+    id: "route_agent",
+    name: "Local cash-out agent",
+    type: "cash_agent",
+    fee_fixed: 0,
+    fee_percent: 20,
+    fee_label: "illustrative",
+    requires: ["cash_availability"],
+    eligibility: "unverified",
+    estimated_minutes: 120,
+  },
+  {
+    id: "route_paypal",
+    name: "PayPal-supported route",
+    type: "paypal",
+    fee_fixed: 0,
+    fee_percent: 5,
+    fee_label: "illustrative",
+    requires: ["wallet_acceptance", "connectivity"],
+    eligibility: "verified",
+    estimated_minutes: 10,
+  },
+];
+
+/** Return fresh objects so callers cannot mutate the shared demo catalogue. */
+export function getDemoRouteCatalogue(): FinancialRoute[] {
+  return DEMO_ROUTE_CATALOGUE.map((route) => ({ ...route, requires: [...route.requires] }));
+}
