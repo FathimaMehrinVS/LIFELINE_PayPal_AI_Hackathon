@@ -2,9 +2,12 @@ import cors from "cors";
 import express from "express";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { allocationRouter } from "./routes/allocation.routes";
+import { casesRouter } from "./routes/cases.routes";
 import { commerceRouter } from "./routes/commerce.routes";
+import { donationRouter } from "./routes/donation.routes";
 import { financeRouter } from "./routes/finance.routes";
-import { paymentRouter } from "./routes/payment.routes";
+import { payoutRouter } from "./routes/payout.routes";
 import { situationRouter } from "./routes/situation.routes";
 
 export function createApp() {
@@ -20,7 +23,11 @@ export function createApp() {
   app.use("/api/situation", situationRouter);
   app.use("/api/finance", financeRouter);
   app.use("/api/commerce", commerceRouter);
-  app.use("/api/payments", paymentRouter);
+  app.use("/api/cases", casesRouter);
+  app.use("/api/allocations", allocationRouter);
+  // Both mounted at /api/payments; each router owns different paths.
+  app.use("/api/payments", donationRouter);
+  app.use("/api/payments", payoutRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -1,15 +1,23 @@
-# Handoff: Member 3, Commerce Intelligence + PayPal
+# Handoff: Member 3, Commerce Intelligence
 
-**Branch:** `feature/commerce-payments`
-**Agents you own:** Commerce Agent, Decision Agent, PayPal Agent
-**One-line job:** find essential goods and build a basket that fits the family's usable budget with a reserve,
-and run the PayPal Sandbox payments (donor checkout, webhooks, payout or labelled fallback).
+**Branch:** `feature/commerce-payments` · **Effort:** ~25 hours over 4 days
 
-PayPal is the hackathon's core judging point, so **do PayPal Orders first**, then the basket.
+| Part              | What you build                                                         |
+| ----------------- | ---------------------------------------------------------------------- |
+| AI                | **Ranking Agent**: matches and ranks products against needs, explains the basket |
+| Rules (no AI)     | Basket fit, reserve, cheaper substitutions, unmet needs                |
+| External service  | **PayPal donor checkout** (Orders) + **Channel3** product search       |
+| Frontend          | Basket page + donate flow                                              |
+| Final-day job     | Demo merchant data, end-to-end test                                    |
+
+**You will learn:** search and ranking, recommendation, budget optimisation, LLM tool use over real APIs, the full
+payment checkout lifecycle.
+
+PayPal donor checkout is the hackathon's core judging point, so it comes **first**, on Day 1.
 
 ---
 
-## 1. Setup (1 hour, including accounts)
+## 1. Setup (1 h, including accounts)
 
 ```bash
 git clone https://github.com/FathimaMehrinVS/LIFELINE_PayPal_AI_Hackathon.git
@@ -17,136 +25,150 @@ cd LIFELINE_PayPal_AI_Hackathon
 git checkout feature/commerce-payments
 npm install
 cp .env.example .env
-npm test                     # 17 tests should pass
+npm test
 ```
 
-Accounts and keys for `.env`:
+You set up two shared accounts for the team on Day 1:
 
-- **PayPal:** developer.paypal.com → Apps & Credentials → **Sandbox** → Create App →
-  `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`. Also note the sandbox buyer (personal) account for testing.
-- **Channel3:** `CHANNEL3_API_KEY`. Check their docs for the search endpoint. Credits are limited, so
-  cache responses while developing.
-- **Groq:** `GROQ_API_KEY` + `GROQ_MODEL` (console.groq.com)
-- **Supabase:** `DATABASE_URL` + `DIRECT_URL` (one teammate creates the project and shares them), then
-  `npm run db:migrate`
+- **Supabase:** create a free project → Connect → copy the pooler URL into `DATABASE_URL` and the session URL
+  into `DIRECT_URL` → `npm run db:migrate` → `npm run db:seed` (creates the demo NGO user and campaign
+  `camp_demo`) → share both URLs with the team privately (not in git)
+- **PayPal:** developer.paypal.com → Apps & Credentials → **Sandbox** → Create App → `PAYPAL_CLIENT_ID`,
+  `PAYPAL_CLIENT_SECRET` → share with Member 2. Note the sandbox **buyer** account for testing.
 
-## 2. Day-one checks (tell the team the results)
+Your own keys: `GROQ_API_KEY` + `GROQ_MODEL` (console.groq.com), `CHANNEL3_API_KEY`.
 
-- [ ] OAuth token works: `POST {PAYPAL_BASE_URL}/v1/oauth2/token` with basic auth and
-  `grant_type=client_credentials`
-- [ ] **Is Payouts enabled on the sandbox app?** (App settings → features). This decides the demo:
-  real sandbox payout, or a clearly labelled simulated payout.
-- [ ] One Channel3 search works and you know the response shape
+## 2. Files you own (only these)
 
-## 3. What you own
+| Path                                           | What goes there                              |
+| ---------------------------------------------- | -------------------------------------------- |
+| `apps/api/src/integrations/paypal/orders.ts`   | Create and capture donor orders              |
+| `apps/api/src/integrations/channel3/`          | Channel3 search client                       |
+| `apps/api/src/modules/commerce/`               | `registry.json`, `local-registry.ts`, `channel3-source.ts`, `prompts.ts`, `commerce.service.ts` |
+| `apps/api/src/rules/basket.ts`                 | Basket fit, reserve, substitutions           |
+| `apps/api/src/routes/commerce.routes.ts`       | `POST /api/commerce/basket`                  |
+| `apps/api/src/routes/donation.routes.ts`       | `POST /api/payments/donations`, `POST /api/payments/donations/:id/capture` |
+| `apps/web/app/commerce/`                       | Basket page                                  |
+| `apps/web/app/donate/`                         | Donate page + PayPal return page             |
+| `tests/commerce/`                              | Your tests                                   |
+| `tests/integration/end-to-end.test.ts`         | End-to-end test (Day 4)                      |
 
-| Path                                        | What goes there                              |
-| ------------------------------------------- | -------------------------------------------- |
-| `apps/api/src/integrations/paypal/`         | `client.ts`, `orders.ts`, `webhooks.ts`, `payouts.ts` |
-| `apps/api/src/integrations/channel3/`       | Channel3 search client                       |
-| `apps/api/src/modules/commerce/`            | Product sources, ranking prompt, service     |
-| `apps/api/src/rules/basket.ts`              | Totals, reserve, fit check, substitution     |
-| `apps/api/src/routes/commerce.routes.ts`, `payment.routes.ts` | Replace `notImplemented` handlers |
-| `prisma/seed.ts`                            | Synthetic merchants and products             |
-| `apps/web/app/commerce/`                    | Basket + donate pages                        |
-| `tests/commerce/`                           | Your tests                                   |
+`integrations/paypal/client.ts` (OAuth token + `paypalFetch`) is shared and already in `main`. Use it, don't edit it.
+Member 2 owns `webhooks.ts` and `payouts.ts` in the same folder.
 
-## 4. Your contracts
+## 3. Your contracts
 
-- **Basket:** `CommerceRequest` → `CommerceResult`, see `packages/contracts/samples/commerce-*.json`
-- **Payments:** `CreateDonationRequest` → `DonationResult`, `CreatePayoutRequest` → `PayoutResult`
-  (`packages/contracts/src/payment.ts`)
-- Full PayPal flow: `docs/paypal-integration.md`
+| Endpoint                                  | Input                   | Output           |
+| ----------------------------------------- | ----------------------- | ---------------- |
+| `POST /api/commerce/basket`               | `CommerceRequest` (`samples/commerce-request.json`) | `CommerceResult` (`samples/commerce-result.json`) |
+| `POST /api/payments/donations`            | `CreateDonationRequest` | `DonationResult` |
+| `POST /api/payments/donations/:id/capture`| —                       | `DonationResult` |
 
-Your basket `budget` is Member 2's `usable_value`. Use the sample (€285) until integration.
+Your basket `budget` is Member 2's `usable_value`. Use the sample (€285) until Day 3.
+Full PayPal flow: `docs/paypal-integration.md`.
 
-## 5. Tasks
+---
 
-### Day 1 (7 Nov): PayPal Orders
+## 4. Day-by-day
 
-- [ ] `integrations/paypal/client.ts`: get and cache the OAuth token (refresh before `expires_in`); one
-  `paypalFetch(path, init)` helper that adds the token and throws `HttpError("UPSTREAM_ERROR", ...)` on failure
-- [ ] `integrations/paypal/orders.ts`:
-  - create: `POST /v2/checkout/orders` with `intent: "CAPTURE"`, amount as a string with 2 decimals
-    (`"300.00"`), and a return/cancel URL pointing at the web app. Return the approval link.
+### Day 1 · 6 Nov · accounts + PayPal donor checkout (~7 h)
+
+- [ ] **Supabase + PayPal accounts**, shared with the team (see Setup) (1 h)
+- [ ] **Payouts check** (0.5 h): in the sandbox app's features, is Payouts enabled? **Tell the team tonight.**
+  It decides whether Member 2 builds a real or a simulated payout.
+- [ ] **`integrations/paypal/orders.ts`** (2 h), using `paypalFetch` from `client.ts`
+  - create: `POST /v2/checkout/orders` with `intent: "CAPTURE"`, the amount as a 2-decimal string (`"300.00"`),
+    and return / cancel URLs pointing at `<web>/donate/return`. Return the approval link.
   - capture: `POST /v2/checkout/orders/{id}/capture`
-- [ ] Routes `POST /api/payments/donations` and `POST /api/payments/donations/:id/capture`; store `Donation`
-  rows (`getPrisma()`), status `CREATED` → `CAPTURED`
-- [ ] Test it by hand: create → open approval URL → log in with the sandbox buyer → capture
+- [ ] **`routes/donation.routes.ts`** (2 h): create stores a `Donation` (`CREATED`, `paypalOrderId`); capture
+  updates it to `CAPTURED` with `paypalCaptureId`. Use `getPrisma()` from `src/database/prisma.ts`.
+- [ ] **Manual test** (1.5 h): create in Postman → open the approval URL → log in as the sandbox buyer → capture →
+  check the row in `npm run db:studio`
 
-### Day 2 (8 Nov): basket + webhooks
+**Checkpoint tonight:** a sandbox donation goes from created to captured and is stored.
 
-- [ ] Product sources in `modules/commerce/`, behind one interface so they're swappable:
+### Day 2 · 7 Nov · Commerce Intelligence (~7 h)
+
+- [ ] **`modules/commerce/registry.json`** (1 h): 20–30 synthetic products from 4–5 verified local merchants
+  covering every need category, with prices in EUR, availability and `accepts` payment methods
+- [ ] **Product sources** (3 h), behind one interface so they're swappable:
 
   ```ts
   interface ProductSource {
-    search(need: NeedCategory, location: string, currency: string): Promise<BasketItem[]>;
+    search(needs: NeedCategory[], location: string, currency: string): Promise<BasketItem[]>;
   }
   ```
 
-  - `local-registry.ts`: synthetic verified merchants. Start with an in-memory list; once Supabase is up,
-    seed it via `prisma/seed.ts` and search with PostgreSQL full-text search (`$queryRaw` with
-    `to_tsvector` / `plainto_tsquery`)
-  - `channel3.ts`: Channel3 results mapped to `BasketItem` with `source: "channel3"`, `availability: "unknown"`
-    (an online catalogue doesn't prove local availability), `price_label: "estimate"`
-- [ ] `rules/basket.ts` (plain code, no AI, use `utils/money.ts`):
+  - `local-registry.ts`: filters `registry.json`, `source: "local_registry"`
+  - `channel3-source.ts`: one Channel3 search per need, mapped to `BasketItem` with `source: "channel3"`,
+    `availability: "unknown"` (an online catalogue doesn't prove local availability), `price_label: "estimate"`.
+    Cache responses in memory while developing to save credits.
+- [ ] **`rules/basket.ts` + tests** (2 h), plain code, use `utils/money.ts`:
   - spendable = `budget × (1 − reserve_ratio)`
-  - pick the best-ranked candidate per need; if the total doesn't fit, swap in cheaper candidates
-    (keep the swapped-out ones as `alternatives`); if a need still can't fit, add it to `unmet_needs`
-  - `reserve = budget − total`, always ≥ 0
-- [ ] Commerce Agent: **one** LLM call that ranks all candidates for all needs and writes the explanation.
-  The LLM returns product IDs in ranked order; your code builds the basket from them. It never sets prices or totals.
-- [ ] Webhooks `POST /api/payments/webhooks/paypal`:
-  - verify with `POST /v1/notifications/verify-webhook-signature` (PayPal headers + `PAYPAL_WEBHOOK_ID`)
-  - store a `WebhookEvent`; the unique `eventId` means a duplicate event is ignored
-  - on `PAYMENT.CAPTURE.COMPLETED`, confirm the donation
-  - for local testing, expose port 4000 with a tunnel and register that URL in the sandbox app
-- [ ] Unit tests: `rules/basket.ts` with the sample (should give total 221, reserve 64), the over-budget case
-  (€350 basket vs €300), and PayPal calls with a mocked `fetch`
+  - take the top-ranked product per need; if the total doesn't fit, swap in cheaper candidates (keep the replaced
+    ones in `alternatives`); if a need still can't fit, add it to `unmet_needs`
+  - `reserve = budget − total`, never negative
+  - tests: the sample (total 221, reserve 64) and the over-budget case (€350 of goods vs €300)
+- [ ] **Ranking Agent** in `commerce.service.ts` (1 h): **one** LLM call with all candidates for all needs.
+  The LLM returns product IDs in ranked order per need plus an explanation; your rules build the basket. The LLM
+  never sets prices or totals.
 
-### Day 3 (9 Nov): UI + payouts
+**Evening:** open your PR into `main`; review one teammate's PR (10 min).
 
-- [ ] `apps/web/app/commerce/page.tsx`: basket items with source badges (local registry / Channel3),
-  availability, price labels, alternatives, reserve, unmet needs, explanation
-- [ ] Donate button → `api.createDonation` → redirect to `approval_url` → return page calls
-  `api.captureDonation` → shows the status **from the backend**, not from the redirect
-- [ ] Payouts: if enabled, `integrations/paypal/payouts.ts` (`POST /v1/payments/payouts`) with
-  `mode: "sandbox"`. If not, record `mode: "simulated"` and show **"Demo fallback: simulated payout"** in the UI.
-  Only for an `AidAllocation` with status `APPROVED`.
-- [ ] Open a PR into `main` by the end of the day.
+### Day 3 · 8 Nov · UI + donate flow (~6 h)
 
-### Day 4 (10 Nov): integration
+Merge `main` into your branch first.
 
-- [ ] Merge `main`, help Member 1 plug your basket into the Orchestrator
-- [ ] Save `Basket` / `BasketItem` rows
-- [ ] Add your requests and tests to the Postman collection (`postman/`)
+- [ ] **Basket page** `apps/web/app/commerce/page.tsx` (2.5 h): items with source badge (Local registry /
+  Channel3), availability, price label, subtotal; alternatives; total, reserve, unmet needs; explanation. Use
+  `api.buildBasket`.
+- [ ] **Donate flow** `apps/web/app/donate/` (2.5 h)
+  - donate page: amount + "Donate with PayPal" → `api.createDonation` → redirect to `approval_url`
+  - return page (`/donate/return?token=...`): calls `api.captureDonation`, then shows the status **from the
+    backend**, never from the redirect alone
+  - cancel → a clear "Donation cancelled" message
+- [ ] **Tests** for `orders.ts` with a mocked `fetch` (1 h)
 
-### Days 5–6 (11–12 Nov): together
+**Checkpoint tonight:** donate → PayPal sandbox → back → captured, and the basket page works with the sample.
 
-Deploy on Render (`render.yaml` is ready; secrets go in the Render dashboard), demo video, submission before
-**12:00 PT on 12 Nov**.
+### Day 4 · 9 Nov · demo-ready (~5 h)
 
-## 6. Definition of done
+- [ ] **`tests/integration/end-to-end.test.ts`** (2 h): with a fake LLM and mocked PayPal/Channel3, run
+  `/api/cases` and the donation endpoints and check each step's output
+- [ ] **Demo data** (1 h): make the registry and scenario match the demo script (the €300 family)
+- [ ] **Bug fixes** from the end-to-end run (2 h)
+
+---
+
+## 5. Definition of done
 
 - [ ] Sandbox donation: create → approve → capture, stored in the database
-- [ ] Webhook signature verified; a duplicate event doesn't create a duplicate record
-- [ ] Sample basket request → total ≤ budget, reserve ≥ 20%, sources and labels set
+- [ ] Payouts check result shared with the team on Day 1
+- [ ] Sample basket → total ≤ spendable, reserve ≥ 20%, sources and labels set
 - [ ] Over-budget case substitutes cheaper items and lists unmet needs
-- [ ] Payout runs in sandbox, or is clearly labelled simulated
-- [ ] `npm run typecheck` and `npm test` pass
+- [ ] Channel3 results shown next to local registry results
+- [ ] Basket page and donate flow work end to end
+
+## 6. If you fall behind, cut in this order
+
+1. Channel3 → local registry only (say so in the integration status doc)
+2. End-to-end test → a manual test checklist
+3. Alternatives list → only `unmet_needs`
 
 ## 7. Rules
 
-- PayPal credentials stay on the backend. Never in `apps/web`.
-- A payment is complete only when PayPal confirms it, never because the browser reached a success page.
+- PayPal credentials stay on the backend, never in `apps/web`.
+- A donation is complete only when PayPal confirms the capture, never because the browser reached a page.
 - Don't call authorisation "escrow" or the internal ledger "PayPal balance".
 - The LLM ranks and explains. Prices, totals and the reserve are code.
-- Need a new npm package (e.g. a PayPal SDK)? Small PR to `main` first. `fetch` is enough for everything above.
+- Don't commit `.env` or share keys in git. Send them privately.
 
-## 8. Who depends on you
+## 8. Handover points
 
-| Who      | Needs                                         | When     |
-| -------- | --------------------------------------------- | -------- |
-| Everyone | Whether Payouts is enabled                     | 7 Nov    |
-| Member 1 | `buildBasket()` for the Orchestrator           | 10 Nov   |
-| Demo     | Working sandbox checkout                       | 9 Nov    |
+| You give                                   | To       | When          |
+| ------------------------------------------ | -------- | ------------- |
+| Supabase URLs, PayPal sandbox credentials  | Everyone | Day 1         |
+| Payouts enabled: yes / no                  | Member 2 | Day 1         |
+| `buildBasket()`                            | Member 1 (Orchestrator) | Day 2 evening (merged) |
+| Captured `Donation` rows                   | Member 2 (approval rule) | Day 2 evening (merged) |
+| Working donate flow                        | Demo     | Day 3         |

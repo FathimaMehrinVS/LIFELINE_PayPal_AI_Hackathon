@@ -1,6 +1,12 @@
 # PayPal integration (Sandbox)
 
-Owner: Member 3. Code: `apps/api/src/integrations/paypal/`, routes in `routes/payment.routes.ts`.
+| Part                              | Owner    | Code                                                         |
+| --------------------------------- | -------- | ------------------------------------------------------------ |
+| OAuth token + `paypalFetch`       | shared   | `integrations/paypal/client.ts`                              |
+| Donor orders (create, capture)    | Member 3 | `integrations/paypal/orders.ts`, `routes/donation.routes.ts` |
+| Webhooks                          | Member 2 | `integrations/paypal/webhooks.ts`, `routes/payout.routes.ts` |
+| Allocation approval               | Member 2 | `rules/approval.ts`, `routes/allocation.routes.ts`           |
+| Payouts                           | Member 2 | `integrations/paypal/payouts.ts`, `routes/payout.routes.ts`  |
 
 Availability depends on country, account type and product enablement. Verify each capability in the sandbox
 before presenting it as implemented.
@@ -25,9 +31,12 @@ before presenting it as implemented.
 
 A payment is never marked complete because the browser reached a success page.
 
-## Payouts
+## Approval and payouts
 
-Only for an `AidAllocation` with status `APPROVED`. If Payouts is not available for the account, the payout is
+1. The NGO presses **Approve** on the dashboard → `POST /api/allocations/approve`.
+2. Backend rule: approve only if `amount ≤ captured donations for the campaign − amount already allocated`. It
+   stores an `AidAllocation` (`APPROVED`, approver, time) and an `AuditLog` row.
+3. `POST /api/payments/payouts` runs only for an `AidAllocation` with status `APPROVED`. If Payouts is not available for the account, the payout is
 recorded with `mode: SIMULATED` and the UI must label it "Demo fallback: simulated payout".
 
 ## Must never

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AmountSchema, CurrencySchema } from "./common";
 
-// Owner: Member 3 (feature/commerce-payments).
+// Donations: Member 3 (feature/commerce-payments). Payouts: Member 2 (feature/financial-intelligence).
 // Payment state comes only from the backend after PayPal confirms it — never from the browser reaching a success page.
 
 export const DonationStatusSchema = z.enum(["created", "approved", "captured", "failed", "cancelled", "refunded"]);

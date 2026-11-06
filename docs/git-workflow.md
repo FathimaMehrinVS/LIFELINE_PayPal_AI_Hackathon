@@ -4,16 +4,19 @@
 
 | Branch                           | Owner    | Owns                                                                                   |
 | -------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `feature/situation-agent`        | Member 1 | `apps/api/src/modules/situation/`, `routes/situation.routes.ts`, `apps/web/app/situation/`, `tests/situation/`, `orchestration/` (after merges) |
-| `feature/financial-intelligence` | Member 2 | `apps/api/src/modules/finance/`, `rules/accessibility-score.ts`, `rules/fees.ts`, `rules/route-eligibility.ts`, `routes/finance.routes.ts`, `apps/web/app/finance/`, `tests/finance/` |
-| `feature/commerce-payments`      | Member 3 | `apps/api/src/modules/commerce/`, `rules/basket.ts`, `integrations/channel3/`, `integrations/paypal/`, `routes/commerce.routes.ts`, `routes/payment.routes.ts`, `prisma/seed.ts`, `apps/web/app/commerce/`, `tests/commerce/` |
-| `main`                           | Everyone, via PR only | Everything else, plus the shared dashboard (`apps/web/app/dashboard/`) |
+| `feature/situation-agent`        | Member 1 | `apps/api/src/modules/situation/`, `rules/situation-checks.ts`, `routes/situation.routes.ts`, `routes/cases.routes.ts`, `orchestration/`, `apps/web/app/situation/`, `apps/web/app/dashboard/`, `tests/situation/`, `render.yaml` |
+| `feature/financial-intelligence` | Member 2 | `apps/api/src/modules/finance/`, `rules/fees.ts`, `rules/accessibility-score.ts`, `rules/route-eligibility.ts`, `rules/approval.ts`, `routes/finance.routes.ts`, `routes/allocation.routes.ts`, `routes/payout.routes.ts`, `integrations/paypal/webhooks.ts`, `integrations/paypal/payouts.ts`, `apps/web/app/finance/`, `tests/finance/`, `docs/integration-status.md`, `postman/` |
+| `feature/commerce-payments`      | Member 3 | `apps/api/src/modules/commerce/`, `rules/basket.ts`, `integrations/channel3/`, `integrations/paypal/orders.ts`, `routes/commerce.routes.ts`, `routes/donation.routes.ts`, `prisma/seed.ts`, `apps/web/app/commerce/`, `apps/web/app/donate/`, `tests/commerce/`, `tests/integration/end-to-end.test.ts` |
+| `main`                           | Everyone, via PR only | Everything else |
+
+No file is owned by two people. If you need to change a file you don't own, ask its owner.
 
 ## Shared files: change only through a small PR to `main`
 
 - `packages/contracts/**` (update the samples in the same PR)
 - `prisma/schema.prisma`
-- `apps/api/src/ai/`, `config/`, `middleware/`, `app.ts`
+- `apps/api/src/ai/`, `config/`, `middleware/`, `app.ts`, `integrations/paypal/client.ts`
+- `apps/web/services/api.ts`, `apps/web/app/layout.tsx`
 - Root `package.json`, `package-lock.json`, `tsconfig.base.json`, `.env.example`
 
 Tell the team first, merge it quickly, then everyone merges `main` into their branch.

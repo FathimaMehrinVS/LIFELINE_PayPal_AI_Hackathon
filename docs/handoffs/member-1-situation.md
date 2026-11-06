@@ -1,9 +1,17 @@
 # Handoff: Member 1, Situation Intelligence
 
-**Branch:** `feature/situation-agent`
-**Agents you own:** Situation Agent, Orchestrator
-**One-line job:** turn a plain-language emergency message into a structured `SituationResult`, then (at the end)
-chain all three modules into one case.
+**Branch:** `feature/situation-agent` · **Effort:** ~25 hours over 4 days
+
+| Part              | What you build                                                  |
+| ----------------- | --------------------------------------------------------------- |
+| AI                | **Situation Agent**: emergency message → structured JSON        |
+| Rules (no AI)     | Unknown / missing-information checks                            |
+| External service  | Groq + Gemini fallback, **Render** deployment                    |
+| Frontend          | Situation page + **AG Grid dashboard** with the Approve button  |
+| Final-day job     | **Orchestrator** (chains all three modules), demo video         |
+
+**You will learn:** prompt engineering, structured output, entity extraction, classification, hallucination
+handling, agent orchestration, deployment.
 
 ---
 
@@ -15,52 +23,62 @@ cd LIFELINE_PayPal_AI_Hackathon
 git checkout feature/situation-agent
 npm install
 cp .env.example .env
-npm test                     # 17 tests should pass
+npm test
 ```
 
-In `.env`:
+In `.env`, use **your own** Groq key (each member has their own, so rate limits don't collide):
 
-- `GROQ_API_KEY`: from console.groq.com → API Keys
-- `GROQ_MODEL`: pick a current model from console.groq.com/docs/models that supports JSON mode
-- Optional backup: `GEMINI_API_KEY` + `GEMINI_MODEL` from aistudio.google.com
+- `GROQ_API_KEY`: console.groq.com → API Keys
+- `GROQ_MODEL`: a current model from console.groq.com/docs/models that supports JSON mode
+- optional fallback: `GEMINI_API_KEY` + `GEMINI_MODEL` (aistudio.google.com)
+- `DATABASE_URL`, `DIRECT_URL`: Member 3 shares these on Day 1
 
-Then `npm run dev:api` and open `http://localhost:4000/health`.
+`npm run dev:api` → `http://localhost:4000/health`
 
-## 2. What you own
+## 2. Files you own (only these)
 
-| Path                                        | What goes there                        |
-| ------------------------------------------- | -------------------------------------- |
-| `apps/api/src/modules/situation/`           | Prompt, service, post-processing       |
-| `apps/api/src/routes/situation.routes.ts`   | Replace the `notImplemented` handler   |
-| `apps/web/app/situation/`                   | The Situation page                     |
-| `tests/situation/`                          | Your tests                             |
-| `apps/api/src/orchestration/`               | Orchestrator (Day 4, after merges)     |
+| Path                                         | What goes there                             |
+| -------------------------------------------- | ------------------------------------------- |
+| `apps/api/src/modules/situation/`            | `prompts.ts`, `situation.service.ts`        |
+| `apps/api/src/rules/situation-checks.ts`     | Unknown / missing-information checks        |
+| `apps/api/src/routes/situation.routes.ts`    | `POST /api/situation/analyze`               |
+| `apps/api/src/orchestration/`                | `run-case.ts` (Day 3)                       |
+| `apps/api/src/routes/cases.routes.ts`        | `POST /api/cases`, `GET /api/cases` (Day 3) |
+| `apps/web/app/situation/`                    | Situation page                              |
+| `apps/web/app/dashboard/`                    | AG Grid dashboard + Approve button          |
+| `tests/situation/`                           | Your tests                                  |
+| `render.yaml`                                | Deployment (Day 4)                          |
 
-Don't edit other members' folders. Changes to contracts, the AI client or the schema go through a small PR to `main`.
+Everything else belongs to someone else or is frozen. If you really need a shared change (contracts, AI client,
+schema, a new npm package), open a small PR to `main` and tell the team first.
 
-## 3. Your contract
+## 3. Your contracts
 
-- **Input:** `SituationRequest`, see `packages/contracts/samples/situation-request.json`
-- **Output:** `SituationResult`, see `packages/contracts/samples/situation-result.json`
-- Schema: `packages/contracts/src/situation.ts`
+| Endpoint                     | Input                                  | Output                                 |
+| ---------------------------- | -------------------------------------- | -------------------------------------- |
+| `POST /api/situation/analyze`| `SituationRequest` (`samples/situation-request.json`) | `SituationResult` (`samples/situation-result.json`) |
+| `POST /api/cases`            | `SituationRequest`                     | `CaseResult` (`packages/contracts/src/case.ts`) |
 
-Member 2 consumes your `access` object. Member 3 consumes your `needs`, `budget`, `currency` and `location`.
-Your output is the start of the whole pipeline, so accuracy on **unknowns** matters more than anything.
+Member 2 uses your `access` object; Member 3 uses `needs`, `budget`, `currency`, `location`. Your output starts the
+whole pipeline, so **getting unknowns right matters more than anything else**.
 
-## 4. Tasks
+---
 
-### Day 1 (7 Nov): extraction works from the terminal
+## 4. Day-by-day
 
-- [ ] `modules/situation/prompts.ts`: system prompt. Include:
+### Day 1 · 6 Nov · extraction works (~6 h)
+
+- [ ] **`modules/situation/prompts.ts`** (1.5 h): system prompt with
   - the exact JSON shape and every allowed enum value (needs, urgency, availability)
   - "If the message does not state it, use `unknown` or `null`. Never guess."
-  - urgency guidance (e.g. medicine or children at risk → `high`; life-threatening → `critical`)
-  - 2 short examples (few-shot): one complete, one vague
-- [ ] `modules/situation/situation.service.ts`:
+  - urgency guidance (medicine or children at risk → `high`; life-threatening → `critical`)
+  - two short examples: one complete message, one vague one
+- [ ] **`modules/situation/situation.service.ts`** (1 h)
 
   ```ts
   import { type SituationRequest, type SituationResult, SituationResultSchema } from "@lifeline/contracts";
   import type { LlmClient } from "../../ai/llm-client";
+  import { applySituationChecks } from "../../rules/situation-checks";
   import { SITUATION_SYSTEM_PROMPT } from "./prompts";
 
   export async function analyzeSituation(input: SituationRequest, llm: LlmClient): Promise<SituationResult> {
@@ -69,20 +87,15 @@ Your output is the start of the whole pipeline, so accuracy on **unknowns** matt
       user: JSON.stringify(input),
       schema: SituationResultSchema,
     });
-    return postProcess(raw, input);
+    return applySituationChecks(raw, input);
   }
   ```
 
-- [ ] `postProcess` (plain code, no AI):
-  - if the request gave `currency`/`location` and the model returned `null`, use the request values
-  - every access factor that is `unknown` and every `null` field (`budget`, `location`, `currency`)
-    must appear in `missing_information`. Add any the model forgot.
+- [ ] **`rules/situation-checks.ts`** (1.5 h), plain code, your deterministic guarantee:
+  - if the request gave `currency` / `location` and the model returned `null`, use the request value
+  - every access factor that is `unknown`, and every `null` field, appears in `missing_information`
   - de-duplicate `needs` and `missing_information`
-- [ ] Try 3–4 messages by hand with a tiny script or Postman (`postman/` collection → Situation).
-
-### Day 2 (8 Nov): reliable AI
-
-- [ ] Wire the route:
+- [ ] **Wire the route** (0.5 h)
 
   ```ts
   situationRouter.post("/analyze", validateBody(SituationRequestSchema), async (req, res) => {
@@ -90,69 +103,95 @@ Your output is the start of the whole pipeline, so accuracy on **unknowns** matt
   });
   ```
 
-- [ ] Build a test set in `tests/situation/fixtures.ts`, 8–10 messages, for example:
+- [ ] Try 3–4 messages in Postman (`postman/` → Situation) (1 h)
+
+**Checkpoint tonight:** the sample message returns real `SituationResult` JSON from Groq.
+
+### Day 2 · 7 Nov · reliable + visible (~6 h)
+
+- [ ] **Test set** `tests/situation/fixtures.ts` (1.5 h), 8–10 messages:
   - the €300 proposal message
   - "My family in Kerala needs food and medicine, budget 5000 INR"
-  - no budget mentioned → `budget: null`, `"budget"` in missing info
+  - no budget → `budget: null` and `"budget"` in missing info
   - no bank mentioned → `bank_availability: "unknown"` (the hallucination check)
-  - very short / vague ("please help")
-  - mixed language or typos
-- [ ] Unit tests with a **fake LLM** (no real API calls, see `tests/ai/llm-client.test.ts`):
+  - very vague ("please help us"), typos, mixed language
+- [ ] **Unit tests** with a fake LLM, no network (1.5 h)
 
   ```ts
   const fakeLlm: LlmClient = { generateJson: async <T>() => sampleResult as T };
   ```
 
-  Test `postProcess` thoroughly: that's your deterministic guarantee.
-- [ ] Run the real fixtures once against Groq and note which ones fail. Adjust the prompt. Keep notes in
-  `modules/situation/README.md` (judges like evidence of evaluation).
+  Test `situation-checks.ts` thoroughly.
+- [ ] **Evaluate** the real fixtures once against Groq; fix the prompt; write the results table in
+  `modules/situation/README.md` (judges like evidence) (1 h)
+- [ ] **Situation page** `apps/web/app/situation/page.tsx` (2 h): textarea + Analyse button, summary card, need
+  chips, urgency badge, access grid (unknown in grey, clearly marked), "We still need to know" list, loading and
+  error states. Use `api.analyzeSituation` from `apps/web/services/api.ts`.
 
-### Day 3 (9 Nov): UI
+**Evening:** open your PR into `main`; review one teammate's PR (10 min).
 
-- [ ] `apps/web/app/situation/page.tsx` (client component, Tailwind):
-  - textarea + optional location/currency + Analyse button, using `api.analyzeSituation` from `services/api.ts`
-  - summary card, needs as chips, urgency badge
-  - access-factor grid with colours: available / limited / unavailable / **unknown (grey, clearly marked)**
-  - "We still need to know" list from `missing_information`
-  - loading and error states (show `error.message` from the API)
-- [ ] Open a PR into `main` by the end of the day.
+### Day 3 · 8 Nov · Orchestrator + dashboard (~7 h)
 
-### Day 4 (10 Nov): Orchestrator + integration
+Merge `main` into your branch first (it now has Member 2's and 3's modules).
 
-After Member 2 and 3's PRs are merged, merge `main` into your branch, then:
+- [ ] **`orchestration/run-case.ts`** (2 h)
+  1. `analyzeSituation(...)`
+  2. if `budget` or `currency` is missing → stop, return `status: "needs_information"`
+  3. `evaluateRoutes(...)` with your `access`, the budget, and Member 2's `route-catalogue.ts`
+  4. if no recommended route → stop, `status: "no_usable_route"`
+  5. `buildBasket(...)` with `budget = usable_value` of the recommended route
+  6. return `CaseResult` with `status: "complete"`. Never invent a missing value.
+- [ ] **`routes/cases.routes.ts`** (1 h): `POST /api/cases` runs the case and saves an `AssistanceRequest` +
+  `SituationAssessment` with `getPrisma()`; `GET /api/cases` lists them for the dashboard
+- [ ] **Dashboard** `apps/web/app/dashboard/page.tsx` (3 h): AG Grid Community (`ag-grid-react`, already
+  installed) with one row per case: urgency, needs, recommended route, usable value, basket total, allocation and
+  payout status. Add an **Approve** button per row that calls Member 2's `POST /api/allocations/approve`.
+- [ ] Full run on your machine, from message to dashboard to approval (1 h)
 
-- [ ] `orchestration/run-case.ts`: Situation → Financial → Commerce
-  - build the `FinanceRequest` from your `access` + `budget` + the demo route catalogue (Member 2 provides it)
-  - build the `CommerceRequest` with `budget = usable_value` of the recommended route
-  - if a step can't run (no budget, no passing route), stop and return what's missing. Never invent values.
-- [ ] `POST /api/cases` route returning all three results
-- [ ] Save the case (`AssistanceRequest` + `SituationAssessment`) with `getPrisma()` from `src/database/prisma.ts`
-- [ ] Help wire the dashboard and the end-to-end demo.
+**Checkpoint tonight:** the whole demo works end to end on one machine.
 
-### Days 5–6 (11–12 Nov): together
+### Day 4 · 9 Nov · ship (~6 h)
 
-Deployment on Render, README check, demo video, submission before **12:00 PT on 12 Nov**.
+- [ ] **Render** (2 h): create the Blueprint from `render.yaml`, set the secrets in the dashboard, set
+  `WEB_ORIGIN` / `NEXT_PUBLIC_API_URL` to the Render URLs, check `/health`
+- [ ] **Demo script** (1 h), under 3 minutes: problem → message → situation → routes → basket → donate (PayPal
+  Sandbox) → approve → payout → dashboard
+- [ ] **Record the video** (2 h) and upload it to YouTube (public)
+- [ ] **Devpost write-up** with the team (1 h), then submit
+
+---
 
 ## 5. Definition of done
 
-- [ ] The sample request returns a valid `SituationResult` from the real API
+- [ ] The sample message gives a valid `SituationResult` from the real API, with one LLM call
 - [ ] Unstated facts are always `unknown` / `null` and listed in `missing_information`
-- [ ] One LLM call per request
-- [ ] Unit tests pass without network; `npm run typecheck` passes
-- [ ] Situation page works end to end
-- [ ] Orchestrator chains all three modules
+- [ ] Checks and service are unit-tested without network
+- [ ] `/api/cases` chains all three modules and stops honestly when data is missing
+- [ ] Dashboard shows cases and the Approve button works
+- [ ] Deployed on Render (or a clean local setup) and the video is uploaded
 
-## 6. Rules
+## 6. If you fall behind, cut in this order
+
+1. Dashboard → a plain HTML table instead of AG Grid
+2. Saving cases to the database → keep them in memory
+3. Render → demo from a local setup (the rules allow it)
+
+## 7. Rules
 
 - The LLM extracts and classifies. It never calculates money.
-- Use only the shared `llm` client. Don't add an SDK or a second client.
-- Synthetic demo data only, never real people or locations.
-- Need a new npm package? It changes `package-lock.json`, so do it in a small PR to `main`.
+- Use only the shared `llm` client in `src/ai/`.
+- Synthetic data only, never real people or places.
 
-## 7. Who depends on you
+## 8. Handover points
 
-| Who      | Needs                                   | When         |
-| -------- | --------------------------------------- | ------------ |
-| Member 2 | `access` object shape: already frozen in the contract | Now (sample) |
-| Member 3 | `needs`, `budget`, `currency`, `location` | Now (sample) |
-| Everyone | Orchestrator for the end-to-end demo    | 10 Nov       |
+| You give                               | To       | When      |
+| -------------------------------------- | -------- | --------- |
+| `analyzeSituation()`                   | Orchestrator (you) | Day 2 |
+| `/api/cases` + dashboard               | Everyone (demo)    | Day 3 |
+| Live URL + video                       | Submission         | Day 4 |
+
+| You need                                | From     | When  |
+| --------------------------------------- | -------- | ----- |
+| `evaluateRoutes()` + `route-catalogue.ts` | Member 2 | Day 2 evening (merged) |
+| `buildBasket()`                         | Member 3 | Day 2 evening (merged) |
+| `POST /api/allocations/approve`         | Member 2 | Day 3 |

@@ -3,3 +3,5 @@ export * from "./situation";
 export * from "./finance";
 export * from "./commerce";
 export * from "./payment";
+export * from "./case";
+export * from "./allocation";

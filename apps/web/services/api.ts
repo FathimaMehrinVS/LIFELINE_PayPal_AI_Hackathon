@@ -1,5 +1,8 @@
 import type {
+  AllocationResult,
   ApiError,
+  ApproveAllocationRequest,
+  CaseResult,
   CommerceRequestInput,
   CommerceResult,
   CreateDonationRequest,
@@ -20,9 +23,9 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function post<TResponse>(path: string, body?: unknown): Promise<TResponse> {
+async function request<TResponse>(method: "GET" | "POST", path: string, body?: unknown): Promise<TResponse> {
   const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
@@ -30,6 +33,9 @@ async function post<TResponse>(path: string, body?: unknown): Promise<TResponse>
   if (!res.ok) throw new ApiRequestError(res.status, json as ApiError);
   return json as TResponse;
 }
+
+const get = <TResponse>(path: string) => request<TResponse>("GET", path);
+const post = <TResponse>(path: string, body?: unknown) => request<TResponse>("POST", path, body);
 
 export const api = {
   analyzeSituation: (body: SituationRequest) => post<SituationResult>("/api/situation/analyze", body),
@@ -39,4 +45,7 @@ export const api = {
   captureDonation: (donationId: string) =>
     post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/capture`),
   createPayout: (body: CreatePayoutRequest) => post<PayoutResult>("/api/payments/payouts", body),
+  createCase: (body: SituationRequest) => post<CaseResult>("/api/cases", body),
+  listCases: () => get<CaseResult[]>("/api/cases"),
+  approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
 };

@@ -42,8 +42,11 @@ Base URL: `http://localhost:4000`
 | POST   | `/api/commerce/basket`                | `CommerceRequest`      | `CommerceResult`   | Member 3 |
 | POST   | `/api/payments/donations`             | `CreateDonationRequest`| `DonationResult`   | Member 3 |
 | POST   | `/api/payments/donations/:id/capture` | —                      | `DonationResult`   | Member 3 |
-| POST   | `/api/payments/payouts`               | `CreatePayoutRequest`  | `PayoutResult`     | Member 3 |
-| POST   | `/api/payments/webhooks/paypal`       | PayPal event           | `200`              | Member 3 |
+| POST   | `/api/payments/payouts`               | `CreatePayoutRequest`  | `PayoutResult`     | Member 2 |
+| POST   | `/api/payments/webhooks/paypal`       | PayPal event           | `200`              | Member 2 |
+| POST   | `/api/cases`                          | `SituationRequest`     | `CaseResult`       | Member 1 |
+| GET    | `/api/cases`                          | —                      | `CaseResult[]`     | Member 1 |
+| POST   | `/api/allocations/approve`            | `ApproveAllocationRequest` | `AllocationResult` | Member 2 |
 
 ## Situation (Member 1)
 
@@ -82,7 +85,32 @@ Request: `{ needs[], budget, currency, location, reserve_ratio? }` (default rese
 Response: `items[]` and `alternatives[]` (each with `source` `channel3` · `local_registry`, availability and
 `price_label`), `total`, `reserve`, `unmet_needs`, `explanation`. See `samples/commerce-result.json`.
 
-## Payments (Member 3)
+## Cases (Member 1)
+
+`POST /api/cases` takes a `SituationRequest` and runs Situation → Finance → Commerce.
+
+```json
+{
+  "case_id": "...",
+  "status": "complete",
+  "situation": { "...": "SituationResult" },
+  "finance": { "...": "FinanceResult, or null if the case stopped earlier" },
+  "commerce": { "...": "CommerceResult, or null if the case stopped earlier" },
+  "missing_information": ["location"]
+}
+```
+
+`status`: `complete` · `needs_information` (budget or currency missing; stops after Situation) ·
+`no_usable_route` (no route passed; stops after Finance).
+
+## Allocations (Member 2)
+
+- Approve: `{ case_id, campaign_id, amount, currency }` → `{ allocation_id, case_id, status, amount, currency, approved_at }`
+- Allocation status: `proposed` · `approved` · `rejected` · `disbursed`
+- Approved only if `amount ≤ captured donations − already allocated` for that campaign (internal ledger, not a
+  PayPal balance)
+
+## Payments (donations: Member 3, payouts: Member 2)
 
 - Donation: `{ campaign_id, amount, currency }` → `{ donation_id, paypal_order_id, status, amount, currency, approval_url? }`
 - Donation status: `created` · `approved` · `captured` · `failed` · `cancelled` · `refunded`

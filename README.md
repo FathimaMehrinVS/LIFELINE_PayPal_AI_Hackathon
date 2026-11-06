@@ -13,11 +13,14 @@ payment infrastructure that still works.
 
 ## Three AI modules
 
-| Module                 | Agents                                                    | Branch                           | Handoff |
-| ---------------------- | --------------------------------------------------------- | -------------------------------- | ------- |
-| Situation Intelligence | Situation Agent, Orchestrator                             | `feature/situation-agent`        | [Member 1](docs/handoffs/member-1-situation.md) |
-| Financial Intelligence | Financial Route, Accessibility, Cost & Anomaly, Risk      | `feature/financial-intelligence` | [Member 2](docs/handoffs/member-2-financial.md) |
-| Commerce Intelligence  | Commerce Agent, Decision Agent, PayPal Agent              | `feature/commerce-payments`      | [Member 3](docs/handoffs/member-3-commerce.md) |
+| Module                 | AI                         | Also owns                                           | Branch                           | Handoff |
+| ---------------------- | -------------------------- | --------------------------------------------------- | -------------------------------- | ------- |
+| Situation Intelligence | Situation Agent            | Orchestrator, `/api/cases`, dashboard, Render deploy | `feature/situation-agent`        | [Member 1](docs/handoffs/member-1-situation.md) |
+| Financial Intelligence | Explanation Agent          | Fee/score/approval rules, PayPal webhooks + payouts | `feature/financial-intelligence` | [Member 2](docs/handoffs/member-2-financial.md) |
+| Commerce Intelligence  | Ranking Agent              | Basket rules, Channel3, PayPal donor checkout       | `feature/commerce-payments`      | [Member 3](docs/handoffs/member-3-commerce.md) |
+
+Each member has about 25 hours of work: one AI part, one set of deterministic rules, one external service, one
+frontend page and one final-day job.
 
 AI extracts, compares, ranks and explains. Deterministic code calculates scores, fees and totals. Humans and
 backend rules authorise payments.
@@ -33,22 +36,25 @@ message ─► Situation ─► Financial ─► Commerce ─► NGO/donor appro
 | Part                                    | State                          |
 | --------------------------------------- | ------------------------------ |
 | Monorepo, contracts, samples, AI client | ✅ Done                        |
-| Database schema, Postman, Render config | ✅ Done (no migration run yet)  |
-| Situation Intelligence                  | ⏳ In progress (Member 1)      |
-| Financial Intelligence                  | ⏳ In progress (Member 2)      |
-| Commerce + PayPal                       | ⏳ In progress (Member 3)      |
-| Orchestration + dashboard               | ⏳ After merges (10 Nov)       |
+| Shared PayPal client, route placeholders | ✅ Done                       |
+| Database schema, seed, Postman, Render config | ✅ Done (no migration run yet) |
+| Situation Intelligence + Orchestrator   | ⏳ In progress (Member 1)      |
+| Financial Intelligence + payouts        | ⏳ In progress (Member 2)      |
+| Commerce Intelligence + donor checkout  | ⏳ In progress (Member 3)      |
+
+What is real, sandbox-tested or simulated: [integration status](docs/integration-status.md).
 
 ## Timeline
 
-| Date   | Goal                                                              |
-| ------ | ----------------------------------------------------------------- |
-| 7 Nov  | Each module works on its sample input; PayPal OAuth + Payouts check |
-| 8 Nov  | AI complete and tested in each module                             |
-| 9 Nov  | Module UI pages; PRs into `main`                                  |
-| 10 Nov | Orchestrator, dashboard, end-to-end flow                          |
-| 11 Nov | Deploy on Render, README, demo video                              |
-| 12 Nov | Final check and submission before **12:00 PT**                    |
+| Day           | Goal                                                                       |
+| ------------- | -------------------------------------------------------------------------- |
+| Day 1 · 6 Nov | Supabase + PayPal sandbox set up; each module's core works on its sample   |
+| Day 2 · 7 Nov | AI + rules tested, module pages built; **PRs into `main` in the evening**  |
+| Day 3 · 8 Nov | Orchestrator, dashboard, donate flow, approval and payouts: demo works end to end |
+| Day 4 · 9 Nov | Deploy on Render, integration status, Postman, end-to-end test, demo video |
+| 10–12 Nov     | Buffer only. Submit before **12 Nov 12:00 PT**                              |
+
+Day-by-day tasks are in each member's handoff.
 
 ## Tech stack (free tier)
 
@@ -113,6 +119,9 @@ Each module can be built and tested with the sample JSON in `packages/contracts/
 1. Create a free project at supabase.com.
 2. **Connect** → copy the transaction pooler URL into `DATABASE_URL` and the session URL into `DIRECT_URL`.
 3. `npm run db:migrate` to create the tables.
+4. `npm run db:seed` to add the demo NGO user and the demo campaign `camp_demo`.
+
+Member 3 does this once on Day 1 and shares the two URLs privately.
 
 Free Supabase projects pause after a week without activity. Open the dashboard before a demo.
 
@@ -128,6 +137,7 @@ Free Supabase projects pause after a week without activity. Open the dashboard b
 | `npm run build`       | Production build                           |
 | `npm run db:validate` | Validate the Prisma schema                 |
 | `npm run db:migrate`  | Create/apply migrations                    |
+| `npm run db:seed`     | Add the demo NGO user and campaign         |
 | `npm run db:studio`   | Browse the database                        |
 
 ## Documentation
@@ -136,6 +146,7 @@ Free Supabase projects pause after a week without activity. Open the dashboard b
 - [Architecture](docs/architecture.md)
 - [AI design](docs/ai-design.md)
 - [PayPal integration](docs/paypal-integration.md)
+- [Integration status](docs/integration-status.md): what's real, sandbox-tested or simulated
 - [API contracts](docs/api-contracts.md)
 - [Git workflow](docs/git-workflow.md): read this before you start
 - Handoffs: [Member 1](docs/handoffs/member-1-situation.md) · [Member 2](docs/handoffs/member-2-financial.md) · [Member 3](docs/handoffs/member-3-commerce.md)
