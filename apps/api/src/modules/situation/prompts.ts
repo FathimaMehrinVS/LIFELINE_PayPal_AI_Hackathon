@@ -19,7 +19,7 @@ Return one JSON object with exactly these keys and no others:
 - "access": an object with exactly these six keys: "bank_availability", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance", "connectivity". Each value is one of:
   - "available": the message says it works (for example "shops are open", "ATMs work")
   - "limited": the message says it partly works ("internet is intermittent", "only one shop is open", "cash is scarce")
-  - "unavailable": the message says it does not work ("bank is closed", "no ATM", "no signal")
+  - "unavailable": the message says it does not work ("bank is closed", "no ATM", "no signal", "ATMs are empty", "ATM is broken", "out of cash")
   - "unknown": the message does not say
   What each access key means (always about the recipient's location, never about the sender):
   - "bank_availability": the recipient can use a bank branch or bank account
@@ -28,6 +28,7 @@ Return one JSON object with exactly these keys and no others:
   - "cash_availability": physical cash can be obtained locally (cash points, cash agents, cash in circulation)
   - "merchant_acceptance": local shops are open and accept payment
   - "connectivity": the recipient has internet or phone signal
+  Each statement sets only the key it is about. "ATMs are empty" sets "atm_access"; it does not tell you whether cash can be obtained in other ways.
   Having money, or having no money, is the budget. It says nothing about any access key, even when the sender and the recipient are the same person. Set "cash_availability" only from what the message says about getting cash locally ("cash points are open", "no cash in the market", "agents are closed").
 - "missing_information": array of the key names that are null or "unknown", for example "budget", "location", "wallet_acceptance". Use only key names from this output.
 - "confidence": a number from 0 to 1 for how clearly the message states the facts you extracted. A clear, specific message is about 0.8 to 0.9. A vague one is 0.3 or lower.
