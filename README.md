@@ -40,7 +40,7 @@ message ─► Situation ─► Financial ─► Commerce ─► NGO/donor appro
 | Database schema, seed, Postman, Render config | ✅ Done (no migration run yet) |
 | Situation Intelligence + Orchestrator   | ⏳ In progress (Member 1)      |
 | Financial Intelligence + payouts        | ⏳ In progress (Member 2)      |
-| Commerce Intelligence + donor checkout  | ⏳ In progress (Member 3)      |
+| Commerce Intelligence + donor checkout  | ✅ Implemented; Sandbox/database manual verification pending (Member 3) |
 
 What is real, sandbox-tested or simulated: [integration status](docs/integration-status.md).
 
@@ -100,7 +100,7 @@ npm test                    # should pass before you start
 npm run dev                 # API → http://localhost:4000, web → http://localhost:3000
 ```
 
-The API starts without any keys; module endpoints return `501 NOT_IMPLEMENTED` until built.
+The API process can start without external keys. The implemented Member 3 endpoints require PostgreSQL, and donor checkout also requires PayPal Sandbox credentials; Channel3 and the LLM have local/deterministic fallbacks.
 
 ### Keys you need
 
@@ -109,8 +109,9 @@ The API starts without any keys; module endpoints return `501 NOT_IMPLEMENTED` u
 | `GROQ_API_KEY`, `GROQ_MODEL`             | console.groq.com                              | All modules    |
 | `GEMINI_API_KEY`, `GEMINI_MODEL`         | aistudio.google.com (optional fallback)       | All modules    |
 | `DATABASE_URL`, `DIRECT_URL`             | Supabase → Connect                            | Saving results |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID` | developer.paypal.com → Sandbox app | Payments |
-| `CHANNEL3_API_KEY`                       | Channel3                                      | Commerce       |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_BASE_URL` | developer.paypal.com → Sandbox app; base URL must remain `https://api-m.sandbox.paypal.com` | Member 3 donor checkout |
+| `PAYPAL_WEBHOOK_ID`                      | PayPal Sandbox app webhook                   | Member 2 webhooks |
+| `CHANNEL3_API_KEY`                       | Channel3 (optional; local synthetic registry works without it) | Commerce |
 
 Each module can be built and tested with the sample JSON in `packages/contracts/samples/` before the others exist.
 
@@ -118,7 +119,7 @@ Each module can be built and tested with the sample JSON in `packages/contracts/
 
 1. Create a free project at supabase.com.
 2. **Connect** → copy the transaction pooler URL into `DATABASE_URL` and the session URL into `DIRECT_URL`.
-3. `npm run db:migrate` to create the tables.
+3. `npm run db:migrate` to create the tables (the shared Prisma schema already defines Basket, BasketItem, and Donation; no Member 3 schema migration was added).
 4. `npm run db:seed` to add the demo NGO user and the demo campaign `camp_demo`.
 
 Member 3 does this once on Day 1 and shares the two URLs privately.

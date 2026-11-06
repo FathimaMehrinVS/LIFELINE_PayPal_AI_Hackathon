@@ -1,14 +1,16 @@
 # Deterministic decision engine
 
-Plain TypeScript, no LLM. Everything here must give the same output for the same input and be unit-tested.
+Deterministic TypeScript rules. Basket arithmetic is code; the commerce LLM can influence candidate ranking and
+item reasons but never controls prices, quantities, totals, budget fit or reserve. Rules should give the same
+output for the same inputs and be unit-tested.
 
-| File (to be added)       | Owner    | What it decides                                                |
-| ------------------------ | -------- | -------------------------------------------------------------- |
-| `accessibility-score.ts` | Member 2 | 0–100 score from the access factors, with versioned weights   |
-| `fees.ts`                | Member 2 | Fee, usable value, fee-anomaly flags against a reference range |
-| `route-eligibility.ts`   | Member 2 | pass / review / block per route                                |
-| `basket.ts`              | Member 3 | Totals, reserve, whether a basket fits the budget              |
-| `approval.ts`            | Shared   | Whether a payment or payout may run (NGO approval, limits)     |
+| File | Owner | What it decides |
+| --- | --- | --- |
+| `accessibility-score.ts` | Member 2 | 0–100 score from the access factors, with versioned weights |
+| `fees.ts` | Member 2 | Fee, usable value, fee-anomaly flags against a reference range |
+| `route-eligibility.ts` | Member 2 | pass / review / block per route |
+| `basket.ts` | Member 3 | Integer-cent product selection, totals, reserve, alternatives and unmet needs |
+| `approval.ts` | Shared | Whether a payment or payout may run (NGO approval, limits) |
 
 Rules from the proposal:
 

@@ -41,11 +41,14 @@ AI concepts: explainable AI, anomaly detection, classification, rule-based guard
 payment policies.
 
 ### Member 3: Commerce Intelligence
-- **Commerce Agent** (LLM + search): matches needs to products from Channel3 and the local registry
-  (PostgreSQL full-text search), ranks them.
-- **Decision Agent** (code + LLM): builds the basket within budget and reserve (`rules/basket.ts`); if it doesn't
-  fit, substitutes cheaper items and lists unmet needs. LLM explains the trade-offs.
-- **PayPal Agent** (code): prepares the payment request; the backend executes it only after approval.
+- **Commerce Ranking Agent** (one structured LLM call): ranks candidate products from the local synthetic
+  registry and optional Channel3 results, returning product IDs and brief reasons. If the model fails, deterministic
+  ordering is used.
+- **Basket rules** (`rules/basket.ts`, code): assign quantities, choose items within the spend limit, calculate
+  totals and reserve, choose cheaper candidates when needed, and report alternatives and unmet needs. The model
+  cannot author prices or arithmetic.
+- **PayPal donor checkout** (code): creates a Sandbox order and approval URL. The backend records a donation as
+  captured only after PayPal confirms the capture.
 
 AI concepts: semantic search, ranking, recommendation, budget optimisation, tool calling.
 

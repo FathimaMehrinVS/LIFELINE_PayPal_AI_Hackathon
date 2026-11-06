@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { CommerceRequestSchema } from "@lifeline/contracts";
 import { validateBody } from "../middleware/validate";
-import { notImplemented } from "./not-implemented";
+import { createCommerceBasket } from "../modules/commerce/service";
 
 // Owner: Member 3 (feature/commerce-payments)
-export const commerceRouter = Router();
+export function createCommerceRouter(buildBasket = createCommerceBasket) {
+  const router = Router();
+  router.post("/basket", validateBody(CommerceRequestSchema), async (req, res) => {
+  const result = await buildBasket(CommerceRequestSchema.parse(req.body));
+  res.status(201).json(result);
+});
+  return router;
+}
 
-commerceRouter.post("/basket", validateBody(CommerceRequestSchema), notImplemented("Basket building"));
+export const commerceRouter = createCommerceRouter();
