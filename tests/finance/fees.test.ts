@@ -32,4 +32,13 @@ describe("assessFees", () => {
       ],
     });
   });
+
+  it("accepts the reference maximum and never reports negative usable value", () => {
+    const atReferenceMaximum = assessFees(10, { ...agentRoute, fee_percent: 6 });
+    expect(atReferenceMaximum).toEqual({ estimated_fee: 0.6, usable_value: 9.4, flags: [] });
+
+    const feeExceedsAmount = assessFees(10, { ...agentRoute, fee_fixed: 12, fee_percent: 0 });
+    expect(feeExceedsAmount.estimated_fee).toBe(12);
+    expect(feeExceedsAmount.usable_value).toBe(0);
+  });
 });
