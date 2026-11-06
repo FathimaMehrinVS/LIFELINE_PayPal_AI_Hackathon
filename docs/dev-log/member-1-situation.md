@@ -211,3 +211,60 @@ Design choices:
 #### 10. Slow calls during evaluation (7–32 s)
 - Free-plan rate limit again. The script waits 30 s and retries once, so the run still finished. Each full run takes
   about 2–3 minutes.
+
+---
+
+## Day 3 tasks (started early, 6 Nov evening)
+
+### Where the team was when I started
+- Member 2 (`feature/financial-intelligence`): fee, score and eligibility rules pushed; no `evaluateRoutes()` yet.
+- Member 3 (`feature/commerce-payments`): nothing pushed yet, so their work is only on their laptop.
+- Supabase: not created yet, `DATABASE_URL` empty.
+
+### Step A: the Orchestrator (`apps/api/src/orchestration/`)
+
+| File | What it does |
+| ---- | ------------ |
+| `run-case.ts` | `runCase(caseId, input, modules)`: Situation → Finance → Commerce, stopping honestly |
+| `modules.ts` | Connects the real modules. Situation is real; Finance and Commerce are "not merged yet" placeholders |
+| `tests/situation/run-case.test.ts` | 6 tests with fake modules built from the shared sample files |
+
+How it decides:
+1. Situation Agent → if budget, currency or location is missing → `needs_information` with **all** of them at once
+2. Finance with the route catalogue → recommended route?
+3. No route passes:
+   - a verified route is on review **only** because access it needs is `unknown` → `needs_information` (ask!)
+   - otherwise → `no_usable_route`
+4. Commerce with `budget = usable_value` of the recommended route (€285, not the €300 sent) → `complete`
+
+### Challenges
+
+#### 13. The demo would have stopped at the payment step
+- **Found by:** walking through Priya's case end to end on paper.
+- **Problem:** her first message leaves `wallet_acceptance: unknown`. Member 2's rule says "a required access factor
+  is unknown → review", so the PayPal route can't pass, and the case would end as `no_usable_route`: **the money
+  never moves** in the demo.
+- **Why the samples hid it:** Member 2's sample input already had wallet `available`, so each module looked fine on
+  its own. Only following one case through all three modules showed the gap.
+- **Fix:** `unknownsBlockingRoutes()`. If a route is verified, has no warning flag, and is on review only because of
+  unknown access, the Orchestrator returns `needs_information` with those factors. The person answers, the case runs
+  again, and the PayPal route passes.
+- **No change needed in Member 2's code:** the Orchestrator already knows each route's `requires` list, because it
+  passes the route catalogue in.
+- **Lessons:**
+  - Modules that each pass their own tests can still fail together. Walk one real case through everything.
+  - "Unknown" should lead to a question, not a dead end.
+
+#### 14. Building against modules that don't exist yet
+- **Problem:** the Orchestrator calls `evaluateRoutes()` and `buildBasket()`, which aren't written or merged yet.
+  Importing them would break the build.
+- **Fix:** the Orchestrator takes a `CaseModules` object. Tests pass fakes; `modules.ts` holds placeholders that
+  answer "not merged yet". On merge day only `modules.ts` changes: one import and one line per teammate function.
+- **Lesson:** depend on the contract (the shapes in `packages/contracts`), not on someone else's file. This is
+  called dependency injection.
+
+#### 15. Scope check: are we drifting from the idea?
+- Discussed voice input and many disaster use cases. Decision: **no**. LIFELINE is a payment-routing product; the
+  crisis is only why normal banking failed. Voice dropped for the hackathon (maybe "future work"). Everything left
+  for Member 1 is about getting the payment flow to work in the demo.
+- Also: voice can't help when the family has no internet; that's why the users are the sender abroad and NGO workers.

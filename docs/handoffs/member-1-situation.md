@@ -138,7 +138,10 @@ Merge `main` into your branch first (it now has Member 2's and 3's modules).
   1. `analyzeSituation(...)`
   2. if `budget` or `currency` is missing → stop, return `status: "needs_information"`
   3. `evaluateRoutes(...)` with your `access`, the budget, and Member 2's `route-catalogue.ts`
-  4. if no recommended route → stop, `status: "no_usable_route"`
+  4. if no recommended route:
+     - a verified route is on `review` only because access it needs is `unknown` (no warning flags) → stop with
+       `status: "needs_information"` and those factors, so the person is asked instead of the case dying
+     - otherwise → stop, `status: "no_usable_route"`
   5. `buildBasket(...)` with `budget = usable_value` of the recommended route
   6. return `CaseResult` with `status: "complete"`. Never invent a missing value.
 - [ ] **`routes/cases.routes.ts`** (1 h): `POST /api/cases` runs the case and saves an `AssistanceRequest` +
