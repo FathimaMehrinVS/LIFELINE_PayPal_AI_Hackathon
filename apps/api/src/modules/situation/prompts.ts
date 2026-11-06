@@ -28,7 +28,7 @@ Return one JSON object with exactly these keys and no others:
   - "cash_availability": physical cash can be obtained locally (cash points, cash agents, cash in circulation)
   - "merchant_acceptance": local shops are open and accept payment
   - "connectivity": the recipient has internet or phone signal
-  The sender's budget, or a lack of money, says nothing about any access key.
+  Having money, or having no money, is the budget. It says nothing about any access key, even when the sender and the recipient are the same person. Set "cash_availability" only from what the message says about getting cash locally ("cash points are open", "no cash in the market", "agents are closed").
 - "missing_information": array of the key names that are null or "unknown", for example "budget", "location", "wallet_acceptance". Use only key names from this output.
 - "confidence": a number from 0 to 1 for how clearly the message states the facts you extracted. A clear, specific message is about 0.8 to 0.9. A vague one is 0.3 or lower.
 
