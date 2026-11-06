@@ -14,7 +14,7 @@ Return one JSON object with exactly these keys and no others:
 - "needs": array of categories the message asks for, using only: "food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport", "other". Use "other" only for a need that fits none of these. No duplicates.
 - "budget": the amount of money the sender has, as a number in major units (300, not 30000), or null if no amount is stated.
 - "currency": a 3-letter ISO code, or null. Convert symbols and words: € or euro = "EUR", $ or dollar = "USD", £ or pound = "GBP", ₹ or rupee(s) = "INR". If the message gives none, use the "currency" hint if present.
-- "location": the place named in the message, or the "location" hint if present, or null.
+- "location": the most specific place you can give, or null. If the message and the "location" hint both name places, combine them from most to least specific: hint "Ernakulam" + message "Kerala" gives "Ernakulam, Kerala". If they name places that don't fit together, use the hint, because the person typed it on purpose, and end the summary with "The message mentions <place>, which does not match the location given; please confirm." Write place names with capital letters.
 - "urgency": one of "low", "medium", "high", "critical" (see Urgency).
 - "access": an object with exactly these six keys: "bank_availability", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance", "connectivity". Each value is one of:
   - "available": the message says it works (for example "shops are open", "ATMs work")

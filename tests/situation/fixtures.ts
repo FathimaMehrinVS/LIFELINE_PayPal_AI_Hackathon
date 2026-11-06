@@ -118,6 +118,12 @@ export const SITUATION_FIXTURES: SituationFixture[] = [
     },
   },
   {
+    id: "form-location-more-specific",
+    checks: "Form district + state in the message are combined, not replaced",
+    input: { message: "My family in Kerala needs food, budget 5000 INR", location: "ernakulam" },
+    expect: { needs: ["food"], budget: 5000, currency: "INR", location: "Ernakulam", access: {} },
+  },
+  {
     id: "no-budget-phones-work",
     checks: "No amount → budget null; a positive access statement",
     input: { message: "Earthquake destroyed our house. Need shelter and blankets for 4 people. Phones still work." },

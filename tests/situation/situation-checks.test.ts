@@ -50,7 +50,24 @@ describe("applySituationChecks", () => {
     expect(result.missing_information).not.toContain("location");
   });
 
-  it("keeps the model's value over the form hint when both exist", () => {
+  it("combines the form's location with a wider place from the message", () => {
+    const raw = { ...base, location: "Kerala" };
+    const result = applySituationChecks(raw, { message: "...", location: "ernakulam" });
+    expect(result.location).toBe("Ernakulam, Kerala");
+  });
+
+  it("keeps the model's location when it already includes the form's", () => {
+    const raw = { ...base, location: "Ernakulam, Kerala" };
+    const result = applySituationChecks(raw, { message: "...", location: "ERNAKULAM" });
+    expect(result.location).toBe("Ernakulam, Kerala");
+  });
+
+  it("ignores a blank form location", () => {
+    const raw = { ...base, location: "Kerala" };
+    expect(applySituationChecks(raw, { message: "...", location: "   " }).location).toBe("Kerala");
+  });
+
+  it("keeps the model's currency over the form hint when both exist", () => {
     const result = applySituationChecks(base, { message: "...", currency: "USD" });
     expect(result.currency).toBe("EUR");
   });
