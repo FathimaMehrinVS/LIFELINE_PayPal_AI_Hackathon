@@ -13,7 +13,7 @@ const NEED_LABELS: Record<string, string> = { baby_supplies: "baby supplies" };
 interface CaseOutcomeProps {
   result: CaseResult;
   /** Re-runs the case with the person's answers added to the message. */
-  onAnswer: (answers: string) => void;
+  onAnswer: (answers: CaseAnswers) => void;
   busy: boolean;
 }
 
@@ -26,7 +26,7 @@ export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
       {result.status === "needs_information" && (
         <NeedsAnswers questions={result.missing_information} onAnswer={onAnswer} busy={busy} />
       )}
-      {result.status === "no_usable_route" && <NoRoute result={result} />}
+      {result.status === "no_usable_route" && <NoRoute result={result} onAnswer={onAnswer} busy={busy} />}
 
       <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <button
@@ -42,7 +42,7 @@ export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
         </button>
         {showDetails && (
           <div className="border-t border-slate-200 p-5">
-            <SituationResultView result={result.situation} />
+            <SituationResultView result={result.situation} showMissing={false} />
           </div>
         )}
       </section>
@@ -140,58 +140,281 @@ function Figure({ label, value, highlight = false }: { label: string; value: str
   );
 }
 
-function NeedsAnswers({ questions, onAnswer, busy }: { questions: string[]; onAnswer: (answers: string) => void; busy: boolean }) {
-  const [answers, setAnswers] = useState("");
+/** Facts the person can give back to us, and how each answer is written into the message. */
+const ACCESS_ANSWERS: Record<string, { yes: string; no: string }> = {
+  bank_availability: { yes: "They can use a bank account or branch.", no: "They cannot use a bank." },
+  atm_access: { yes: "There is a working ATM they can reach.", no: "They cannot reach a working ATM." },
+  wallet_acceptance: { yes: "They can receive and pay with a mobile wallet.", no: "They cannot use a mobile wallet." },
+  cash_availability: { yes: "They can get physical cash locally.", no: "They cannot get physical cash locally." },
+  merchant_acceptance: { yes: "Local shops are open and accept payments.", no: "Local shops are closed or cannot accept payments." },
+  connectivity: { yes: "They have working internet or phone signal.", no: "They have no internet or phone signal." },
+};
+
+const NEED_OPTIONS = ["food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport"] as const;
+
+export interface CaseAnswers {
+  /** Plain sentences added to the message, e.g. "They cannot use a mobile wallet." */
+  sentences: string[];
+  location?: string;
+  currency?: string;
+}
+
+type Choice = "yes" | "no" | "unsure";
+
+interface NeedsAnswersProps {
+  questions: string[];
+  onAnswer: (answers: CaseAnswers) => void;
+  busy: boolean;
+  title?: string;
+  intro?: string;
+}
+
+function NeedsAnswers({ questions, onAnswer, busy, title, intro }: NeedsAnswersProps) {
+  const [choices, setChoices] = useState<Record<string, Choice>>({});
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const [needs, setNeeds] = useState<string[]>([]);
+  const [extra, setExtra] = useState("");
+
+  const setText = (key: string, value: string) => setTexts((t) => ({ ...t, [key]: value }));
+
+  function collect(): CaseAnswers {
+    const answers: CaseAnswers = { sentences: [] };
+    for (const q of questions) {
+      const access = ACCESS_ANSWERS[q];
+      const text = texts[q]?.trim();
+      if (access) {
+        const choice = choices[q];
+        if (choice === "yes" || choice === "no") answers.sentences.push(access[choice]);
+      } else if (q === "budget" && text) {
+        answers.sentences.push(`I can send ${text}${texts.currency ? ` ${texts.currency}` : ""}.`);
+      } else if (q === "currency" && text) {
+        answers.currency = text;
+        answers.sentences.push(`The money is in ${text}.`);
+      } else if (q === "location" && text) {
+        answers.location = text;
+        answers.sentences.push(`They are in ${text}.`);
+      } else if (q === "needs" && needs.length > 0) {
+        answers.sentences.push(`They need ${needs.map((n) => NEED_LABELS[n] ?? n).join(", ")}.`);
+      } else if (text) {
+        answers.sentences.push(`${MISSING_QUESTIONS[q] ?? q} ${text}`);
+      }
+    }
+    if (extra.trim()) answers.sentences.push(extra.trim());
+    return answers;
+  }
+
+  const answered = collect().sentences.length > 0;
+
   return (
     <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
-      <h2 className="text-lg font-semibold text-amber-900">A few answers, and we can find a route</h2>
+      <h2 className="text-lg font-semibold text-amber-900">
+        {title ?? (questions.length === 1 ? "One answer, and we can look again" : "A few answers, and we can look again")}
+      </h2>
       <p className="mt-1 text-sm text-amber-800">
-        LIFELINE never guesses these, because a wrong guess could send money where it can&apos;t be used.
+        {intro ?? "LIFELINE never guesses these, because a wrong guess could send money where it can't be used."}
       </p>
-      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-amber-900">
-        {questions.map((q) => (
-          <li key={q}>{MISSING_QUESTIONS[q] ?? q}</li>
-        ))}
-      </ol>
+
       <form
-        className="mt-4 space-y-2"
+        className="mt-4 space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (answers.trim()) onAnswer(answers.trim());
+          if (answered) onAnswer(collect());
         }}
       >
-        <label htmlFor="answers" className="block text-sm font-medium text-amber-900">
-          Your answers
-        </label>
-        <textarea
-          id="answers"
-          value={answers}
-          onChange={(e) => setAnswers(e.target.value)}
-          rows={3}
-          placeholder="e.g. They can pay with a mobile wallet. The internet works in the evening."
-          className="w-full rounded-xl border border-amber-200 bg-white p-3 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
-        />
-        <button
-          type="submit"
-          disabled={busy || !answers.trim()}
-          className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {busy ? "Checking again…" : "Add answers and check again"}
-        </button>
+        {questions.map((q) => (
+          <fieldset key={q} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-amber-100">
+            <legend className="sr-only">{MISSING_QUESTIONS[q] ?? q}</legend>
+            <p className="font-medium text-slate-900" aria-hidden="true">
+              {MISSING_QUESTIONS[q] ?? q}
+            </p>
+            <div className="mt-3">
+              {ACCESS_ANSWERS[q] ? (
+                <div className="flex flex-wrap gap-2" role="radiogroup">
+                  {(
+                    [
+                      ["yes", "Yes"],
+                      ["no", "No"],
+                      ["unsure", "Not sure"],
+                    ] as const
+                  ).map(([value, label]) => {
+                    const on = choices[q] === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setChoices((c) => ({ ...c, [q]: value }))}
+                        className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                          on
+                            ? value === "yes"
+                              ? "bg-emerald-500 text-white"
+                              : value === "no"
+                                ? "bg-slate-800 text-white"
+                                : "bg-slate-300 text-slate-800"
+                            : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                  {choices[q] === "unsure" && (
+                    <span className="self-center text-xs text-slate-500">That&apos;s fine: we keep it as unknown.</span>
+                  )}
+                </div>
+              ) : q === "needs" ? (
+                <div className="flex flex-wrap gap-2">
+                  {NEED_OPTIONS.map((n) => {
+                    const on = needs.includes(n);
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setNeeds((list) => (on ? list.filter((x) => x !== n) : [...list, n]))}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition ${
+                          on ? "bg-indigo-600 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {NEED_LABELS[n] ?? n}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : q === "budget" ? (
+                <div className="flex max-w-sm gap-2">
+                  <input
+                    inputMode="decimal"
+                    value={texts.budget ?? ""}
+                    onChange={(e) => setText("budget", e.target.value.replace(/[^\d.,]/g, ""))}
+                    placeholder="Amount, e.g. 300"
+                    aria-label="Amount"
+                    className="w-full rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                  />
+                  {!questions.includes("currency") && (
+                    <input
+                      value={texts.currency ?? ""}
+                      onChange={(e) => setText("currency", e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3))}
+                      placeholder="EUR"
+                      aria-label="Currency"
+                      className="w-24 rounded-xl border border-slate-300 p-2.5 uppercase focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                    />
+                  )}
+                </div>
+              ) : (
+                <input
+                  value={texts[q] ?? ""}
+                  onChange={(e) => setText(q, q === "currency" ? e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3) : e.target.value)}
+                  placeholder={q === "location" ? "Town or district" : q === "currency" ? "e.g. EUR" : "Your answer"}
+                  aria-label={MISSING_QUESTIONS[q] ?? q}
+                  className="w-full max-w-md rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                />
+              )}
+            </div>
+          </fieldset>
+        ))}
+
+        <div>
+          <label htmlFor="extra" className="text-sm font-medium text-amber-900">
+            Anything else? <span className="font-normal text-amber-800">(optional)</span>
+          </label>
+          <input
+            id="extra"
+            value={extra}
+            onChange={(e) => setExtra(e.target.value)}
+            placeholder="e.g. A cash agent opens twice a week in the next village."
+            className="mt-1 w-full rounded-xl border border-amber-200 bg-white p-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={busy || !answered}
+            className="rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+          >
+            {busy ? "Checking again…" : "Check again with my answers"}
+          </button>
+          <span className="text-xs text-amber-800">
+            {answered ? "Your answers are added to the message, and this case is updated." : "Answer at least one question."}
+          </span>
+        </div>
       </form>
     </section>
   );
 }
 
-function NoRoute({ result }: { result: CaseResult }) {
+const ACCESS_NAMES: Record<string, string> = {
+  bank_availability: "a bank",
+  atm_access: "an ATM",
+  wallet_acceptance: "a mobile wallet",
+  cash_availability: "local cash",
+  merchant_acceptance: "open shops",
+  connectivity: "internet or phone",
+};
+
+type RouteAssessmentItem = NonNullable<CaseResult["finance"]>["routes"][number];
+
+/** Why a route can't be used, in words a family member understands (from Member 2's flags). */
+function plainReason(route: RouteAssessmentItem, currency: string): string {
+  const unavailable = route.flags.find((f) => f.code === "REQUIRED_ACCESS_UNAVAILABLE");
+  if (unavailable) {
+    const factor = (unavailable.evidence as { factor?: string } | undefined)?.factor;
+    return `needs ${factor ? (ACCESS_NAMES[factor] ?? factor) : "something"} they can't use`;
+  }
+  if (route.flags.some((f) => f.code === "ROUTE_UNSUPPORTED")) return "isn't available where they are";
+  if (route.flags.some((f) => f.code === "FEE_ABOVE_REFERENCE")) {
+    return `fees look too high (${formatMoney(route.estimated_fee, currency)}), so a person must check it first`;
+  }
+  return "isn't confirmed yet, so a person must check it first";
+}
+
+function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (answers: CaseAnswers) => void; busy: boolean }) {
+  const { finance, situation } = result;
+  const unknown = Object.entries(situation.access)
+    .filter(([key, value]) => value === "unknown" && ACCESS_ANSWERS[key])
+    .map(([key]) => key);
+
   return (
-    <section className="rounded-3xl border border-slate-300 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">No safe route yet</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        None of the payment routes would get the money to the family safely with what we know now. The case is saved, and an
-        NGO worker can look at other options.
-      </p>
-      {result.finance && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{result.finance.explanation}</p>}
-    </section>
+    <div className="space-y-4">
+      <section className="rounded-3xl border border-slate-300 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">No safe route yet</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          With what we know now, none of the ways to send money would safely reach the family. The case is saved, and an NGO
+          worker can look at other options.
+        </p>
+        {finance && finance.routes.length > 0 && (
+          <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+            {finance.routes.map((route) => (
+              <li key={route.route_id} className="flex items-start gap-3 px-4 py-3 text-sm">
+                <span
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+                    route.verdict === "block" ? "bg-red-500" : "bg-amber-400"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {route.verdict === "block" ? "×" : "!"}
+                </span>
+                <span>
+                  <span className="font-semibold text-slate-900">{routeName(route.route_id)}</span>{" "}
+                  <span className="text-slate-600">{plainReason(route, finance.currency)}.</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {unknown.length > 0 && (
+        <NeedsAnswers
+          questions={unknown}
+          onAnswer={onAnswer}
+          busy={busy}
+          title="Do you know any of these? A new answer may open a route."
+          intro="Answer what you know. Anything you skip stays unknown."
+        />
+      )}
+    </div>
   );
 }

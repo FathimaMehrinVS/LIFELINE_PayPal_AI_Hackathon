@@ -418,3 +418,25 @@ npm install && npm test && git push
   Orchestrator's missing information. Options: change the shared schema (a PR and a migration for everyone) or keep
   the whole result as JSON in the audit log. Chose the audit log: no migration, nothing lost, and the normal tables
   are still filled for the modules that use them.
+
+### Answering questions on the request page (7 Nov)
+
+#### 26. "No they cant" didn't change anything
+- The answer box added `More details: No they cant` to the message. Without the question next to it, the AI couldn't
+  tell what "can't" meant, kept the wallet as `unknown` and asked the same question again.
+- **Fix:** one control per question (Yes / No / Not sure for access, an amount box for budget, need chips, a
+  text box for the place). Each answer is written into the message as a full sentence, e.g. "They cannot use a mobile
+  wallet." Retested in the browser: wallet became `unavailable`.
+- **Lesson:** an answer means nothing without its question. Give the AI complete sentences, not fragments.
+
+#### 27. Every re-check made a new case
+- Each answer created another case, so the dashboard filled with copies of one family.
+- **Fix:** `POST /api/cases?replaces=<case_id>` re-runs a case under the same id. Only cases that aren't complete can
+  be replaced (a complete case may already be approved); unknown ids get 404. The database store deletes the old
+  rows first; the audit log keeps every version and the list shows the newest. 4 new tests.
+
+#### 28. "No safe route yet" was a dead end
+- It showed the finance fallback text ("deterministic eligibility checks… route flags"): fine for staff, not for a
+  worried family member.
+- **Fix:** each route with a plain reason built from Member 2's flag codes ("PayPal needs a mobile wallet they can't
+  use"), plus Yes / No questions for access that is still unknown, because a new answer may open a route.

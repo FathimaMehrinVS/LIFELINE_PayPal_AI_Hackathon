@@ -43,7 +43,7 @@ export const MISSING_QUESTIONS: Record<string, string> = {
   atm_access: "Is there a working ATM they can reach?",
   wallet_acceptance: "Can they receive or pay with a mobile wallet (e.g. UPI, M-Pesa, PayPal)?",
   cash_availability: "Can they get physical cash locally (cash points, agents)?",
-  merchant_acceptance: "Are local shops open, and how do they accept payment?",
+  merchant_acceptance: "Are local shops open and able to take payments?",
   connectivity: "Do they have internet or phone signal?",
 };
 
@@ -59,7 +59,8 @@ function formatBudget(budget: number | null, currency: string | null) {
   }
 }
 
-export function SituationResultView({ result }: { result: SituationResult }) {
+/** `showMissing` is off in the case view, where the questions are asked in their own answer form. */
+export function SituationResultView({ result, showMissing = true }: { result: SituationResult; showMissing?: boolean }) {
   const budget = formatBudget(result.budget, result.currency);
   const accessKeys = Object.keys(ACCESS_LABELS) as AccessFactorKey[];
 
@@ -114,7 +115,7 @@ export function SituationResultView({ result }: { result: SituationResult }) {
         </ul>
       </section>
 
-      {result.missing_information.length > 0 && (
+      {showMissing && result.missing_information.length > 0 && (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <h2 className="font-semibold text-amber-900">We still need to know</h2>
           <p className="mb-2 text-sm text-amber-800">

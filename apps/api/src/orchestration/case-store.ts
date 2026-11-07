@@ -55,6 +55,9 @@ export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): C
       const db = prisma();
       const { case_id: id, situation, finance, commerce } = result;
 
+      // A case re-run with the person's answers keeps its id: replace its old rows (assessments and basket go with
+      // them by cascade). The audit log keeps every version; list() shows the newest.
+      await db.assistanceRequest.deleteMany({ where: { id } });
       await db.assistanceRequest.create({
         data: {
           id,

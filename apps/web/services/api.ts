@@ -45,7 +45,9 @@ export const api = {
   captureDonation: (donationId: string) =>
     post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/capture`),
   createPayout: (body: CreatePayoutRequest) => post<PayoutResult>("/api/payments/payouts", body),
-  createCase: (body: SituationRequest) => post<CaseResult>("/api/cases", body),
+  /** With `replaces`, re-runs a case that needed information, keeping its id. */
+  createCase: (body: SituationRequest, replaces?: string) =>
+    post<CaseResult>(replaces ? `/api/cases?replaces=${encodeURIComponent(replaces)}` : "/api/cases", body),
   listCases: () => get<CaseResult[]>("/api/cases"),
   approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
 };

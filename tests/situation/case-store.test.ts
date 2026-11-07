@@ -62,7 +62,11 @@ function createPrismaStub(options: { failBasket?: boolean } = {}) {
     return result(args);
   };
   const prisma = {
-    assistanceRequest: { create: record("request.create"), delete: record("request.delete") },
+    assistanceRequest: {
+      create: record("request.create"),
+      delete: record("request.delete"),
+      deleteMany: record("request.deleteMany"),
+    },
     financialAssessment: { upsert: record("financial.upsert") },
     basket: {
       create: record("basket.create", () => {
@@ -121,6 +125,18 @@ describe("database case store", () => {
     const list = await store.list();
     expect(list.map((c) => c.case_id)).toEqual([completeCase().case_id, "a"]);
     expect(list[0]).toEqual(completeCase());
+  });
+
+  it("replaces the old rows when a case is saved again with the same id", async () => {
+    const { prisma, calls } = createPrismaStub();
+    const store = createPrismaCaseStore(() => prisma);
+    await store.save(makeCase("again"));
+    await store.save({ ...makeCase("again"), missing_information: [] });
+
+    expect(calls["request.deleteMany"]).toEqual([{ where: { id: "again" } }, { where: { id: "again" } }]);
+    const list = await store.list();
+    expect(list.map((c) => c.case_id)).toEqual(["again"]);
+    expect(list[0]!.missing_information).toEqual([]);
   });
 
   it("skips audit rows that no longer match the contract", async () => {

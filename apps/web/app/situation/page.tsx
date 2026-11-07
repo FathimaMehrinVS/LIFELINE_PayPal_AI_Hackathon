@@ -4,7 +4,7 @@ import type { CaseResult, SituationRequest, SituationResult } from "@lifeline/co
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, SparkleIcon, UsersIcon } from "../../components/icons";
 import { ApiRequestError, api } from "../../services/api";
-import { CaseOutcome } from "./case-outcome";
+import { type CaseAnswers, CaseOutcome } from "./case-outcome";
 import { SituationResultView } from "./situation-result";
 
 // Owner: Member 1 (feature/situation-agent)
@@ -138,22 +138,29 @@ export default function SituationPage() {
   const empty = message.trim() === "";
   const busy = loading !== null;
 
-  function buildRequest(text: string): SituationRequest {
+  function buildRequest(text: string, overrides: { location?: string; currency?: string } = {}): SituationRequest {
     const body: SituationRequest = { message: text.trim().slice(0, MAX_LENGTH) };
-    if (location.trim()) body.location = location.trim();
-    if (currency) body.currency = currency;
+    const loc = overrides.location ?? location.trim();
+    const cur = overrides.currency ?? currency;
+    if (loc) body.location = loc;
+    if (/^[A-Z]{3}$/.test(cur)) body.currency = cur;
     return body;
   }
 
-  async function run(kind: "case" | "analysis", text = message) {
+  /** `replaces` updates a case that needed information instead of creating a second one. */
+  async function run(
+    kind: "case" | "analysis",
+    text = message,
+    options: { replaces?: string; location?: string; currency?: string } = {},
+  ) {
     if (!text.trim()) return;
     setLoading(kind);
     setError(null);
     try {
-      const body = buildRequest(text);
+      const body = buildRequest(text, options);
       setOutcome(
         kind === "case"
-          ? { kind, result: await api.createCase(body) }
+          ? { kind, result: await api.createCase(body, options.replaces) }
           : { kind, result: await api.analyzeSituation(body) },
       );
     } catch (err) {
@@ -176,11 +183,17 @@ export default function SituationPage() {
     }
   }
 
-  /** Adds the person's answers to the message, so the case is checked again with everything they said. */
-  function onAnswer(answers: string) {
-    const updated = `${message.trim()}\n\nMore details: ${answers}`;
+  /**
+   * Adds the answers to the message as plain sentences ("They cannot use a mobile wallet."), so the AI reads them
+   * the way they were meant, and re-runs the same case.
+   */
+  function onAnswer(answers: CaseAnswers) {
+    const updated = `${message.trim()}\n${answers.sentences.join(" ")}`;
     setMessage(updated);
-    void run("case", updated);
+    if (answers.location) setLocation(answers.location);
+    if (answers.currency && CURRENCIES.some((c) => c.code === answers.currency)) setCurrency(answers.currency);
+    const replaces = outcome?.kind === "case" ? outcome.result.case_id : undefined;
+    void run("case", updated, { replaces, location: answers.location, currency: answers.currency });
   }
 
   // Which step the progress bar shows as current.
