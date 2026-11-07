@@ -32,11 +32,16 @@ describe("API foundation", () => {
     expect(res.status).not.toBe(400);
   });
 
-  it.each([
-    ["/api/allocations/approve", { case_id: "case_1", campaign_id: "camp_demo", amount: 285, currency: "EUR" }],
-    ["/api/payments/payouts", { allocation_id: "alloc_1", amount: 285, currency: "EUR" }],
-  ])("%s is mounted (NOT_IMPLEMENTED until built)", async (path, body) => {
-    const res = await request(app).post(path).send(body);
+  it("validates allocation approval requests before database access", async () => {
+    const res = await request(app).post("/api/allocations/approve").send({
+      case_id: "case_1", campaign_id: "camp_demo", amount: 0, currency: "EUR",
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("keeps the payout route unimplemented", async () => {
+    const res = await request(app).post("/api/payments/payouts").send({ allocation_id: "alloc_1", amount: 285, currency: "EUR" });
     expect(res.status).toBe(501);
   });
 
