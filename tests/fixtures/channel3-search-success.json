@@ -1,0 +1,2895 @@
+{
+  "products": [
+    {
+      "id": "3qVGhtC",
+      "title": "GoBox Family Emergency Pack",
+      "description": "A comprehensive, multi-pack emergency preparedness kit designed to cover the crucial first 72 hours of a disaster. Each GoBox is compact enough for bookshelf storage or stashing in a vehicle and includes essentials like three days of food and water rations, first-aid supplies, a respirator mask, Mylar blanket, poncho, LED flashlight, glow stick, candles, and a high-decibel whistle. This specific offering includes five individual boxes.",
+      "brands": [
+        {
+          "id": "ixrM",
+          "name": "Preppi"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/570f04c5-e863-4906-bf47-bffc494dd009?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=roJC",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/570f04c5-e863-4906-bf47-bffc494dd009?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=roJC",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Cardboard box for a 3-day emergency preparedness kit."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/374b1b0d-68ee-451a-b94c-88cd87ad0824?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=roJC",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "flat_lay",
+          "alt_text": "Flat lay of contents inside the Preppi GoBox."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/2edf643a-90b1-4f0b-8ec2-a0f2adba3f4c?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=roJC",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Assortment of first-aid and survival gear items."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/b0e6816a-9c0b-4e18-9818-0e29ab9aeabc?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=roJC",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Close-up of black gloves and various first-aid items."
+        }
+      ],
+      "category": {
+        "slug": "emergency-tools-kits",
+        "title": "Emergency Tools & Kits",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "emergency-preparedness",
+            "title": "Emergency Preparedness"
+          },
+          {
+            "slug": "emergency-tools-kits",
+            "title": "Emergency Tools & Kits"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Mylar"
+      ],
+      "key_features": [
+        "Comprehensive First-Aid",
+        "3-day Water Supply",
+        "3-day Food Rations",
+        "Multi-tool",
+        "LED Flashlight",
+        "Glow Stick",
+        "Mylar Emergency Space Blanket",
+        "Emergency Rain Poncho",
+        "Waterproofing Utility Bag",
+        "Kraft Notebook"
+      ],
+      "colors": [
+        {
+          "hex": "#e7ac72",
+          "percentage": 0.6614
+        },
+        {
+          "hex": "#f9f5ef",
+          "percentage": 0.1591
+        },
+        {
+          "hex": "#efdbc9",
+          "percentage": 0.1113
+        },
+        {
+          "hex": "#ce874f",
+          "percentage": 0.0682
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/3qVGhtC-roJC-tbzpK7?o=01KTVCXZ172BJF4KW4J5KZXC4H&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "shop.uncrate.com",
+          "price": {
+            "price": 341.95,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 13,
+              "unit": "in"
+            },
+            "width": {
+              "number": 9.5,
+              "unit": "in"
+            },
+            "height": {
+              "number": 3,
+              "unit": "in"
+            },
+            "weight": {
+              "number": 6.4,
+              "unit": "lb"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "emergency-items-included": [
+          "First aid kit",
+          "Blanket",
+          "Flashlight",
+          "Food",
+          "Water",
+          "Whistle"
+        ],
+        "pattern": [
+          "Chevron",
+          "Striped",
+          "Solid"
+        ],
+        "power-source": [
+          "Batteries",
+          "Rechargeable"
+        ],
+        "ingress-protection-ip-rating": [
+          "Not rated"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "mp9Ce3A",
+      "title": "12-Piece Single Living Food Storage Containers",
+      "description": "This premium 12-piece food storage container set from SKYLOCK features an innovative, space-saving modular stacking design, perfect for organizing food efficiently in the refrigerator. The containers are BPA-free and safe for use in the freezer (up to -30°C) and microwave. The set includes various sizes (Rectangle Medium and Square) to accommodate different storage needs for single living or everyday meal prep. Note: Exercise caution when storing oily or highly pigmented foods to prevent potential staining.",
+      "brands": [
+        {
+          "id": "cTsp",
+          "name": "SKYLOCK"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/mp9Ce3A-4SSG?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/c1328022-ce0a-430a-add8-d25f58b19930?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Set of 13 clear plastic containers with white lids and floral design"
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7205634/91/720563491_1.png",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/c1328022-ce0a-430a-add8-d25f58b19930?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Set of 13 clear plastic containers with white lids and floral design"
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7205634/91/720563491_2.png",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Two clear plastic containers with lids, one with salad and one with vegetables"
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7205634/91/720563491_3.png",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Five clear plastic containers with various foods, including shrimp, brussels sprouts, and onions"
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "PP (Polypropylene)",
+        "SAN (Styrene Acrylonitrile)",
+        "TPE (Thermoplastic Elastomer)"
+      ],
+      "key_features": [
+        "Innovative modular stacking system",
+        "BPA-free materials",
+        "Microwave-safe",
+        "Freezer-resistant up to -30°C",
+        "99% antibacterial TPE packing material"
+      ],
+      "colors": [
+        {
+          "hex": "#eeebef",
+          "percentage": 0.5085
+        },
+        {
+          "hex": "#cabfc6",
+          "percentage": 0.2479
+        },
+        {
+          "hex": "#a79ba1",
+          "percentage": 0.1304
+        },
+        {
+          "hex": "#7c7379",
+          "percentage": 0.1132
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/mp9Ce3A-4SSG-tbzpK7?o=01KCV4HEKKZ9K1SDDQJTZJ5P78&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "wconcept.com",
+          "price": {
+            "price": 34,
+            "compare_at_price": 62,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.042,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "food-storage-features": [
+          "BPA-free",
+          "Freezer safe",
+          "Microwave safe",
+          "Modular",
+          "Stackable"
+        ],
+        "pattern": [
+          "Floral"
+        ],
+        "shape": [
+          "Rectangular",
+          "Square"
+        ],
+        "food-storage-material": [
+          "Plastic"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "EGguzso",
+      "title": "3L Square Flip-Tight Food Storage",
+      "description": "This 3L square kitchen storage container is designed to keep baked goods, cereals, and biscuits fresh for longer with its practical flip-tight locking system. Made from durable, clear plastic with a white lid, it features a contemporary design that is both freezer safe and hand washable.",
+      "brands": [
+        {
+          "id": "MNgq",
+          "name": "Marks & Spencer"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/4650d342-ec56-4b7a-96f8-5eac4a9109a1?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=fB8I",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "White square food storage container filled with granola on a marble surface."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/f499f23d-0779-41f0-b40e-2e422675e914?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=fB8I",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Various clear and white food storage containers filled with dry food ingredients."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Plastic"
+      ],
+      "key_features": [
+        "Flip-tight locking system for airtight seal",
+        "Suitable for dry food only",
+        "Freezer safe",
+        "Contemporary design"
+      ],
+      "colors": [
+        {
+          "hex": "#aea59f",
+          "percentage": 0.4453
+        },
+        {
+          "hex": "#4c3628",
+          "percentage": 0.1533
+        },
+        {
+          "hex": "#361f11",
+          "percentage": 0.1158
+        },
+        {
+          "hex": "#8d827a",
+          "percentage": 0.1127
+        },
+        {
+          "hex": "#64574b",
+          "percentage": 0.0921
+        },
+        {
+          "hex": "#d3cfcc",
+          "percentage": 0.0807
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/EGguzso-fB8I-tbzpK7?o=01M4ZFVRS9CHN86M7VE5FASQNM&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "marksandspencer.com",
+          "price": {
+            "price": 20,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.07,
+          "dimensions": {
+            "length": {
+              "number": 20,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 20,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 12.8,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "food-storage-features": [
+          "Airtight",
+          "Snap-lock lid"
+        ],
+        "food-storage-material": [
+          "Plastic"
+        ],
+        "shape": [
+          "Square"
+        ],
+        "pattern": [
+          "Solid"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "oYFUijZ",
+      "title": "Potato Food Mask",
+      "description": "This intensive soothing wash-off mask contains Solanum Tuberosum (Potato) Pulp Extract from Gangwon-do, rich in chlorogenic acid, and madecassoside to gently alleviate irritated skin. It features a soft mashed potato texture and is suitable for temporary skin soothing, reducing skin redness, improving skin brightness, and reducing skin temperature.",
+      "brands": [
+        {
+          "id": "AVHz",
+          "name": "Skinfood"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/230a8491-ab39-4d99-8df5-53424ca5227e?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/230a8491-ab39-4d99-8df5-53424ca5227e?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "White jar of Skinfood Potato Food Mask with beige lid."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/0bf510d5-1fa1-4b9f-a5c6-53c5f95281ed?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/0bf510d5-1fa1-4b9f-a5c6-53c5f95281ed?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Silver jar of fino Premium Touch Hair Mask with red lid."
+        }
+      ],
+      "category": {
+        "slug": "skin-care-masks-peels",
+        "title": "Skin Care Masks & Peels",
+        "path": [
+          {
+            "slug": "health-beauty",
+            "title": "Health & Beauty"
+          },
+          {
+            "slug": "personal-care",
+            "title": "Personal Care"
+          },
+          {
+            "slug": "cosmetics",
+            "title": "Cosmetics"
+          },
+          {
+            "slug": "skin-care",
+            "title": "Skin Care"
+          },
+          {
+            "slug": "skin-care-masks-peels",
+            "title": "Skin Care Masks & Peels"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": "adult",
+      "materials": [
+        "Solanum Tuberosum (Potato) Pulp Extract",
+        "madecassoside"
+      ],
+      "key_features": [
+        "Intensive soothing wash-off mask",
+        "Contains Solanum Tuberosum (Potato) Pulp Extract from Gangwon-do",
+        "Rich in chlorogenic acid and madecassoside",
+        "Soft mashed potato texture",
+        "Helps reduce skin redness",
+        "Improves skin brightness",
+        "Reduces skin temperature"
+      ],
+      "colors": [
+        {
+          "hex": "#cabfa3",
+          "percentage": 0.9133
+        },
+        {
+          "hex": "#9d9073",
+          "percentage": 0.0867
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/oYFUijZ-4SSG-tbzpK7?o=01KCXPAV9Z0DYT6TJNXXDKPGYR&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "wconcept.com",
+          "price": {
+            "price": 11,
+            "compare_at_price": 14,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.042,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "package-type": [
+          "Jar"
+        ],
+        "skin-care-effect": [
+          "Anti-redness",
+          "Brightening",
+          "Soothing"
+        ],
+        "product-certifications-standards": [
+          "Cruelty-free"
+        ],
+        "body-area": [
+          "Face"
+        ],
+        "cosmetic-function": [
+          "Soothing"
+        ],
+        "product-form": [
+          "Cream"
+        ],
+        "skin-care-features": [
+          "Soothing"
+        ],
+        "face-area": [
+          "Face"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "Mth18ZT",
+      "title": "Double Seal Food and Freezer Bags",
+      "description": "Practical, small-sized food and freezer storage bags featuring a double-seal closure to prevent leaks and maintain freshness. These bags are designed with a wide 7 cm bottom gusset, allowing them to stand upright for easier filling and stable storage. Each pack contains 25 polyethylene bags capable of withstanding temperatures from -30°C to 80°C.",
+      "brands": [
+        {
+          "id": "D8hN",
+          "name": "Muji"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/1292e59b-df46-49cd-959c-79a18dcd4217?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=hUzI",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "packaging",
+          "alt_text": "Hands holding a sealed pack of 25 small double seal food bags."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-bags",
+        "title": "Food Storage Bags",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-bags",
+            "title": "Food Storage Bags"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Polyethylene"
+      ],
+      "key_features": [
+        "Double-seal closure prevents leaks",
+        "Wide base (7 cm gusset) stands upright",
+        "Cold-resistant to -30 °C",
+        "Heat-resistant to 80 °C",
+        "Pack of 25 bags"
+      ],
+      "colors": [
+        {
+          "hex": "#e2d1bb",
+          "percentage": 0.4235
+        },
+        {
+          "hex": "#c99561",
+          "percentage": 0.1762
+        },
+        {
+          "hex": "#cbab93",
+          "percentage": 0.1475
+        },
+        {
+          "hex": "#f2ebcc",
+          "percentage": 0.1049
+        },
+        {
+          "hex": "#af7448",
+          "percentage": 0.093
+        },
+        {
+          "hex": "#e2ad81",
+          "percentage": 0.0548
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/Mth18ZT-hUzI-tbzpK7?o=01M6FFZJRZ64QRK7GQ9BD4Y2AX&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "muji.eu",
+          "price": {
+            "price": 1.95,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 14.5,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 20,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 7,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "shape": [
+          "Rectangular"
+        ],
+        "food-bag-material": [
+          "Plastic"
+        ],
+        "food-storage-features": [
+          "Freezer safe",
+          "Leakproof"
+        ],
+        "usage-type": [
+          "Disposable"
+        ],
+        "food-storage-bag-type": [
+          "Freezer",
+          "Zip-top"
+        ],
+        "food-storage-bag-features": [
+          "Freezer safe",
+          "Gusseted bottom",
+          "Heat-resistant",
+          "Leakproof",
+          "Resealable",
+          "Stand-up",
+          "Transparent"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "closure-type": [
+          "Slip-on"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "Do2WHmL",
+      "title": "Dome (Gen 2) Essentials Bundle",
+      "description": "The Dome (Gen 2) Essentials Bundle is a professional-grade outdoor pizza oven set designed for versatility and high-performance cooking. This hybrid-fuel oven allows users to cook with wood, charcoal, or propane, making it suitable for everything from traditional leopard-spotted pizzas to roasted meats and vegetables. The bundle includes the Dome (Gen 2) oven, a dedicated Series Stand for an optimal cooking setup, and a Pro Placement Peel. Key technical features include a 30mm removable cordierite stone floor, 3-layer space-age insulation for thermal efficiency, and a built-in digital console with twin meat probes for precise temperature monitoring.",
+      "brands": [
+        {
+          "id": "AfOm",
+          "name": "Gozney"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/5a9153ba-c10a-4038-9e17-9bc3ead9c32d?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/5a9153ba-c10a-4038-9e17-9bc3ead9c32d?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Black gas grill on a wooden stand in a room with plants."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/bad582ca-43b7-42ab-aee7-32f512093dcf?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/bad582ca-43b7-42ab-aee7-32f512093dcf?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "White and black gas grill on a wooden stand."
+        }
+      ],
+      "category": {
+        "slug": "pizza-makers-ovens",
+        "title": "Pizza Makers & Ovens",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "kitchen-appliances",
+            "title": "Kitchen Appliances"
+          },
+          {
+            "slug": "toasters-grills",
+            "title": "Toasters & Grills"
+          },
+          {
+            "slug": "pizza-makers-ovens",
+            "title": "Pizza Makers & Ovens"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "cordierite",
+        "aluminized steel",
+        "304 stainless steel"
+      ],
+      "key_features": [
+        "Hybrid fuel system: Wood, Charcoal, Propane",
+        "30mm removable cordierite stone floor",
+        "Commercial-grade 3-layer space-age insulation",
+        "Built-in digital console with twin meat probes and timer",
+        "Rolling lateral flame for even heat distribution",
+        "Can fit one 16\" pizza or two 10\" pizzas",
+        "Push-turn gas ignition"
+      ],
+      "colors": [
+        {
+          "hex": "#394046",
+          "percentage": 0.6097
+        },
+        {
+          "hex": "#545b5f",
+          "percentage": 0.3903
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/Do2WHmL-RrRQ-tbzpK7?o=01M2AWN62HYBPG6SDGKW68EXZP&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "au.gozney.com",
+          "price": {
+            "price": 2189.97,
+            "compare_at_price": 2589.97,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 652,
+              "unit": "mm"
+            },
+            "width": {
+              "number": 826,
+              "unit": "mm"
+            },
+            "height": {
+              "number": 986,
+              "unit": "mm"
+            },
+            "weight": {
+              "number": 62,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "power-source": [
+          "Charcoal",
+          "Firewood",
+          "Propane",
+          "Rechargeable",
+          "Batteries"
+        ],
+        "temperature-control": [
+          "Adjustable temperature"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "material": [
+          "Ceramic",
+          "Aluminum",
+          "Stainless steel"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "Ypp2tjp",
+      "title": "Insulated Food Jar",
+      "description": "A high-capacity insulated stainless steel food jar designed to keep meals hot or cold for hours. This 28 oz (828 ml) Hydro Flask Insulated Food Jar features TempShield double-wall vacuum insulation, a leakproof and easy-grip lid, and is made from pro-grade 18/8 stainless steel for durability. It is dishwasher safe and designed for on-the-go meals, offering a compact, portable solution for lunches and outdoor adventures.",
+      "brands": [
+        {
+          "id": "WFU3",
+          "name": "Hydro Flask"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/ccf7a9c9-7648-480b-83e8-8d46ff85589a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/ccf7a9c9-7648-480b-83e8-8d46ff85589a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Black insulated food jar with silver rim and white hand logo."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/08915ffe-8ba8-4667-b435-4219cdf40dc6?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/08915ffe-8ba8-4667-b435-4219cdf40dc6?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Black insulated food jar with silver rim and white hand logo."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/41592320-effb-452c-9f21-2f301ac390a5?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "on_model",
+          "alt_text": "Person holding a black insulated food jar with a silver rim."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/3c37c21b-398e-4fb1-92bc-485c982d3f24?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Person holding a filled food jar on a marble surface."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/afb1409d-8d3d-4b79-a850-55d7b342ea97?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Hand opening the lid of a purple insulated food jar in a case."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/0da7e0b2-f184-4194-b681-81d7448a73b5?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "product_information",
+          "alt_text": "Product warranty and specification details with QR code."
+        }
+      ],
+      "category": {
+        "slug": "thermoses",
+        "title": "Thermoses",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-beverage-carriers",
+            "title": "Food & Beverage Carriers"
+          },
+          {
+            "slug": "thermoses",
+            "title": "Thermoses"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": "adult",
+      "materials": [
+        "stainless steel"
+      ],
+      "key_features": [
+        "TempShield double-wall vacuum insulation keeps temperature for hours",
+        "Made with 18/8 pro-grade stainless steel for durability",
+        "Leakproof when closed",
+        "Easy grip lid",
+        "Dishwasher safe",
+        "Not for use in a microwave"
+      ],
+      "colors": [
+        {
+          "hex": "#141414",
+          "percentage": 0.4783
+        },
+        {
+          "hex": "#363636",
+          "percentage": 0.4139
+        },
+        {
+          "hex": "#a3a2a1",
+          "percentage": 0.1078
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/Ypp2tjp-2OMO-tbzpK7?o=01KJBDXVDF93SF917H82WQ12SH&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "hydroflask.com",
+          "price": {
+            "price": 49.95,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.06,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "closure-type": [
+          "Drawstring"
+        ],
+        "material": [
+          "Stainless steel"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "thermos-handle-type": [
+          "Removable strap"
+        ],
+        "lid-type": [
+          "Snap-on"
+        ],
+        "insulation-technology": [
+          "Double-wall vacuum"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "WQXJFZA",
+      "title": "Insulated Food Jar",
+      "description": "A compact, double-wall insulated stainless steel jar designed for meals on the go. The 12 oz (355 ml) Insulated Food Jar from Hydro Flask keeps food hot or cold with TempShield insulation. It features a screw-on lid, leak-proof seal, and a modern light blue matte finish with Hydro Flask branding. Durable, dishwasher-safe, and not for microwave use.",
+      "brands": [
+        {
+          "id": "WFU3",
+          "name": "Hydro Flask"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/3fbfcff0-174d-4797-bdab-5cd6e48bb545?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/3fbfcff0-174d-4797-bdab-5cd6e48bb545?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Black insulated food jar with silver band and white logo on white background."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/ebd91d18-47fa-4694-b996-c39b39fedd81?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/ebd91d18-47fa-4694-b996-c39b39fedd81?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Black insulated food jar with silver band and white logo on white background."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/9c64a376-35ac-46de-827a-289f2e21a3e5?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "on_model",
+          "alt_text": "Person holding a black insulated food jar with a silver band."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/a3ccedc2-332d-44ef-a979-d3229c42b932?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Insulated food jar filled with yogurt and berries."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/1d04af3a-912b-4302-bf44-c488c191a973?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Light purple insulated food jar in a blue carrying bag."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/83e8ce65-45e4-43e2-a87d-a35f01e50b9b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=2OMO",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "product_information",
+          "alt_text": "Warranty information and product details for HYDRO FLASK items."
+        }
+      ],
+      "category": {
+        "slug": "thermoses",
+        "title": "Thermoses",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-beverage-carriers",
+            "title": "Food & Beverage Carriers"
+          },
+          {
+            "slug": "thermoses",
+            "title": "Thermoses"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": "adult",
+      "materials": [
+        "stainless steel"
+      ],
+      "key_features": [
+        "TempShield double-wall vacuum insulation",
+        "Made with 18/8 pro-grade stainless steel",
+        "Leakproof when closed",
+        "Easy grip lid",
+        "Dishwasher safe",
+        "Not for use in a microwave"
+      ],
+      "colors": [
+        {
+          "hex": "#141414",
+          "percentage": 0.4802
+        },
+        {
+          "hex": "#363636",
+          "percentage": 0.4118
+        },
+        {
+          "hex": "#a2a1a0",
+          "percentage": 0.108
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/WQXJFZA-2OMO-tbzpK7?o=01KJBBYYMR49ZZ5G1N4DECSSC7&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "hydroflask.com",
+          "price": {
+            "price": 23.97,
+            "compare_at_price": 39.95,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.056,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "thermos-handle-type": [
+          "No handle"
+        ],
+        "lid-type": [
+          "Snap-on",
+          "Screw-on"
+        ],
+        "closure-type": [
+          "Straps",
+          "Screw-on"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "insulation-technology": [
+          "Double-wall vacuum"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "material": [
+          "Stainless steel",
+          "Silicone"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "jzf1RS0",
+      "title": "food container with lid",
+      "description": "The BESTÄMMA food container is a rectangular 0.5-liter storage vessel made from tempered glass, ensuring it doesn't absorb odors or discolor over time. It comes with a transparent polypropylene plastic lid that is microwave-safe, allowing for easy reheating of leftovers. Its stackable design helps maximize space in the refrigerator, and the clear material allows for quick identification of contents. Please note that this container is not spill-proof.",
+      "brands": [
+        {
+          "id": "Pu7O",
+          "name": "Ikea"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/9a289968-f11b-4d2d-95d7-efc790e5eceb?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/4d28f424-3ad7-4ad8-bed8-e46ecda882ec?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Clear glass food container with lid on a white background."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/f1bcbbb3-3b4a-41a2-998b-de10bdc39ac9?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Glass food container with vegetables and egg on a wooden board."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/686d48ba-3ddc-4417-ab42-58b3f351a137?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Refrigerator shelf with various glass food containers filled with food."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/b039743e-0bb2-488e-a434-b243c93fa5cd?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Clear glass food container with lid shown from the side."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "tempered glass",
+        "polypropylene plastic"
+      ],
+      "key_features": [
+        "Microwave-safe lid",
+        "Dishwasher-safe",
+        "Stackable design",
+        "Does not absorb odours or discolour",
+        "Transparent for easy identification"
+      ],
+      "colors": [
+        {
+          "hex": "#d5d6db",
+          "percentage": 0.9294
+        },
+        {
+          "hex": "#a4abb2",
+          "percentage": 0.0706
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/jzf1RS0-FwdJ-tbzpK7?o=01M10R7V9RMD2A66NYTC0ZZ0PX&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "ikea.gr",
+          "price": {
+            "price": 1.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 12,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 12,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 6,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "closure-type": [
+          "Slip-on"
+        ],
+        "food-storage-features": [
+          "Dishwasher safe",
+          "Microwave safe",
+          "Stackable"
+        ],
+        "shape": [
+          "Rectangular"
+        ],
+        "lid-type": [
+          "Snap-on"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "food-storage-material": [
+          "Glass",
+          "Plastic"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "zc6pcqU",
+      "title": "Food Storage",
+      "description": "The YETI Food Storage Container is a versatile and eco-conscious addition to any camp kitchen. Designed for durability and efficiency, it features a 10% leakproof and airtight seal to keep food fresh during camping or boating trips. The container is microwave and freezer safe, making it suitable for a variety of food items. Its stackable and nestable design ensures efficient packing and is compatible with all YETI coolers and the YETI Ice Sheet. Crafted from BPA-free plastic containing 50% recycled material, it is also dishwasher safe for easy cleaning.",
+      "brands": [
+        {
+          "id": "VXTD",
+          "name": "YETI"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/606d1cb7-5386-4014-9bf8-d5ba6e167c09?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=XY6i",
+          "cleaned_url": "https://cdn.trychannel3.com/6ce60749-e3bd-4b78-9d8f-4f118198232a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=XY6i",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "YETI Large Food Storage container with a clear base and navy blue lid."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "BPA-free plastic"
+      ],
+      "key_features": [
+        "10% leakproof and airtight to keep food secure and fresh",
+        "Microwave and freezer safe for flexible food storage",
+        "Compatible with YETI Ice Sheet and all YETI coolers",
+        "Stackable and nestable design for efficient packing",
+        "Dishwasher safe for effortless cleaning after daily use",
+        "Made from BPA-free, 50% recycled plastic"
+      ],
+      "colors": [
+        {
+          "hex": "#303f54",
+          "percentage": 0.6383
+        },
+        {
+          "hex": "#cdced1",
+          "percentage": 0.1649
+        },
+        {
+          "hex": "#48566a",
+          "percentage": 0.1092
+        },
+        {
+          "hex": "#a0a6ae",
+          "percentage": 0.0877
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/zc6pcqU-XY6i-tbzpK7?o=01KZBGVMK2EKEKC6J5M7V3ZVSC&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "eu.yeti.com",
+          "price": {
+            "price": 30,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 25.4,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 18.5,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 8.1,
+              "unit": "cm"
+            },
+            "weight": {
+              "number": 0.61,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "food-storage-features": [
+          "Airtight",
+          "BPA-free",
+          "Dishwasher safe",
+          "Freezer safe",
+          "Leakproof",
+          "Microwave safe",
+          "Nested",
+          "Stackable",
+          "Reusable"
+        ],
+        "lid-type": [
+          "Snap-on"
+        ],
+        "shape": [
+          "Rectangular"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "food-storage-material": [
+          "Plastic"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "closure-type": [
+          "Straps"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "ORdt0rD",
+      "title": "food container with lid",
+      "description": "A practical 3-pack of rectangular glass food containers, each with a 1.0 litre capacity. These durable containers are designed for versatility, being safe for use in the oven, microwave, air fryer, freezer, and dishwasher. They feature snap-on lids that ensure an airtight and leakproof seal to help reduce food waste. Being stackable, they maximize storage space in the fridge, and the heat-resistant glass does not absorb odours or stain.",
+      "brands": [
+        {
+          "id": "Pu7O",
+          "name": "Ikea"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/4d66edce-c54c-49a3-9d54-2dfb3113ea63?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Stack of clear food containers with white lids."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/eafa472b-4af1-48f4-b3eb-91385c2a5515?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Stacked food containers with food ingredients on a wooden table."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/a3a0dbe7-0b04-48cd-9baa-9dfeebaf3fd9?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/0fb02d2e-e2b2-42a9-bf33-8a802ce6022f?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Food containers filled with vegetables and corn on a cutting board."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/846d3724-ef4d-4b15-af27-f55a45424353?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Hands cooking food in an oven using a glass container."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/48e424d2-0d7c-415a-9e43-80d319290681?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Pasta in a glass container in an oven."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/6697f661-9aa2-4ee5-9574-e0e07b09b9b1?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Glass food containers with vegetables on a wooden table."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/9b149f10-6e88-459a-aebb-d78169c0983b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/9b149f10-6e88-459a-aebb-d78169c0983b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Close-up of a hand holding the container lid."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/d91b2808-2321-48e4-8489-80dbd1abcae2?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Stacked food containers with green beans and egg."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/0bcbbda9-4e9f-40b2-982f-653e394e8ca8?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Single clear food container with a white lid."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Heat resistant glass",
+        "Polypropylene plastic",
+        "Silicone rubber"
+      ],
+      "key_features": [
+        "3-pack of 1.0 litre containers",
+        "Airtight and leakproof snap-on lids",
+        "Oven, microwave, freezer and dishwasher safe",
+        "Air fryer compatible",
+        "Stackable design for space saving",
+        "Stain and odour resistant glass"
+      ],
+      "colors": [
+        {
+          "hex": "#dfe2e4",
+          "percentage": 0.5105
+        },
+        {
+          "hex": "#b1bac0",
+          "percentage": 0.2562
+        },
+        {
+          "hex": "#86949e",
+          "percentage": 0.1326
+        },
+        {
+          "hex": "#506370",
+          "percentage": 0.1007
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/ORdt0rD-FwdJ-tbzpK7?o=01M116G5AZTWZZFJV01ZP73YRW&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "ikea.gr",
+          "price": {
+            "price": 12.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 21,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 15,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 6,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "shape": [
+          "Rectangular"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "food-storage-material": [
+          "Glass",
+          "Plastic"
+        ],
+        "food-storage-features": [
+          "Airtight",
+          "Freezer safe",
+          "Leakproof",
+          "Microwave safe",
+          "Odor resistant",
+          "Stackable"
+        ],
+        "lid-type": [
+          "Snap-on"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "O2BIPdo",
+      "title": "Emergency Bivy",
+      "description": "An essential emergency bivy bag designed for rapid warming in outdoor situations. This waterproof and windproof bivy is constructed with taped seams for excellent weather protection. It is super packable and lightweight, making it an ideal item to carry for mountain explorers.",
+      "brands": [
+        {
+          "id": "xLuL",
+          "name": "Rab"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/ea711de9-7b63-4dc9-9dd2-fcf0fdfba644?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=LJex",
+          "cleaned_url": "https://cdn.trychannel3.com/99f416ab-3e96-4bab-9248-236e42f8b095?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=LJex",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Orange reflective tarp material laid out with wrinkles."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/eae99520-b00b-4b41-a464-f0b4442b7c21?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=LJex",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Orange and silver reflective tarp material in a folded shape."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/bd39f9eb-a9d3-4282-b393-668107849462?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=LJex",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/a066f507-eeaf-4b02-b6d7-f66bb197bc7e?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=LJex",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Orange compression sack with 'Rab ARK EMERGENCY' branding."
+        }
+      ],
+      "category": {
+        "slug": "bivy-sacks-storm-shelters",
+        "title": "Bivy Sacks & Storm Shelters",
+        "path": [
+          {
+            "slug": "sporting-goods",
+            "title": "Sporting Goods"
+          },
+          {
+            "slug": "outdoor-recreation",
+            "title": "Outdoor Recreation"
+          },
+          {
+            "slug": "camping-hiking",
+            "title": "Camping & Hiking"
+          },
+          {
+            "slug": "tents",
+            "title": "Tents"
+          },
+          {
+            "slug": "bivy-sacks-storm-shelters",
+            "title": "Bivy Sacks & Storm Shelters"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": "adult",
+      "materials": [
+        "Polyethylene"
+      ],
+      "key_features": [
+        "Lightweight PE (Polyethylene)",
+        "Reflects body heat",
+        "Windproof",
+        "Waterproof",
+        "Seam Taped",
+        "Super packable and lightweight",
+        "Essential emergency mountain product",
+        "Supplied with stuff sac"
+      ],
+      "colors": [
+        {
+          "hex": "#b93e22",
+          "percentage": 0.6134
+        },
+        {
+          "hex": "#c0573e",
+          "percentage": 0.2763
+        },
+        {
+          "hex": "#e99377",
+          "percentage": 0.1103
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/O2BIPdo-LJex-tbzpK7?o=01KRJ085RZY4G4YWX8DQM1RJ73&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "rab.equipment",
+          "price": {
+            "price": 22,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.077,
+          "dimensions": {
+            "length": null,
+            "width": null,
+            "height": null,
+            "weight": {
+              "number": 105,
+              "unit": "g"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "pattern": [
+          "Striped",
+          "Solid"
+        ],
+        "suitable-for-camping-activity": [
+          "Backpacking"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "HhexGDu",
+      "title": "food container with lid",
+      "description": "A set of three durable, rectangular food containers with lids, each with a 1.0 liter capacity. Made from polypropylene plastic with silicone rubber seals, these containers are designed for efficient food storage, helping to reduce waste. They are stackable to save cabinet space and are safe for use in the microwave, freezer, and dishwasher.",
+      "brands": [
+        {
+          "id": "Pu7O",
+          "name": "Ikea"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/ce4a9cf3-23a9-4cdb-88db-edc66811a3cb?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/ecc241ee-f2db-4481-8bae-d05232c2c250?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Stack of clear food containers with blue lids."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/3a8c6e5a-d546-41da-a4ae-364962aa461e?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Person holding three clear food containers of vegetables."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/5a79caa5-698b-4d30-8b5a-e9e37f84a1cc?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Clear food container with cooked vegetables on a wooden board."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/55543f06-dba8-4a49-8b87-406675153e2e?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Group shot of four clear food containers of different sizes."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/4819442c-db7d-47f0-88f8-41c0e6ae2fb8?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/f91ae347-a74a-4add-83c2-91d6b3fd14d0?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Clear food container with lid inside a microwave oven."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/304ab988-6d9e-43ca-9939-3e26dd101934?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/be1e33c0-4d6c-4f71-99c7-a76a97252b9b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Close-up of a clear food container and blue lid."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Polypropylene plastic",
+        "Silicone rubber"
+      ],
+      "key_features": [
+        "Microwave-safe",
+        "Freezer-safe",
+        "Dishwasher-safe",
+        "Stackable design",
+        "Durable plastic construction"
+      ],
+      "colors": [
+        {
+          "hex": "#d0d8e5",
+          "percentage": 0.5278
+        },
+        {
+          "hex": "#f8f9fb",
+          "percentage": 0.2585
+        },
+        {
+          "hex": "#aabad3",
+          "percentage": 0.1141
+        },
+        {
+          "hex": "#6b88b1",
+          "percentage": 0.0996
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/HhexGDu-FwdJ-tbzpK7?o=01M11B6C6M1SXYF8F5XRG1Y1GA&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "ikea.com.cy",
+          "price": {
+            "price": 8.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 21,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 15,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 6,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "pattern": [
+          "Solid"
+        ],
+        "food-storage-features": [
+          "Dishwasher safe",
+          "Freezer safe",
+          "Microwave safe",
+          "Nested",
+          "Stackable"
+        ],
+        "food-storage-material": [
+          "Plastic"
+        ],
+        "shape": [
+          "Rectangular"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "yk7oDDQ",
+      "title": "Dome XL (Gen 2) Essentials Bundle",
+      "description": "Take your outdoor cooking to the professional level with the Dome XL (Gen 2) Essentials Bundle. This comprehensive set includes the Dome XL (Gen 2), the most versatile and spacious outdoor pizza oven in the range, capable of cooking three 10\" pizzas at once. The bundle is completed with the Dome Gen 2 Series Stand for an optimal cooking setup and a Large Pro Placement Peel for effortless pizza handling. This hybrid-fuel oven allows you to switch between wood, charcoal, and propane, combining restaurant-grade firepower with precise digital controls, including a temperature console and twin meat probes.",
+      "brands": [
+        {
+          "id": "AfOm",
+          "name": "Gozney"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/b4bc65c8-d96d-4736-b4d6-2c19aa2c5d70?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Black outdoor grill with lid open on a stand."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/deb43b08-2ef3-4a42-aba7-ec20cc7ee491?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/deb43b08-2ef3-4a42-aba7-ec20cc7ee491?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=RrRQ",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "White and black outdoor grill with lid closed on a stand."
+        }
+      ],
+      "category": {
+        "slug": "pizza-makers-ovens",
+        "title": "Pizza Makers & Ovens",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "kitchen-appliances",
+            "title": "Kitchen Appliances"
+          },
+          {
+            "slug": "toasters-grills",
+            "title": "Toasters & Grills"
+          },
+          {
+            "slug": "pizza-makers-ovens",
+            "title": "Pizza Makers & Ovens"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "cordierite stone",
+        "aluminized steel",
+        "stainless steel"
+      ],
+      "key_features": [
+        "Hybrid Fuel: Compatible with wood, charcoal, and propane",
+        "Large cooking capacity: fits three 10\", two 12\", or one 18\" pizza",
+        "Built-in digital console with temperature sensors and timer",
+        "30mm removable cordierite stone floor",
+        "3-layer space-age insulation for thermal efficiency",
+        "Twin meat probes for precision cooking",
+        "Includes Dome Gen 2 Series Stand and Pro Placement Peel"
+      ],
+      "colors": [
+        {
+          "hex": "#f9f8f8",
+          "percentage": 0.3959
+        },
+        {
+          "hex": "#2e2722",
+          "percentage": 0.1389
+        },
+        {
+          "hex": "#81807d",
+          "percentage": 0.1374
+        },
+        {
+          "hex": "#524b46",
+          "percentage": 0.1232
+        },
+        {
+          "hex": "#121110",
+          "percentage": 0.1157
+        },
+        {
+          "hex": "#bdbab3",
+          "percentage": 0.0889
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/yk7oDDQ-RrRQ-tbzpK7?o=01M2B0BB9RTMPZ2YYFS95ZTDJ1&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "de.gozney.com",
+          "price": {
+            "price": 2499.97,
+            "compare_at_price": 3099.97,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 697,
+              "unit": "mm"
+            },
+            "width": {
+              "number": 946,
+              "unit": "mm"
+            },
+            "height": {
+              "number": 97,
+              "unit": "mm"
+            },
+            "weight": {
+              "number": 73,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "power-source": [
+          "Charcoal",
+          "Propane",
+          "Firewood",
+          "Batteries",
+          "Rechargeable"
+        ],
+        "temperature-control": [
+          "Adjustable temperature"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "material": [
+          "Ceramic",
+          "Aluminum",
+          "Stainless steel"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "5l3QAc2",
+      "title": "Rambler Food Jar",
+      "description": "The YETI Rambler Food Jar is a high-performance insulated container designed to keep your cold foods cold and hot foods hot. Crafted from stainless steel with a durable DuraCoat™ finish, it features double-wall vacuum insulation for maximum temperature retention. The jar includes a leakproof commuter cap and a two-piece lid that is easy to disassemble for cleaning. Dishwasher safe and rugged, it is the ideal companion for meals on the go.",
+      "brands": [
+        {
+          "id": "VXTD",
+          "name": "YETI"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/2ae56a01-ab24-4f68-b66a-28d873c37e0a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=XY6i",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/2ae56a01-ab24-4f68-b66a-28d873c37e0a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=XY6i",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Black YETI insulated food jar shown from the front."
+        }
+      ],
+      "category": {
+        "slug": "thermoses",
+        "title": "Thermoses",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-beverage-carriers",
+            "title": "Food & Beverage Carriers"
+          },
+          {
+            "slug": "thermoses",
+            "title": "Thermoses"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Stainless steel"
+      ],
+      "key_features": [
+        "Double-wall vacuum insulated",
+        "100% leakproof MagVent lid",
+        "MagVent lid vents as it opens",
+        "Two-piece lid comes apart for easy cleaning",
+        "Dishwasher safe",
+        "Capacity: 8 oz.",
+        "DuraCoat™ Colour",
+        "Commuter Cap",
+        "16oz / 473ml Capacity"
+      ],
+      "colors": [
+        {
+          "hex": "#262626",
+          "percentage": 0.4809
+        },
+        {
+          "hex": "#4e4e4e",
+          "percentage": 0.4091
+        },
+        {
+          "hex": "#ababaa",
+          "percentage": 0.11
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/5l3QAc2-XY6i-tbzpK7?o=01KZGQ5VBBRCRP9G56VJCWPHB5&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "uk.yeti.com",
+          "price": {
+            "price": 40,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.028,
+          "dimensions": {
+            "length": null,
+            "width": null,
+            "height": {
+              "number": 10.5,
+              "unit": "cm"
+            },
+            "weight": {
+              "number": 0.46,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "closure-type": [
+          "Screw-on",
+          "Adjustable/Pull",
+          "Magnetic",
+          "Zipper"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "lid-type": [
+          "Screw-on"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "safety-certifications": [
+          "BPA-free"
+        ],
+        "thermos-handle-type": [
+          "No handle"
+        ],
+        "material": [
+          "Stainless steel"
+        ],
+        "insulation-technology": [
+          "Double-wall vacuum"
+        ]
+      },
+      "ratings": {
+        "value": 4,
+        "count": 214,
+        "source_count": 3
+      }
+    },
+    {
+      "id": "5D0vmqn",
+      "title": "Glass Food Storage Set",
+      "description": "This set of four Nest™ Glass food storage containers from Joseph Joseph offers a space-saving and versatile solution for your kitchen. The containers are made from durable borosilicate glass, making them safe for use in the freezer, oven, microwave, and dishwasher. The accompanying lids feature an easy-find, snap-together design with easy-pull tabs for convenient handling. When not in use, the containers and lids nest together to minimize storage space. Perfect for preparing, cooking, storing, and reheating food.",
+      "brands": [
+        {
+          "id": "WWSy",
+          "name": "Joseph Cook"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/31a582f1-7c8d-4cf1-b8bd-77b314c1e089?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "lifestyle",
+          "alt_text": "A hand placing a blue lid onto a clear glass food storage container."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/3b30350f-9a49-4cf3-b199-14d4447c1949?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "A set of colorful glass food storage containers with lids and a green tray."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/c7a8d4f2-fe21-4965-bd23-56cfd9a6c4b5?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "A stack of colorful glass food storage containers with matching lids."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/0b08f967-b70a-4f98-8062-c763bcf0543a?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Close-up of stacked clear glass food storage containers."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/df3c2d98-2b8e-489a-b355-c95fae54289b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Colorful plastic lids stacked together."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/5128d68d-766b-493d-9eca-2ddd6cf486fb?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "A glass food storage container with a colorful lid."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/d823e6f4-476b-4b4d-b30f-4c26409280d9?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=Lais",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "A hand interacting with a green glass food storage container."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "glass",
+        "plastic"
+      ],
+      "key_features": [
+        "Compact, space-saving design",
+        "Easy-find, snap-together lids with easy-pull tabs",
+        "Tough, borosilicate glass containers",
+        "Freezer, oven, microwave and dishwasher safe",
+        "Contains four different sized containers"
+      ],
+      "colors": [],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/5D0vmqn-Lais-tbzpK7?o=01KRRV8NC1ASAET0Z9QRY2MJXC&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "us.josephjoseph.com",
+          "price": {
+            "price": 49.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.035,
+          "dimensions": {
+            "length": {
+              "number": 27,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 20.5,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 8,
+              "unit": "cm"
+            },
+            "weight": {
+              "number": 2.5,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "lid-type": [
+          "Snap-on"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "closure-type": [
+          "Snap"
+        ],
+        "food-storage-features": [
+          "Dishwasher safe",
+          "Freezer safe",
+          "Microwave safe",
+          "Snap-lock lid",
+          "Stackable",
+          "Nested"
+        ],
+        "shape": [
+          "Rectangular"
+        ],
+        "food-storage-material": [
+          "Glass",
+          "Plastic"
+        ],
+        "pattern": [
+          "Solid"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "Z043eCX",
+      "title": "food storage basket",
+      "description": "The IKEA 365+ food storage basket is a practical and decorative mesh container designed for storing foods that benefit from room temperature and circulating air, such as fruits, vegetables, and bread. It allows you to easily see the contents through the mesh and is stackable to save space. This specific model measures 14x14x10 cm and can be paired with a matching bamboo lid.",
+      "brands": [
+        {
+          "id": "Pu7O",
+          "name": "Ikea"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/8de0f8ae-d5fe-4ade-9250-86ebc8c55208?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/f9925a00-42f5-4e60-aea9-0cdd435bf91f?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "Hero shot of a single light beige mesh food storage basket."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/ed0a13ab-a837-4265-ac9a-404d0c91affa?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "in_use",
+          "alt_text": "Hands placing a wooden lid on a mesh food storage basket."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/14f376c9-cc2e-43e6-99c8-526abbcdc5cd?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/4c475927-87db-4bd8-917c-cc3005c806d6?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Mesh food storage baskets on a metal shelving unit in a kitchen."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/8048af6f-2198-469d-a5f8-3f1eaf3c045c?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Stack of several mesh food storage baskets in different colors."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/c45a5acb-048b-47f0-8370-b40aa21f8bc7?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Close-up of the weave texture of a light beige mesh food storage basket."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/b4ed830b-db2a-48ee-bc4d-6c7f43b74d9f?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Group shot of various size mesh food storage baskets filled with vegetables."
+        }
+      ],
+      "category": {
+        "slug": "food-storage",
+        "title": "Food Storage",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          }
+        ],
+        "has_children": true
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Steel",
+        "Polyester powder coating"
+      ],
+      "key_features": [
+        "Mesh design for air circulation",
+        "Stackable for space saving",
+        "Suitable for fruits, vegetables and bread",
+        "Compatible with IKEA 365+ bamboo lid"
+      ],
+      "colors": [
+        {
+          "hex": "#988677",
+          "percentage": 0.4906
+        },
+        {
+          "hex": "#b3a598",
+          "percentage": 0.2642
+        },
+        {
+          "hex": "#f6ede3",
+          "percentage": 0.1256
+        },
+        {
+          "hex": "#d4c7bb",
+          "percentage": 0.1196
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/Z043eCX-FwdJ-tbzpK7?o=01M15J074ZQ8EGRHREBGVX5J2Z&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "ikea.gr",
+          "price": {
+            "price": 3.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": {
+            "length": {
+              "number": 14,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 14,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 10,
+              "unit": "cm"
+            },
+            "weight": null
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "pattern": [
+          "Solid"
+        ],
+        "shape": [
+          "Square"
+        ],
+        "food-storage-material": [
+          "Metal"
+        ],
+        "food-storage-features": [
+          "Stackable",
+          "Ventilated"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "oelP9XP",
+      "title": "Tritan Airtight Transparent Food Container",
+      "description": "This is a large capacity (3500ml) food storage container from the brand allevo, featuring Lock&Lock's renowned airtight sealing technology combined with a premium, highly transparent Tritan material construction. Made in Korea, it is designed for modern kitchen organization, offering durability and versatility with compatibility for freezer, refrigerator, dishwasher, and microwave use (with lid removed). The modular design allows for efficient stacking.",
+      "brands": [
+        {
+          "id": "rvjl",
+          "name": "allevo"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/01KCW36T7XVT7ZR3GP44J2HWED?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/20951c97-fc6e-4963-8c8c-e3bc8059a779?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": true,
+          "shot_type": "packaging",
+          "alt_text": "Clear rectangular glass food storage container with green gasket on the lid. Brand name nicht visible, but appears to be a set of glass containers with airtight lids."
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7203619/83/720361983_1.png",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/20951c97-fc6e-4963-8c8c-e3bc8059a779?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": false,
+          "shot_type": "packaging",
+          "alt_text": "Clear rectangular glass food storage container with green gasket on the lid. Brand name nicht visible, but appears to be a set of glass containers with airtight lids."
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7203619/83/720361983_4.png",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "Clear small rectangular container with hinged lid containing blueberries; product is a storage container."
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7203619/83/720361983_5.png",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "Collection of assorted Allevo labeled glass storage containers with various fruits and vegetables across a countertop."
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7203619/83/720361983_6.png",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/33aba98a-e158-416a-bb88-45132f78613b?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=4SSG",
+          "is_main_image": false,
+          "shot_type": "angle_view",
+          "alt_text": "Hands using kitchen tongs to lift a clear container lid from a plastic or glass container filled with liquid; shows cooking/food prep."
+        },
+        {
+          "url": "https://cdn.wconcept.com/products/resize/632x843/7203619/83/720361983_7.png",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Top-down view of multiple glass storage containers filled with different foods placed on a light surface."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-containers",
+        "title": "Food Storage Containers",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage",
+            "title": "Food Storage"
+          },
+          {
+            "slug": "food-storage-containers",
+            "title": "Food Storage Containers"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": "adult",
+      "materials": [],
+      "key_features": [
+        "3500ml capacity",
+        "Made from 100% Tritan material",
+        "Superior airtight technology",
+        "Microwave, dishwasher, freezer, and boiling water compatible",
+        "Modular stacking design"
+      ],
+      "colors": [
+        {
+          "hex": "#e7e6e3",
+          "percentage": 0.5276
+        },
+        {
+          "hex": "#b7bdb9",
+          "percentage": 0.3028
+        },
+        {
+          "hex": "#d4d2c0",
+          "percentage": 0.0883
+        },
+        {
+          "hex": "#869492",
+          "percentage": 0.0812
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/oelP9XP-4SSG-tbzpK7?o=01KCW37TP5071G4FKVDY9QJ33A&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "wconcept.com",
+          "price": {
+            "price": 18,
+            "compare_at_price": 78,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.042,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "shape": [
+          "Rectangular"
+        ],
+        "pattern": [
+          "Solid"
+        ],
+        "cleaning-instructions": [
+          "Dishwasher safe"
+        ],
+        "food-storage-features": [
+          "Airtight",
+          "Dishwasher safe",
+          "Freezer safe",
+          "Microwave safe",
+          "Modular",
+          "Reusable",
+          "Stackable"
+        ]
+      },
+      "ratings": null
+    },
+    {
+      "id": "MZyIiKH",
+      "title": "IKEA 365+ food storage basket",
+      "description": "A compact metal mesh storage basket in white designed for room-temperature food storage with airflow, part of the IKEA 365+ line. It is stackable, pairable with a bamboo lid, and suitable for displaying contents while keeping items organized in the kitchen.",
+      "brands": [
+        {
+          "id": "Pu7O",
+          "name": "Ikea"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/c409ddd5-b937-4e80-999c-f602c01ef209?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/e3141acc-0588-4f19-820c-1d6759ff24f0?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": true,
+          "shot_type": "hero",
+          "alt_text": "White metal mesh storage basket with a solid rim."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/c5de39f5-c272-4f35-9501-0365cac23193?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "White mesh basket filled with cookies on a wooden surface."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/66233c09-63ad-48aa-ba2b-9ce93a7bef97?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "on_model",
+          "alt_text": "Hands holding a white mesh storage basket."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/3a941199-8e4e-40d2-84cc-545b042685af?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Multiple metal mesh storage baskets on a metal shelving unit."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/a33dc108-1cf8-4ebd-9952-d9032b1f4a4c?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Stack of white mesh storage baskets on a white shelf."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/a10f7eaa-738e-464f-9c6a-a89f76f51611?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/a10f7eaa-738e-464f-9c6a-a89f76f51611?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "White mesh storage basket with internal compartments."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/71717567-3377-44c7-8f7c-7d9bf579e178?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": "https://cdn.trychannel3.com/cleaned/v1/71717567-3377-44c7-8f7c-7d9bf579e178?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "is_main_image": false,
+          "shot_type": "detail",
+          "alt_text": "White mesh storage basket with kitchen tools."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/95d5fa7d-28a7-45ee-8067-e61f84ad1086?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "hero",
+          "alt_text": "White metal mesh storage basket view."
+        },
+        {
+          "url": "https://cdn.trychannel3.com/c9fcb727-a55a-4ff3-8b8b-510618ef7732?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=FwdJ",
+          "cleaned_url": null,
+          "is_main_image": false,
+          "shot_type": "lifestyle",
+          "alt_text": "Assortment of various metal mesh storage baskets filled with food items."
+        }
+      ],
+      "category": {
+        "slug": "food-storage-accessories",
+        "title": "Food Storage Accessories",
+        "path": [
+          {
+            "slug": "home-garden",
+            "title": "Home & Garden"
+          },
+          {
+            "slug": "kitchen-dining",
+            "title": "Kitchen & Dining"
+          },
+          {
+            "slug": "food-storage-accessories",
+            "title": "Food Storage Accessories"
+          }
+        ],
+        "has_children": true
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "Steel",
+        "Polyester powder coating"
+      ],
+      "key_features": [
+        "Possible to nest",
+        "Stackable both without and with a lid",
+        "Decorative to have on display while being able to see what you store through the mesh"
+      ],
+      "colors": [
+        {
+          "hex": "#c5c3b7",
+          "percentage": 0.6207
+        },
+        {
+          "hex": "#e0dfd5",
+          "percentage": 0.2212
+        },
+        {
+          "hex": "#fefefd",
+          "percentage": 0.1581
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/MZyIiKH-FwdJ-tbzpK7?o=01KJF5RG2P1KS9NV1GJRV8DVPT&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "ikea.com",
+          "price": {
+            "price": 3.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0.056,
+          "dimensions": {
+            "length": {
+              "number": 14,
+              "unit": "cm"
+            },
+            "width": {
+              "number": 14,
+              "unit": "cm"
+            },
+            "height": {
+              "number": 10,
+              "unit": "cm"
+            },
+            "weight": {
+              "number": 0.13,
+              "unit": "kg"
+            }
+          }
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "pattern": [
+          "Solid",
+          "Diamond"
+        ],
+        "food-storage-material": [
+          "Metal"
+        ]
+      },
+      "ratings": {
+        "value": 4.8,
+        "count": 118,
+        "source_count": 1
+      }
+    },
+    {
+      "id": "agP6xY3",
+      "title": "ABC Emergency Team",
+      "description": "A child-friendly plastic emergency vehicle toy from the ABC Emergency Team collection. This toy features a stylized design with large eyes, bright colors, and integrated lights to engage young children in imaginative play.",
+      "brands": [
+        {
+          "id": "rFLj",
+          "name": "Dickie Toys"
+        }
+      ],
+      "images": [
+        {
+          "url": "https://cdn.trychannel3.com/f96dda3e-abe6-4cf6-90ff-10a8a5406a45?aid=01M6TPHGGBAFMW1TWCMDJW8KPB&mid=ictk",
+          "cleaned_url": null,
+          "is_main_image": true,
+          "shot_type": "lifestyle",
+          "alt_text": "Group shot of three different colored ABC Emergency Team toy vehicles."
+        }
+      ],
+      "category": {
+        "slug": "toy-cars",
+        "title": "Toy Cars",
+        "path": [
+          {
+            "slug": "toys-games",
+            "title": "Toys & Games"
+          },
+          {
+            "slug": "toys",
+            "title": "Toys"
+          },
+          {
+            "slug": "play-vehicles",
+            "title": "Play Vehicles"
+          },
+          {
+            "slug": "toy-cars",
+            "title": "Toy Cars"
+          }
+        ],
+        "has_children": false
+      },
+      "gender": null,
+      "age": null,
+      "materials": [
+        "plastic"
+      ],
+      "key_features": [
+        "Integrated lights",
+        "Child-friendly stylized design",
+        "Part of the ABC Emergency Team assortment"
+      ],
+      "colors": [
+        {
+          "hex": "#97a1a8",
+          "percentage": 0.2919
+        },
+        {
+          "hex": "#414041",
+          "percentage": 0.1451
+        },
+        {
+          "hex": "#2c74a6",
+          "percentage": 0.138
+        },
+        {
+          "hex": "#9cbeca",
+          "percentage": 0.1359
+        },
+        {
+          "hex": "#e2e9ae",
+          "percentage": 0.1087
+        },
+        {
+          "hex": "#cecba3",
+          "percentage": 0.1004
+        },
+        {
+          "hex": "#163450",
+          "percentage": 0.0799
+        }
+      ],
+      "offers": [
+        {
+          "url": "https://buy.trychannel3.com/agP6xY3-ictk-tbzpK7?o=01M0SXFCVRF28EBAZN26CC1QZJ&aid=01M6TPHGGBAFMW1TWCMDJW8KPB",
+          "domain": "dickietoys.com",
+          "price": {
+            "price": 7.99,
+            "compare_at_price": null,
+            "currency": "EUR"
+          },
+          "availability": "InStock",
+          "condition": "new",
+          "max_commission_rate": 0,
+          "dimensions": null
+        }
+      ],
+      "variants": null,
+      "structured_attributes": {
+        "recommended-age-group": [
+          "1 year or older"
+        ],
+        "play-vehicle-scale": [
+          "Not to scale"
+        ],
+        "play-vehicle-propulsion": [
+          "Push and go"
+        ],
+        "toy-game-material": [
+          "Plastic"
+        ]
+      },
+      "ratings": null
+    }
+  ],
+  "next_page_token": "eyJjYWNoZV9rZXkiOiAic2VhcmNoOmNjYjBjY2RlYmY2MDkzY2IiLCAib2Zmc2V0IjogMjB9"
+}

@@ -12,13 +12,15 @@ Set these server-side in the ignored `.env` file:
 PAYPAL_CLIENT_ID=
 PAYPAL_CLIENT_SECRET=
 PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+PAYPAL_WEBHOOK_ID=
 WEB_ORIGIN=http://localhost:3000
 DATABASE_URL=
 ```
 
 Create a REST app under the **Sandbox** tab in the PayPal Developer Dashboard. Use its Sandbox client ID and
-secret. Create a Sandbox Personal buyer account for approval. `PAYPAL_WEBHOOK_ID` is for Member 2's separately
-owned webhook work; it is not required for this donor create/approve/capture flow.
+secret. Create a Sandbox Personal buyer account for approval. Register the Sandbox webhook after deployment and
+then set its webhook ID in the server-side `PAYPAL_WEBHOOK_ID` variable. The handler fails closed until this value
+is configured; it is intentionally left blank in `.env.example` and is not needed for order creation or capture.
 
 ## Create, approve, capture
 
@@ -61,6 +63,18 @@ the captured state. Reaching the return URL alone never signals success.
 
 The cancel URL returns to `/donate?state=cancelled`; this displays cancellation without changing the Donation to
 `CAPTURED`.
+
+## PayPal Sandbox webhooks
+
+`POST /api/payments/webhooks/paypal` preserves the original JSON bytes, then calls PayPal's Sandbox
+`/v1/notifications/verify-webhook-signature` endpoint through the shared OAuth client. No event is processed unless
+PayPal returns `verification_status: SUCCESS`. Verified event IDs are recorded in `WebhookEvent` and processed in
+the same transaction so retries do not repeat donation transitions.
+
+The donation handler supports `CHECKOUT.ORDER.APPROVED` (`CREATED` → `APPROVED`),
+`PAYMENT.CAPTURE.COMPLETED` (`CREATED`/`APPROVED` → `CAPTURED` after order, capture ID, amount and currency
+validation), and `PAYMENT.CAPTURE.DENIED` (`CREATED`/`APPROVED` → `FAILED`). Registration and live webhook delivery
+verification are deployment steps and have not been completed locally.
 
 ## API endpoints
 

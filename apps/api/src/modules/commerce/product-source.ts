@@ -21,6 +21,17 @@ function validCategory(value: unknown): value is NeedCategory {
   return typeof value === "string" && ["food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport", "other"].includes(value);
 }
 
+function normalizeAvailability(value: unknown): Availability {
+  if (typeof value !== "string") return "unknown";
+  const normalized = value.toLowerCase().replace(/[\s_-]/g, "");
+  if (normalized === "instock" || normalized === "available") return "available";
+  if (normalized === "limited") return "limited";
+  if (normalized === "outofstock" || normalized === "unavailable") return "unavailable";
+  return "unknown";
+}
+
+type Channel3SearchResponse = { products?: unknown[] };
+
 export class Channel3Source implements ProductSource {
   constructor(private readonly apiKey = env.CHANNEL3_API_KEY, private readonly fetchImpl: typeof fetch = fetch) {}
   async search(request: CommerceRequest): Promise<ProductCandidate[]> {
@@ -32,16 +43,22 @@ export class Channel3Source implements ProductSource {
         signal: AbortSignal.timeout(8_000),
       });
       if (!response.ok) return [];
-      const body = await response.json() as { data?: unknown[] };
-      return (body.data ?? []).flatMap((raw): ProductCandidate[] => {
+      const body = await response.json() as Channel3SearchResponse;
+      return (body.products ?? []).flatMap((raw): ProductCandidate[] => {
         if (!raw || typeof raw !== "object") return [];
         const item = raw as { id?: unknown; title?: unknown; description?: unknown; category?: unknown; offers?: unknown[]; url?: unknown };
-        const offer = item.offers?.find((value) => value && typeof value === "object") as { price?: { price?: unknown; amount?: unknown; currency?: unknown; currency_code?: unknown }; url?: unknown; merchant?: { name?: unknown; domain?: unknown }; domain?: unknown } | undefined;
+        const offer = item.offers?.find((value) => value && typeof value === "object") as { price?: { price?: unknown; amount?: unknown; currency?: unknown; currency_code?: unknown }; url?: unknown; availability?: unknown; merchant?: { name?: unknown; domain?: unknown }; domain?: unknown } | undefined;
         const price = Number(offer?.price?.price ?? offer?.price?.amount);
         const currency = String(offer?.price?.currency_code ?? offer?.price?.currency ?? request.currency);
-        const productText = `${item.category ?? ""} ${item.title ?? ""} ${item.description ?? ""}`.toLowerCase().replaceAll("_", " ");
+        const categoryDetails = item.category && typeof item.category === "object" && !Array.isArray(item.category)
+          ? item.category as { slug?: unknown; title?: unknown }
+          : undefined;
+        const categoryValue = typeof item.category === "string" ? item.category : categoryDetails?.slug;
+        const categoryText = [typeof item.category === "string" ? item.category : undefined, categoryDetails?.slug, categoryDetails?.title]
+          .filter((value): value is string => typeof value === "string").join(" ");
+        const productText = `${categoryText} ${item.title ?? ""} ${item.description ?? ""}`.toLowerCase().replaceAll("_", " ");
         const aliases: Record<NeedCategory, string[]> = { food: ["food", "grocery", "rice", "meal", "lentil", "oat"], water: ["water", "filter", "purif"], medicine: ["medicine", "medical", "health", "first aid"], shelter: ["shelter", "tarp", "tent"], hygiene: ["hygiene", "soap", "sanitary", "toothbrush"], baby_supplies: ["baby", "infant", "diaper", "nappy"], clothing: ["clothing", "apparel", "sock", "blanket", "coat"], transport: ["transport", "transit", "bus"], other: ["household", "battery", "flashlight"] };
-        const category = validCategory(item.category) ? item.category : request.needs.find((need) => aliases[need].some((alias) => productText.includes(alias)));
+        const category = validCategory(categoryValue) ? categoryValue : request.needs.find((need) => aliases[need].some((alias) => productText.includes(alias)));
         if (typeof item.id !== "string" || typeof item.title !== "string" || !Number.isFinite(price) || price <= 0 || currency !== request.currency || !category) return [];
         const rawUrl = typeof offer?.url === "string" ? offer.url : typeof item.url === "string" ? item.url : undefined;
         let url: string | undefined;
@@ -52,7 +69,7 @@ export class Channel3Source implements ProductSource {
           } catch { /* Ignore malformed purchase links while keeping the product candidate. */ }
         }
         return [{ id: `channel3:${item.id}`, name: item.title, description: typeof item.description === "string" ? item.description : "Product discovered through Channel3",
-          category, price, currency, merchantId: `channel3:${String(offer?.merchant?.domain ?? offer?.domain ?? "unknown")}`, merchantName: String(offer?.merchant?.name ?? offer?.merchant?.domain ?? offer?.domain ?? "Online retailer"), source: "channel3", availability: "unknown", ...(url ? { purchaseUrl: url } : {}) }];
+          category, price, currency, merchantId: `channel3:${String(offer?.merchant?.domain ?? offer?.domain ?? "unknown")}`, merchantName: String(offer?.merchant?.name ?? offer?.merchant?.domain ?? offer?.domain ?? "Online retailer"), source: "channel3", availability: normalizeAvailability(offer?.availability), ...(url ? { purchaseUrl: url } : {}) }];
       });
     } catch { return []; }
   }
