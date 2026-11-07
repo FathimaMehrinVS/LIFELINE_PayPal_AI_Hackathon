@@ -1,48 +1,48 @@
 @import "tailwindcss";
 
 /*
- * LIFELINE colour theme: calm and trustworthy, with red kept for what is truly critical.
+ * LIFELINE colour theme: trustworthy blue on a light background, red kept for what is truly critical.
  * The pages use Tailwind's built-in colour names (slate, indigo, emerald, amber, red, …). Redefining those
- * palettes here themes every page at once, without editing each page. So in this app "indigo" means teal.
- * Ink #0F2A3D · Teal #0E7C7B · Green #2F9E6A · Amber #E8A33D · Coral #D64545 · Paper #F7F5F0
+ * palettes here themes every page at once, without editing each page. So in this app "indigo" means blue.
+ * Navy #0F2547 · Blue #1C4FA8 · Green #22A06B · Amber #E8A33D · Coral #D64545 · Background #F4F7FB
  */
 @theme {
-  /* Navy-tinted neutrals: 50 is the warm paper background, 900 the ink navy */
-  --color-slate-50: #F7F5F0;
-  --color-slate-100: #EFEDE7;
-  --color-slate-200: #E3E2DC;
-  --color-slate-300: #C9CDCF;
-  --color-slate-400: #98A2AC;
-  --color-slate-500: #6B7884;
-  --color-slate-600: #4E5D6A;
-  --color-slate-700: #364756;
-  --color-slate-800: #213646;
-  --color-slate-900: #0F2A3D;
-  --color-slate-950: #0A1E2C;
-  /* Primary: lifeline teal (buttons, links, selection) */
-  --color-indigo-50: #EEF7F6;
-  --color-indigo-100: #D5ECEA;
-  --color-indigo-200: #ABD8D4;
-  --color-indigo-300: #78BEB9;
-  --color-indigo-400: #45A19C;
-  --color-indigo-500: #1F8A86;
-  --color-indigo-600: #0E7C7B;
-  --color-indigo-700: #0B6665;
-  --color-indigo-800: #0A5251;
-  --color-indigo-900: #0A4241;
-  --color-indigo-950: #052A2A;
-  /* Success: calm green (ready, approved, passed) */
-  --color-emerald-50: #EEF8F2;
-  --color-emerald-100: #D4EFDF;
-  --color-emerald-200: #A9DEC0;
-  --color-emerald-300: #77C79D;
-  --color-emerald-400: #4BAF7D;
-  --color-emerald-500: #2F9E6A;
-  --color-emerald-600: #24845A;
-  --color-emerald-700: #1E6A4A;
-  --color-emerald-800: #1A543C;
-  --color-emerald-900: #154532;
-  --color-emerald-950: #0B271C;
+  /* Cool neutrals: 50 is the light blue-grey background, 900 the navy text */
+  --color-slate-50: #F4F7FB;
+  --color-slate-100: #EAF0F7;
+  --color-slate-200: #DCE4EE;
+  --color-slate-300: #C3CEDC;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #66778C;
+  --color-slate-600: #4A5A6F;
+  --color-slate-700: #354559;
+  --color-slate-800: #22324A;
+  --color-slate-900: #0F2547;
+  --color-slate-950: #0A1A33;
+  /* Primary: trust blue (buttons, links, selection) */
+  --color-indigo-50: #EEF4FC;
+  --color-indigo-100: #D9E6F8;
+  --color-indigo-200: #B5CDF1;
+  --color-indigo-300: #85ABE6;
+  --color-indigo-400: #5585D6;
+  --color-indigo-500: #2F66C4;
+  --color-indigo-600: #1C4FA8;
+  --color-indigo-700: #173F88;
+  --color-indigo-800: #15346E;
+  --color-indigo-900: #132C5A;
+  --color-indigo-950: #0B1A38;
+  /* Success: fresh green (ready, approved, passed) */
+  --color-emerald-50: #ECF8F2;
+  --color-emerald-100: #D2EFE0;
+  --color-emerald-200: #A6DFC2;
+  --color-emerald-300: #6FC79D;
+  --color-emerald-400: #3FAE7B;
+  --color-emerald-500: #22A06B;
+  --color-emerald-600: #1B8457;
+  --color-emerald-700: #186A47;
+  --color-emerald-800: #16553A;
+  --color-emerald-900: #134631;
+  --color-emerald-950: #09281B;
   /* Attention: signal amber (needs information, review) */
   --color-amber-50: #FDF7EC;
   --color-amber-100: #FBEACB;
@@ -67,18 +67,18 @@
   --color-red-800: #84262C;
   --color-red-900: #6E242A;
   --color-red-950: #3C0F13;
-  /* Information: muted teal-blue (notes, sample-data banners) */
-  --color-sky-50: #EEF5F8;
-  --color-sky-100: #D6E8EF;
-  --color-sky-200: #AFD1DF;
-  --color-sky-300: #7FB4CA;
-  --color-sky-400: #4F94B0;
-  --color-sky-500: #307896;
-  --color-sky-600: #24617C;
-  --color-sky-700: #1F4F66;
-  --color-sky-800: #1D4255;
-  --color-sky-900: #1B3747;
-  --color-sky-950: #10222D;
+  /* Information: light blue (notes, chips, sample-data banners) */
+  --color-sky-50: #F0F6FD;
+  --color-sky-100: #DDEBFA;
+  --color-sky-200: #BCD7F4;
+  --color-sky-300: #8FBBEB;
+  --color-sky-400: #5E9ADF;
+  --color-sky-500: #3A7CCB;
+  --color-sky-600: #2A63AD;
+  --color-sky-700: #234F8A;
+  --color-sky-800: #1F4370;
+  --color-sky-900: #1C385C;
+  --color-sky-950: #12233B;
   /* Same coral as red */
   --color-rose-50: #FDF1F0;
   --color-rose-100: #FADFDD;
@@ -92,17 +92,17 @@
   --color-rose-900: #6E242A;
   --color-rose-950: #3C0F13;
   /* Same as sky */
-  --color-blue-50: #EEF5F8;
-  --color-blue-100: #D6E8EF;
-  --color-blue-200: #AFD1DF;
-  --color-blue-300: #7FB4CA;
-  --color-blue-400: #4F94B0;
-  --color-blue-500: #307896;
-  --color-blue-600: #24617C;
-  --color-blue-700: #1F4F66;
-  --color-blue-800: #1D4255;
-  --color-blue-900: #1B3747;
-  --color-blue-950: #10222D;
+  --color-blue-50: #F0F6FD;
+  --color-blue-100: #DDEBFA;
+  --color-blue-200: #BCD7F4;
+  --color-blue-300: #8FBBEB;
+  --color-blue-400: #5E9ADF;
+  --color-blue-500: #3A7CCB;
+  --color-blue-600: #2A63AD;
+  --color-blue-700: #234F8A;
+  --color-blue-800: #1F4370;
+  --color-blue-900: #1C385C;
+  --color-blue-950: #12233B;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }

@@ -21,16 +21,16 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 // The LIFELINE theme colours (see app/globals.css), passed to AG Grid's Quartz theme.
 const theme = themeQuartz.withParams({
-  accentColor: "#0E7C7B",
+  accentColor: "#1C4FA8",
   backgroundColor: "#FFFFFF",
-  foregroundColor: "#0F2A3D",
-  borderColor: "#E3E2DC",
+  foregroundColor: "#0F2547",
+  borderColor: "#DCE4EE",
   fontFamily: "inherit",
-  headerBackgroundColor: "#EFEDE7",
-  headerTextColor: "#0F2A3D",
+  headerBackgroundColor: "#EAF0F7",
+  headerTextColor: "#0F2547",
   headerFontWeight: 600,
-  rowHoverColor: "#EEF7F6",
-  selectedRowBackgroundColor: "#D5ECEA",
+  rowHoverColor: "#EEF4FC",
+  selectedRowBackgroundColor: "#D9E6F8",
   rowHeight: 52,
   headerHeight: 44,
   wrapperBorderRadius: 16,
@@ -79,7 +79,6 @@ function StatusCell({ data }: ICellRendererParams<CaseRow>) {
       title={missing_information.length > 0 ? `Waiting for: ${missing_information.join(", ")}` : undefined}
     >
       {SHORT_STATUS[status]}
-      {missing_information.length > 0 && ` (${missing_information.length})`}
     </span>
   );
 }
@@ -156,7 +155,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         comparator: (a: Urgency, b: Urgency) => URGENCY_RANK[a] - URGENCY_RANK[b],
         sort: "desc",
         pinned: "left",
-        width: 115,
+        width: 118,
       },
       {
         headerName: "Situation",
@@ -164,28 +163,28 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         valueGetter: (p) => p.data?.case.situation.summary,
         tooltipValueGetter: (p) => p.value,
         flex: 1,
-        minWidth: 180,
+        minWidth: 130,
       },
       {
         headerName: "Needs",
         colId: "needs",
         valueGetter: (p) => p.data?.case.situation.needs.join(" "),
         cellRenderer: NeedsCell,
-        minWidth: 140,
+        width: 152,
       },
       {
         headerName: "Location",
         colId: "location",
         valueGetter: (p) => p.data?.case.situation.location ?? "",
         filter: "agTextColumnFilter",
-        minWidth: 140,
+        width: 115,
       },
       {
         headerName: "Status",
         colId: "status",
         valueGetter: (p) => (p.data ? STATUS_LABELS[p.data.case.status] : ""),
         cellRenderer: StatusCell,
-        width: 135,
+        width: 122,
       },
       {
         headerName: "Route",
@@ -194,7 +193,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
           const route = p.data && recommendedRoute(p.data.case);
           return route ? routeName(route.route_id) : "";
         },
-        width: 100,
+        width: 90,
       },
       {
         headerName: "Sent",
@@ -203,7 +202,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         valueGetter: (p) => p.data?.case.situation.budget,
         valueFormatter: (p) => formatMoney(p.value, p.data?.case.situation.currency),
         filter: "agNumberColumnFilter",
-        width: 100,
+        width: 92,
       },
       {
         headerName: "Usable",
@@ -212,7 +211,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         type: "rightAligned",
         valueGetter: (p) => (p.data ? recommendedRoute(p.data.case)?.usable_value : undefined),
         valueFormatter: (p) => formatMoney(p.value, p.data?.case.finance?.currency),
-        width: 100,
+        width: 92,
       },
       {
         headerName: "Basket",
@@ -220,16 +219,17 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         type: "rightAligned",
         valueGetter: (p) => p.data?.case.commerce?.total,
         valueFormatter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
-        width: 100,
+        width: 92,
       },
       {
-        headerName: "NGO approval",
+        headerName: "Approval",
+        headerTooltip: "NGO approval",
         colId: "approval",
         cellRenderer: ApprovalCell,
         cellRendererParams: { onApprove },
         sortable: false,
         pinned: "right",
-        width: 165,
+        width: 125,
       },
     ],
     [onApprove],
