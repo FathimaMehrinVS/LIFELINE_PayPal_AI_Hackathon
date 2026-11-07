@@ -19,23 +19,31 @@ import { type CaseRow, STATUS_LABELS, URGENCY_RANK, formatMoney, recommendedRout
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+// The LIFELINE theme colours (see app/globals.css), passed to AG Grid's Quartz theme.
 const theme = themeQuartz.withParams({
-  accentColor: "#4f46e5",
+  accentColor: "#0E7C7B",
+  backgroundColor: "#FFFFFF",
+  foregroundColor: "#0F2A3D",
+  borderColor: "#E3E2DC",
   fontFamily: "inherit",
-  headerBackgroundColor: "#f8fafc",
+  headerBackgroundColor: "#EFEDE7",
+  headerTextColor: "#0F2A3D",
   headerFontWeight: 600,
-  rowHoverColor: "#eef2ff",
-  selectedRowBackgroundColor: "#e0e7ff",
-  wrapperBorderRadius: 8,
+  rowHoverColor: "#EEF7F6",
+  selectedRowBackgroundColor: "#D5ECEA",
+  rowHeight: 52,
+  headerHeight: 44,
+  wrapperBorderRadius: 16,
 });
 
 export type StatusFilter = "all" | "complete" | "needs_information" | "no_usable_route";
 
-const URGENCY_STYLES: Record<Urgency, string> = {
-  low: "bg-slate-100 text-slate-700",
-  medium: "bg-sky-100 text-sky-800",
-  high: "bg-amber-100 text-amber-900",
-  critical: "bg-red-600 text-white",
+/** Dot colour and text colour per urgency: red only for critical. */
+const URGENCY_STYLES: Record<Urgency, { dot: string; text: string }> = {
+  low: { dot: "bg-slate-400", text: "text-slate-600" },
+  medium: { dot: "bg-indigo-500", text: "text-indigo-700" },
+  high: { dot: "bg-amber-400", text: "text-amber-700" },
+  critical: { dot: "bg-red-500", text: "text-red-600" },
 };
 
 /** Short labels for the grid; the filter buttons use the full STATUS_LABELS. */
@@ -47,13 +55,19 @@ const SHORT_STATUS: Record<CaseRow["case"]["status"], string> = {
 
 const STATUS_STYLES: Record<CaseRow["case"]["status"], string> = {
   complete: "bg-emerald-100 text-emerald-800",
-  needs_information: "bg-amber-100 text-amber-900",
+  needs_information: "bg-amber-100 text-amber-800",
   no_usable_route: "bg-red-100 text-red-800",
 };
 
 function UrgencyCell({ value }: ICellRendererParams<CaseRow, Urgency>) {
   if (!value) return null;
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${URGENCY_STYLES[value]}`}>{value}</span>;
+  const style = URGENCY_STYLES[value];
+  return (
+    <span className={`flex h-full items-center gap-2 text-sm font-semibold capitalize ${style.text}`}>
+      <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} aria-hidden="true" />
+      {value}
+    </span>
+  );
 }
 
 function StatusCell({ data }: ICellRendererParams<CaseRow>) {
@@ -61,7 +75,7 @@ function StatusCell({ data }: ICellRendererParams<CaseRow>) {
   const { status, missing_information } = data.case;
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[status]}`}
       title={missing_information.length > 0 ? `Waiting for: ${missing_information.join(", ")}` : undefined}
     >
       {SHORT_STATUS[status]}
@@ -74,7 +88,7 @@ function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
   return (
     <span className="flex h-full flex-wrap content-center items-center gap-1">
       {data?.case.situation.needs.map((need) => (
-        <span key={need} className="rounded bg-indigo-50 px-1.5 text-xs text-indigo-800">
+        <span key={need} className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium capitalize text-sky-800 ring-1 ring-sky-100">
           {need.replace("_", " ")}
         </span>
       ))}
@@ -90,7 +104,7 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
   if (!data) return null;
   const { approval } = data;
   if (approval?.state === "approved") {
-    return <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">Approved</span>;
+    return <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">✓ Approved</span>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-400">Not ready</span>;
   return (
@@ -102,7 +116,7 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
           event.stopPropagation();
           onApprove(data);
         }}
-        className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:bg-slate-300"
+        className="rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:bg-slate-300"
       >
         {approval?.state === "pending" ? "Approving…" : approval?.state === "error" ? "Retry" : "Approve"}
       </button>
@@ -118,8 +132,8 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
 /** Coloured left edge by urgency, so critical cases stand out while scrolling. */
 function getRowStyle({ data }: RowClassParams<CaseRow>): RowStyle | undefined {
   const urgency = data?.case.situation.urgency;
-  if (urgency === "critical") return { backgroundColor: "#fef2f2", boxShadow: "inset 4px 0 0 #dc2626" };
-  if (urgency === "high") return { boxShadow: "inset 4px 0 0 #f59e0b" };
+  if (urgency === "critical") return { backgroundColor: "#FDF1F0", boxShadow: "inset 4px 0 0 #D64545" };
+  if (urgency === "high") return { boxShadow: "inset 4px 0 0 #E8A33D" };
   return undefined;
 }
 

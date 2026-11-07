@@ -64,7 +64,7 @@ export function SituationResultView({ result }: { result: SituationResult }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${URGENCY_STYLES[result.urgency]}`}>
             {result.urgency} urgency
@@ -81,7 +81,7 @@ export function SituationResultView({ result }: { result: SituationResult }) {
             <dd className="mt-1 flex flex-wrap gap-1.5">
               {result.needs.length === 0 && <span className="text-slate-500">None stated</span>}
               {result.needs.map((need) => (
-                <span key={need} className="rounded-md bg-indigo-50 px-2 py-0.5 text-sm text-indigo-800">
+                <span key={need} className="rounded-full bg-sky-50 px-3 py-0.5 text-sm font-medium capitalize text-sky-800 ring-1 ring-sky-100">
                   {NEED_LABELS[need] ?? need}
                 </span>
               ))}
@@ -104,7 +104,7 @@ export function SituationResultView({ result }: { result: SituationResult }) {
           {accessKeys.map((key) => {
             const value = result.access[key];
             return (
-              <li key={key} className={`rounded-lg border p-3 ${AVAILABILITY_STYLES[value]}`}>
+              <li key={key} className={`rounded-xl border p-3 ${AVAILABILITY_STYLES[value]}`}>
                 <div className="text-sm font-medium">{ACCESS_LABELS[key]}</div>
                 <div className="text-xs">{AVAILABILITY_TEXT[value]}</div>
               </li>
@@ -114,7 +114,7 @@ export function SituationResultView({ result }: { result: SituationResult }) {
       </section>
 
       {result.missing_information.length > 0 && (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <h2 className="font-semibold text-amber-900">We still need to know</h2>
           <p className="mb-2 text-sm text-amber-800">
             LIFELINE never fills these in by guessing. Asking for them gives better routes and baskets.

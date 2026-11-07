@@ -66,7 +66,7 @@ export default function SituationPage() {
         </p>
       </header>
 
-      <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
           <label htmlFor="message" className="mb-1 block text-sm font-medium">
             What is happening?
@@ -79,7 +79,7 @@ export default function SituationPage() {
             rows={5}
             required
             placeholder="e.g. My parents' bank is closed, the internet is intermittent. I have €300. They need food and medicine."
-            className="w-full rounded-md border border-slate-300 p-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-xl border border-slate-300 p-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
           />
           <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <div className="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@ export default function SituationPage() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Town or district"
-              className="w-full rounded-md border border-slate-300 p-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-xl border border-slate-300 p-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
           </div>
           <div>
@@ -123,7 +123,7 @@ export default function SituationPage() {
               value={currency}
               onChange={(e) => setCurrency(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3))}
               placeholder="3-letter code"
-              className="w-full rounded-md border border-slate-300 p-2 uppercase focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-xl border border-slate-300 p-2 uppercase focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
           </div>
         </div>
@@ -131,14 +131,14 @@ export default function SituationPage() {
         <button
           type="submit"
           disabled={loading || message.trim() === ""}
-          className="rounded-md bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="rounded-full bg-indigo-600 px-6 py-2.5 shadow-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {loading ? "Analysing…" : "Analyse"}
         </button>
       </form>
 
       <div aria-live="polite">
-        {error && <p className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
+        {error && <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
         {loading && <p className="text-slate-500">Reading the message… this takes a few seconds.</p>}
         {result && !loading && <SituationResultView result={result} />}
       </div>
