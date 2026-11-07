@@ -12,7 +12,7 @@ export const casesRouter = Router();
 
 casesRouter.post("/", validateBody(SituationRequestSchema), async (req, res) => {
   const result = await runCase(`case_${randomUUID()}`, req.body, caseModules);
-  await caseStore.save(result);
+  await caseStore.save(result, req.body);
   res.status(201).json(result);
 });
 

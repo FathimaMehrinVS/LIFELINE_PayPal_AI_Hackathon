@@ -392,6 +392,29 @@ npm install && npm test && git push
 ### Still open
 
 - `POST /api/allocations/approve` (Member 2) still answers 501, so the dashboard's Approve shows "Retry · Not merged".
-- Saving finance results needs an `AssistanceRequest` row first (her `saveFinancialAssessment(requestId, …)`); my
-  case store is still in memory. Next: a Prisma case store that creates the request, then saves both assessments.
 - Render deployment, demo script, video, Devpost write-up.
+
+### Saving cases to Supabase (7 Nov)
+
+- Found that Member 2's `AidAllocation.requestId` is a foreign key to `AssistanceRequest`, so **Approve can only work
+  if each case is a real database row**. That made the database case store the next essential piece.
+- `createPrismaCaseStore()` in `case-store.ts`, chosen automatically when `DATABASE_URL` is set (memory otherwise):
+  - `AssistanceRequest` with **id = case_id**, original message, and status `AWAITING_APPROVAL` / `ANALYZED` / `ROUTED`
+  - `SituationAssessment` (nested create), `FinancialAssessment` through **Member 2's own `saveFinancialAssessment()`**
+    as her README asked, `Basket` + `BasketItem` rows
+  - the full `CaseResult` in an `AuditLog` entry (`case.orchestrated`); the dashboard list reads from there
+  - if a later step fails, the half-saved request is deleted (assessments and basket go with it by cascade)
+- **No schema change**, so no shared PR needed.
+- Tests: 5 with a stub Prisma client. **112 tests** pass. Real round trip against Supabase with a synthetic case:
+  rows written, case listed back deep-equal, test rows deleted afterwards.
+
+#### 24. The round trip said "not identical" when it was
+- Compared `JSON.stringify` of both. Postgres `jsonb` stores keys in its own order, so the strings differed while the
+  data was the same. `isDeepStrictEqual` → equal.
+- **Lesson:** compare data, not its text form.
+
+#### 25. The table can't hold the whole case
+- `Basket` has no column for alternatives or item availability, and nothing stores the case status or the
+  Orchestrator's missing information. Options: change the shared schema (a PR and a migration for everyone) or keep
+  the whole result as JSON in the audit log. Chose the audit log: no migration, nothing lost, and the normal tables
+  are still filled for the modules that use them.
