@@ -154,13 +154,13 @@ Merge `main` into your branch first.
     since donations are now linked to an already-approved allocation
   - store an `AidAllocation` with `APPROVED`, the approver and the time; write an `AuditLog` row
   - a payout may run only for an `APPROVED` allocation
-- [ ] **Payouts** `integrations/paypal/payouts.ts` (2 h)
-  - if Member 3's Day 1 check says Payouts is enabled: `POST /v1/payments/payouts`, `mode: "sandbox"`
-  - otherwise: store a `Payout` with `mode: "SIMULATED"` and return `mode: "simulated"`. The UI must say **"Demo
-    fallback: simulated payout"**.
-  - unit tests with a mocked `fetch`
+- [x] **Assistance disbursement** `modules/finance/disbursement.service.ts`
+  - current implementation stores a `Payout` with `mode: "SIMULATED"` after checking captured campaign funds;
+    no PayPal payout call is made and the UI explicitly says that no money was transferred.
+  - a real payout integration remains unimplemented and requires a supported/verified payout path.
 
-**Checkpoint tonight:** approve → payout works from Member 1's dashboard; a replayed webhook doesn't duplicate.
+**Checkpoint:** approve → captured donation → labelled simulated disbursement works from Member 1's dashboard; a
+replayed webhook doesn't duplicate.
 
 ### Day 4 · 9 Nov · honesty + testing (~5.5 h)
 

@@ -103,6 +103,9 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
   if (!data) return null;
   const { approval } = data;
   if (approval?.state === "approved") {
+    if (approval.result.status === "disbursed") {
+      return <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900" title="Simulated demo disbursement; no money was transferred">Demo disbursed</span>;
+    }
     return <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">✓ Approved</span>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-400">Not ready</span>;

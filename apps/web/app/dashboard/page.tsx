@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ApiRequestError, api } from "../../services/api";
 import { SituationResultView } from "../situation/situation-result";
-import { type Approval, type CaseRow, STATUS_LABELS, formatMoney, recommendedRoute, routeName } from "./case-row";
+import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, formatMoney, recommendedRoute, routeName } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
 // Owner: Member 1 (feature/situation-agent). NGO dashboard: triage cases and approve aid.
@@ -64,7 +64,7 @@ function Stat({ label, value, total, tone, symbol }: { label: string; value: num
   );
 }
 
-function CaseDetail({ row, onClose }: { row: CaseRow; onClose: () => void }) {
+function CaseDetail({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
   const { finance, commerce } = row.case;
   const route = recommendedRoute(row.case);
   return (
@@ -104,12 +104,43 @@ function CaseDetail({ row, onClose }: { row: CaseRow; onClose: () => void }) {
         </div>
       )}
       {row.approval?.state === "approved" && (
-        <Link
-          href={`/donate?allocation_id=${encodeURIComponent(row.approval.result.allocation_id)}&amount=${encodeURIComponent(String(row.approval.result.amount))}&currency=${encodeURIComponent(row.approval.result.currency)}&case_id=${encodeURIComponent(row.approval.result.case_id)}`}
-          className="inline-flex rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-        >
-          Start donation for this approved case
-        </Link>
+        <div className="space-y-3">
+          {row.approval.result.status === "approved" && (
+            <Link
+              href={`/donate?allocation_id=${encodeURIComponent(row.approval.result.allocation_id)}&amount=${encodeURIComponent(String(row.approval.result.amount))}&currency=${encodeURIComponent(row.approval.result.currency)}&case_id=${encodeURIComponent(row.approval.result.case_id)}`}
+              className="inline-flex rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Start donation for this approved case
+            </Link>
+          )}
+
+          {row.approval.result.status === "approved" ? (
+            <section className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <h3 className="font-semibold text-amber-950">Demo fallback: simulated disbursement</h3>
+              <p className="mt-1 text-sm text-amber-900">This records an internal demo state only. It does not send money through PayPal or transfer funds to the recipient.</p>
+              {row.disbursement?.state === "complete" ? (
+                <p role="status" className="mt-3 text-sm font-semibold text-amber-950">{row.disbursement.result.notice ?? "Simulated disbursement recorded. No money was transferred to the recipient."}</p>
+              ) : row.disbursement?.state === "error" ? (
+                <p role="alert" className="mt-3 text-sm text-red-800">{row.disbursement.message}</p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={row.disbursement?.state === "pending"}
+                  onClick={() => onDisburse(row)}
+                  className="mt-3 rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-60"
+                >
+                  {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated disbursement"}
+                </button>
+              )}
+            </section>
+          ) : (
+            <section role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              {row.disbursement?.state === "complete"
+                ? row.disbursement.result.notice
+                : "Demo fallback: simulated disbursement recorded. No PayPal payout was sent and no money was transferred to the recipient."}
+            </section>
+          )}
+        </div>
       )}
       </div>
     </section>
@@ -120,6 +151,7 @@ function Dashboard() {
   const sample = useSearchParams().get("sample") === "1";
   const [cases, setCases] = useState<CaseResult[]>([]);
   const [approvals, setApprovals] = useState<Record<string, Approval>>({});
+  const [disbursements, setDisbursements] = useState<Record<string, Disbursement>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -142,7 +174,7 @@ function Dashboard() {
     void refresh();
   }, [refresh]);
 
-  const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id] })), [cases, approvals]);
+  const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id], disbursement: disbursements[c.case_id] })), [cases, approvals, disbursements]);
   const selected = rows.find((r) => r.case.case_id === selectedId) ?? null;
 
   const onApprove = useCallback(async (row: CaseRow) => {
@@ -159,6 +191,29 @@ function Dashboard() {
       setApprovals((a) => ({ ...a, [case_id]: { state: "approved", result } }));
     } catch (err) {
       setApprovals((a) => ({ ...a, [case_id]: { state: "error", message: approvalError(err) } }));
+    }
+  }, []);
+
+  const onDisburse = useCallback(async (row: CaseRow) => {
+    const approval = row.approval;
+    if (approval?.state !== "approved" || approval.result.status !== "approved") return;
+    const { case_id } = row.case;
+    setDisbursements((current) => ({ ...current, [case_id]: { state: "pending" } }));
+    try {
+      const result = await api.createPayout({
+        allocation_id: approval.result.allocation_id,
+        amount: approval.result.amount,
+        currency: approval.result.currency,
+      });
+      setDisbursements((current) => ({ ...current, [case_id]: { state: "complete", result } }));
+      setApprovals((current) => {
+        const existing = current[case_id];
+        return existing?.state === "approved"
+          ? { ...current, [case_id]: { state: "approved", result: { ...existing.result, status: "disbursed" } } }
+          : current;
+      });
+    } catch (err) {
+      setDisbursements((current) => ({ ...current, [case_id]: { state: "error", message: err instanceof Error ? err.message : "Could not record simulated disbursement" } }));
     }
   }, []);
 
@@ -226,9 +281,9 @@ function Dashboard() {
         onApprove={onApprove}
         onSelect={(row) => setSelectedId(row.case.case_id)}
       />
-      <p className="text-xs text-slate-500">Click a row to see the full case. Approving records an allocation; the payout runs only after that.</p>
+      <p className="text-xs text-slate-500">Click a row to review its allocation. The optional disbursement action is simulated and does not transfer money.</p>
 
-      {selected && <CaseDetail row={selected} onClose={() => setSelectedId(null)} />}
+      {selected && <CaseDetail row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
     </div>
   );
 }

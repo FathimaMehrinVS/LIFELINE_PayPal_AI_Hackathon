@@ -113,7 +113,7 @@
           }
         },
         {
-          "name": "Create payout",
+          "name": "Record simulated disbursement (demo only)",
           "request": {
             "method": "POST",
             "header": [
@@ -125,7 +125,7 @@
             "url": "{{baseUrl}}/api/payments/payouts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"allocation_id\": \"alloc_demo\",\n  \"amount\": 285,\n  \"currency\": \"EUR\"\n}"
+              "raw": "{\n  \"allocation_id\": \"<approved-allocation-id>\",\n  \"amount\": 285,\n  \"currency\": \"EUR\"\n}"
             }
           }
         }

@@ -1,4 +1,4 @@
-import type { AllocationResult, CaseResult, Urgency } from "@lifeline/contracts";
+import type { AllocationResult, CaseResult, PayoutResult, Urgency } from "@lifeline/contracts";
 
 // Owner: Member 1. One dashboard row: a case plus what happened when the NGO pressed Approve.
 
@@ -7,9 +7,15 @@ export type Approval =
   | { state: "approved"; result: AllocationResult }
   | { state: "error"; message: string };
 
+export type Disbursement =
+  | { state: "pending" }
+  | { state: "complete"; result: PayoutResult }
+  | { state: "error"; message: string };
+
 export interface CaseRow {
   case: CaseResult;
   approval?: Approval;
+  disbursement?: Disbursement;
 }
 
 export const URGENCY_RANK: Record<Urgency, number> = { critical: 4, high: 3, medium: 2, low: 1 };

@@ -122,5 +122,6 @@ synthetic registry are used.
 - Donation: `{ allocation_id, amount, currency }` → `{ donation_id, allocation_id, paypal_order_id, status, amount, currency, approval_url? }`; creation requires an approved allocation, an active matching campaign, and an amount no greater than the allocation.
 - Capture: no request body → `{ donation_id, allocation_id?, paypal_order_id, paypal_capture_id?, status, amount, currency }`; `paypal_capture_id` is present after PayPal confirms a completed capture. The return page does not infer success from the redirect.
 - Donation status: `created` · `approved` · `captured` · `failed` · `cancelled` · `refunded`
-- Payout: `{ allocation_id, amount, currency }` → `{ payout_id, allocation_id, status, amount, currency, mode, paypal_batch_id? }`
-- Payout `mode`: `sandbox` (real PayPal Sandbox) or `simulated` (demo fallback, must be labelled in the UI)
+- Payout/disbursement: `{ allocation_id, amount, currency }` → `{ payout_id, allocation_id, status, amount, currency, mode, notice?, paypal_batch_id? }`.
+  The current path returns `mode: simulated`, an explicit no-transfer notice, and records an internal demo state only;
+  it does not call PayPal or claim recipient delivery. It requires captured campaign donations to cover the allocation.

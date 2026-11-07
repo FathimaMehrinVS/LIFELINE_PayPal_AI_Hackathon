@@ -49,6 +49,8 @@ export const PayoutResultSchema = z.object({
   currency: CurrencySchema,
   /** "sandbox" = real PayPal Sandbox payout; "simulated" = demo fallback, must be labelled as such in the UI. */
   mode: z.enum(["sandbox", "simulated"]),
+  /** Explicitly states the simulated outcome; never implies a real recipient transfer. */
+  notice: z.string().optional(),
   paypal_batch_id: z.string().optional(),
 });
 export type PayoutResult = z.infer<typeof PayoutResultSchema>;
