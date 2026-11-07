@@ -77,7 +77,9 @@ async function processDonationEvent(tx: Prisma.TransactionClient, event: PaypalW
         Number(amount.value) !== Number(donation.amount) || amount.currency_code !== donation.currency) return;
 
     await tx.donation.updateMany({
-      where: { id: donation.id, status: { in: ["CREATED", "APPROVED"] } },
+      // A cancellation-page redirect is not proof that PayPal did not capture.
+      // Verified PayPal completion remains authoritative over the local abandon signal.
+      where: { id: donation.id, status: { in: ["CREATED", "APPROVED", "CANCELLED"] } },
       data: { status: "CAPTURED", paypalCaptureId: captureId },
     });
     return;

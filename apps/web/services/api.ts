@@ -44,6 +44,8 @@ export const api = {
   createDonation: (body: CreateDonationRequest) => post<DonationResult>("/api/payments/donations", body),
   captureDonation: (donationId: string) =>
     post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/capture`),
+  cancelDonation: (donationId: string) =>
+    post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/cancel`),
   createPayout: (body: CreatePayoutRequest) => post<PayoutResult>("/api/payments/payouts", body),
   /** With `replaces`, re-runs a case that needed information, keeping its id. */
   createCase: (body: SituationRequest, replaces?: string) =>

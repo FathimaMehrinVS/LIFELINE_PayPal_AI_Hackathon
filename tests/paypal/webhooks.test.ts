@@ -146,7 +146,18 @@ describe("PayPal webhook verification and processing", () => {
     expect(response.status).toBe(200);
     expect(harness.donation).toMatchObject({ status: "CAPTURED", paypalCaptureId: "CAPTURE-1" });
     expect(harness.prisma.donation.updateMany).toHaveBeenCalledWith({
-      where: { id: "don-1", status: { in: ["CREATED", "APPROVED"] } },
+      where: { id: "don-1", status: { in: ["CREATED", "APPROVED", "CANCELLED"] } },
+      data: { status: "CAPTURED", paypalCaptureId: "CAPTURE-1" },
+    });
+  });
+
+  it("allows a verified completed capture to supersede a browser cancellation", async () => {
+    const harness = setup("CANCELLED");
+    const response = await postEvent(harness.app, completedCapture());
+    expect(response.status).toBe(200);
+    expect(harness.donation).toMatchObject({ status: "CAPTURED", paypalCaptureId: "CAPTURE-1" });
+    expect(harness.prisma.donation.updateMany).toHaveBeenCalledWith({
+      where: { id: "don-1", status: { in: ["CREATED", "APPROVED", "CANCELLED"] } },
       data: { status: "CAPTURED", paypalCaptureId: "CAPTURE-1" },
     });
   });

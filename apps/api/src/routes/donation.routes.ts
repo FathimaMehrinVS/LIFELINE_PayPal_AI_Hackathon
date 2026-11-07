@@ -50,7 +50,7 @@ router.post("/donations", validateBody(CreateDonationRequestSchema), async (req,
 
   const donationId = crypto.randomUUID();
   const returnUrl = `${env.WEB_ORIGIN}/donate/return?donation_id=${encodeURIComponent(donationId)}`;
-  const cancelUrl = `${env.WEB_ORIGIN}/donate?allocation_id=${encodeURIComponent(allocation.id)}&case_id=${encodeURIComponent(allocation.requestId)}&amount=${encodeURIComponent(allocation.amount.toString())}&currency=${encodeURIComponent(allocation.currency)}&state=cancelled`;
+  const cancelUrl = `${env.WEB_ORIGIN}/donate?donation_id=${encodeURIComponent(donationId)}&allocation_id=${encodeURIComponent(allocation.id)}&case_id=${encodeURIComponent(allocation.requestId)}&amount=${encodeURIComponent(allocation.amount.toString())}&currency=${encodeURIComponent(allocation.currency)}&state=cancelled`;
   const order = await createOrder({ donationId, amount: input.amount, currency: input.currency, returnUrl, cancelUrl });
   const donation = await prisma.donation.create({
     data: {
@@ -74,6 +74,29 @@ router.post("/donations", validateBody(CreateDonationRequestSchema), async (req,
   });
 });
 
+router.post("/donations/:id/cancel", async (req, res) => {
+  const prisma = db();
+  const donation = await prisma.donation.findUnique({ where: { id: req.params.id } });
+  if (!donation) throw new HttpError("NOT_FOUND", "Donation not found");
+
+  // A browser return is only an abandonment signal. A verified PayPal capture can
+  // still move CANCELLED to CAPTURED if PayPal confirms that payment completed.
+  if (donation.status === "CREATED" || donation.status === "APPROVED") {
+    const updated = await prisma.donation.updateMany({
+      where: { id: donation.id, status: { in: ["CREATED", "APPROVED"] } },
+      data: { status: "CANCELLED" },
+    });
+    if (updated.count === 0) {
+      const current = await prisma.donation.findUnique({ where: { id: donation.id } });
+      if (!current) throw new HttpError("NOT_FOUND", "Donation not found");
+      res.json({ donation_id: current.id, allocation_id: current.allocationId ?? undefined, paypal_order_id: current.paypalOrderId, paypal_capture_id: current.paypalCaptureId ?? undefined, status: current.status.toLowerCase(), amount: Number(current.amount), currency: current.currency });
+      return;
+    }
+  }
+
+  res.json({ donation_id: donation.id, allocation_id: donation.allocationId ?? undefined, paypal_order_id: donation.paypalOrderId, paypal_capture_id: donation.paypalCaptureId ?? undefined, status: donation.status === "CREATED" || donation.status === "APPROVED" ? "cancelled" : donation.status.toLowerCase(), amount: Number(donation.amount), currency: donation.currency });
+});
+
 router.post("/donations/:id/capture", async (req, res) => {
   const prisma = db();
   const donation = await prisma.donation.findUnique({ where: { id: req.params.id } });
@@ -82,7 +105,7 @@ router.post("/donations/:id/capture", async (req, res) => {
     res.json({ donation_id: donation.id, allocation_id: donation.allocationId ?? undefined, paypal_order_id: donation.paypalOrderId, paypal_capture_id: donation.paypalCaptureId ?? undefined, status: "captured", amount: Number(donation.amount), currency: donation.currency });
     return;
   }
-  if (donation.status !== "CREATED" && donation.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", `Donation cannot be captured from status ${donation.status}`);
+  if (donation.status !== "CREATED" && donation.status !== "APPROVED" && donation.status !== "CANCELLED") throw new HttpError("VALIDATION_ERROR", `Donation cannot be captured from status ${donation.status}`);
 
   const capture = await captureOrder(donation.paypalOrderId);
   if (capture.orderId !== donation.paypalOrderId || capture.status !== "COMPLETED" || !capture.captureId) throw new HttpError("UPSTREAM_ERROR", "PayPal has not confirmed a completed capture for this donation");
@@ -90,7 +113,7 @@ router.post("/donations/:id/capture", async (req, res) => {
     throw new HttpError("UPSTREAM_ERROR", "PayPal capture amount does not match the donation");
   }
   const updated = await prisma.donation.updateMany({
-    where: { id: donation.id, status: { in: ["CREATED", "APPROVED"] } },
+    where: { id: donation.id, status: { in: ["CREATED", "APPROVED", "CANCELLED"] } },
     data: { status: "CAPTURED", paypalCaptureId: capture.captureId },
   });
   if (updated.count === 0) {

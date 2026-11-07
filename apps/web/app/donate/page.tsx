@@ -14,7 +14,22 @@ export default function DonatePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("state") === "cancelled") setMessage("Checkout was cancelled. No donation was captured.");
+    if (params.get("state") === "cancelled") {
+      const donationId = params.get("donation_id")?.trim();
+      if (!donationId) {
+        setMessage("Checkout returned without a donation reference. Payment status has not been changed.");
+      } else {
+        api.cancelDonation(donationId).then((result) => {
+          setMessage(result.status === "cancelled"
+            ? "Checkout was cancelled. The donation is marked cancelled; PayPal has not confirmed a capture."
+            : result.status === "captured"
+              ? "PayPal confirmed that this donation was captured."
+              : `Checkout ended. Current donation status: ${result.status}.`);
+        }).catch((error: unknown) => {
+          setMessage(error instanceof Error ? `Could not update checkout status: ${error.message}` : "Could not update checkout status.");
+        });
+      }
+    }
 
     const allocationId = params.get("allocation_id")?.trim();
     const caseId = params.get("case_id")?.trim();

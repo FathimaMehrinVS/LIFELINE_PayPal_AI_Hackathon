@@ -23,7 +23,7 @@ function setup(status = "CREATED") {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   } as unknown as ReturnType<typeof getPrisma>;
-  const createOrder = vi.fn(async () => ({ orderId: "ORDER-1", approvalUrl: "https://sandbox.test/approve" }));
+  const createOrder = vi.fn(async (_input: { donationId: string; amount: number; currency: string; returnUrl: string; cancelUrl: string }) => ({ orderId: "ORDER-1", approvalUrl: "https://sandbox.test/approve" }));
   const harness = express(); harness.use(express.json());
   harness.use("/api/payments", createDonationRouter({ getPrisma: () => prisma, createOrder, captureOrder: vi.fn().mockResolvedValue({ orderId: "ORDER-1", status: "COMPLETED", captureId: "CAP-1", amount: { value: "10.00", currency_code: "EUR" } }) }));
   harness.use(errorHandler);
@@ -38,6 +38,7 @@ describe("donation routes", () => {
     expect(response.body).toMatchObject({ allocation_id: "allocation-1", paypal_order_id: "ORDER-1", status: "created", approval_url: "https://sandbox.test/approve" });
     expect(prisma.donation.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ allocationId: "allocation-1", campaignId: "camp_demo", status: "CREATED", paypalOrderId: "ORDER-1" }) }));
     expect(createOrder).toHaveBeenCalledOnce();
+    expect(createOrder.mock.calls[0]?.[0].cancelUrl).toContain("donation_id=");
   });
 
   it("rejects a missing allocation before creating a PayPal order", async () => {
@@ -112,6 +113,51 @@ describe("donation routes", () => {
     expect(response.body.paypal_capture_id).toBe("CAP-1");
     expect(response.body.allocation_id).toBe("allocation-1");
     expect(prisma.donation.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "CAPTURED", paypalCaptureId: "CAP-1" } }));
+  });
+
+  it("cancels only the donation identified by the cancellation route", async () => {
+    const { app, prisma } = setup();
+    const response = await request(app).post("/api/payments/donations/don-1/cancel");
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ donation_id: "don-1", paypal_order_id: "ORDER-1", status: "cancelled" });
+    expect(prisma.donation.updateMany).toHaveBeenCalledWith({
+      where: { id: "don-1", status: { in: ["CREATED", "APPROVED"] } }, data: { status: "CANCELLED" },
+    });
+  });
+
+  it("returns NOT_FOUND for a missing donation without updating any record", async () => {
+    const { app, prisma } = setup();
+    (prisma.donation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const response = await request(app).post("/api/payments/donations/missing/cancel");
+    expect(response.status).toBe(404);
+    expect(prisma.donation.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("makes repeated cancellation idempotent", async () => {
+    const { app, prisma } = setup("CANCELLED");
+    const response = await request(app).post("/api/payments/donations/don-1/cancel");
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("cancelled");
+    expect(prisma.donation.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not cancel a donation after capture", async () => {
+    const { app, prisma } = setup("CAPTURED");
+    const response = await request(app).post("/api/payments/donations/don-1/cancel");
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("captured");
+    expect(prisma.donation.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("allows a verified PayPal capture to supersede a browser cancellation", async () => {
+    const { app, prisma } = setup("CANCELLED");
+    const response = await request(app).post("/api/payments/donations/don-1/capture");
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("captured");
+    expect(prisma.donation.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "don-1", status: { in: ["CREATED", "APPROVED", "CANCELLED"] } },
+      data: { status: "CAPTURED", paypalCaptureId: "CAP-1" },
+    }));
   });
 
   it("never records a capture when PayPal did not complete it", async () => {
