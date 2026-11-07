@@ -110,7 +110,7 @@ The API process can start without external keys. The implemented Member 3 endpoi
 | `GEMINI_API_KEY`, `GEMINI_MODEL`         | aistudio.google.com (optional fallback)       | All modules    |
 | `DATABASE_URL`, `DIRECT_URL`             | Supabase → Connect                            | Saving results |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_BASE_URL` | developer.paypal.com → Sandbox app; base URL must remain `https://api-m.sandbox.paypal.com` | Member 3 donor checkout |
-| `PAYPAL_WEBHOOK_ID`                      | PayPal Sandbox app webhook                   | Member 2 webhooks |
+| `PAYPAL_WEBHOOK_ID`                      | PayPal Sandbox app webhook (after deployment) | Member 3 donation webhooks; set after registration |
 | `CHANNEL3_API_KEY`                       | Channel3 (optional; local synthetic registry works without it) | Commerce |
 
 Each module can be built and tested with the sample JSON in `packages/contracts/samples/` before the others exist.

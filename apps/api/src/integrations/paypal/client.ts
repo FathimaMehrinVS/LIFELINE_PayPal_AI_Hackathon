@@ -1,7 +1,7 @@
 import { env } from "../../config/env";
 import { HttpError } from "../../utils/http-error";
 
-// Shared by Member 2 (webhooks.ts, payouts.ts) and Member 3 (orders.ts). Changes go through a small PR to main.
+// Shared by Member 2's payout work and Member 3's donation checkout/webhook work.
 
 export interface PaypalConfig {
   baseUrl: string;
@@ -12,6 +12,8 @@ export interface PaypalConfig {
 export interface PaypalClient {
   /** Calls the PayPal REST API with a cached OAuth token. Throws UPSTREAM_ERROR on a non-2xx reply. */
   paypalFetch<T>(path: string, init?: { method?: string; body?: unknown; headers?: Record<string, string> }): Promise<T>;
+  /** Sends an already serialized JSON body without changing its bytes. */
+  paypalFetchRaw<T>(path: string, body: string): Promise<T>;
 }
 
 /** Refresh the token a minute before PayPal says it expires. */
@@ -42,26 +44,33 @@ export function createPaypalClient(config: PaypalConfig, fetchImpl: typeof fetch
     return token.value;
   }
 
-  return {
-    async paypalFetch<T>(path: string, init: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) {
-      const res = await fetchImpl(`${config.baseUrl}${path}`, {
-        method: init.method ?? (init.body === undefined ? "GET" : "POST"),
-        headers: {
-          Authorization: `Bearer ${await accessToken()}`,
-          "Content-Type": "application/json",
-          ...init.headers,
-        },
-        body: init.body === undefined ? undefined : JSON.stringify(init.body),
-        signal: AbortSignal.timeout(30_000),
-      });
+  async function request<T>(path: string, init: { method?: string; body?: unknown; headers?: Record<string, string> } = {}, rawBody?: string) {
+    const res = await fetchImpl(`${config.baseUrl}${path}`, {
+      method: init.method ?? (init.body === undefined ? "GET" : "POST"),
+      headers: {
+        Authorization: `Bearer ${await accessToken()}`,
+        "Content-Type": "application/json",
+        ...init.headers,
+      },
+      body: rawBody ?? (init.body === undefined ? undefined : JSON.stringify(init.body)),
+      signal: AbortSignal.timeout(30_000),
+    });
 
-      const text = await res.text();
-      const json: unknown = text ? JSON.parse(text) : {};
-      if (!res.ok) {
-        // PayPal error bodies carry name, message and debug_id, which help when asking PayPal for support.
-        throw new HttpError("UPSTREAM_ERROR", `PayPal ${path} returned HTTP ${res.status}`, json);
-      }
-      return json as T;
+    const text = await res.text();
+    const json: unknown = text ? JSON.parse(text) : {};
+    if (!res.ok) {
+      // PayPal error bodies carry name, message and debug_id, which help when asking PayPal for support.
+      throw new HttpError("UPSTREAM_ERROR", `PayPal ${path} returned HTTP ${res.status}`, json);
+    }
+    return json as T;
+  }
+
+  return {
+    paypalFetch<T>(path: string, init: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) {
+      return request<T>(path, init);
+    },
+    paypalFetchRaw<T>(path: string, body: string) {
+      return request<T>(path, { method: "POST" }, body);
     },
   };
 }

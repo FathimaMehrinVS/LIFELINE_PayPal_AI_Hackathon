@@ -7,4 +7,3 @@ import { notImplemented } from "./not-implemented";
 export const payoutRouter = Router();
 
 payoutRouter.post("/payouts", validateBody(CreatePayoutRequestSchema), notImplemented("Payout"));
-payoutRouter.post("/webhooks/paypal", notImplemented("PayPal webhook"));

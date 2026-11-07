@@ -8,12 +8,14 @@ import { commerceRouter } from "./routes/commerce.routes";
 import { donationRouter } from "./routes/donation.routes";
 import { financeRouter } from "./routes/finance.routes";
 import { payoutRouter } from "./routes/payout.routes";
+import { mountPaypalWebhookRoute } from "./routes/paypal-webhook.routes";
 import { situationRouter } from "./routes/situation.routes";
 
 export function createApp() {
   const app = express();
 
   app.use(cors({ origin: env.WEB_ORIGIN }));
+  mountPaypalWebhookRoute(app);
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/health", (_req, res) => {

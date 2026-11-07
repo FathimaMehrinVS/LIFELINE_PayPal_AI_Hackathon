@@ -22,6 +22,23 @@ describe("paypal client", () => {
     expect(fetchMock.mock.calls[2]?.[1]).toMatchObject({ method: "GET" });
   });
 
+  it("sends a raw JSON request body unchanged while reusing OAuth authentication", async () => {
+    const rawBody = '{"webhook_event":{\n "id":"event-1"\n}}';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(tokenReply())
+      .mockResolvedValueOnce(new Response(JSON.stringify({ verification_status: "SUCCESS" }), { status: 200 }));
+    const client = createPaypalClient(config, fetchMock);
+    await client.paypalFetchRaw("/v1/notifications/verify-webhook-signature", rawBody);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("https://paypal.test/v1/notifications/verify-webhook-signature");
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: "POST",
+      headers: { Authorization: "Bearer tok", "Content-Type": "application/json" },
+      body: rawBody,
+    });
+  });
+
   it("throws UPSTREAM_ERROR with PayPal's error body on a failed call", async () => {
     const fetchMock = vi
       .fn()

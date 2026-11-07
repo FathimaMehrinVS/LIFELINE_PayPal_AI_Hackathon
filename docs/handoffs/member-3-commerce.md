@@ -71,6 +71,17 @@ The seed creates the demo campaign `camp_demo` with currency EUR. `npm run dev` 
 8. Negative case: start another donation and cancel on PayPal. The app returns to `/donate?state=cancelled`; it
    must not show capture success. Verify that donation is not `CAPTURED`.
 
+## PayPal Sandbox webhooks
+
+`POST /api/payments/webhooks/paypal` verifies the untouched request body with PayPal's Sandbox verification API
+before recording or applying donation events. It handles `CHECKOUT.ORDER.APPROVED`,
+`PAYMENT.CAPTURE.COMPLETED`, and `PAYMENT.CAPTURE.DENIED`; verified event IDs are deduplicated through
+`WebhookEvent`.
+
+Register the webhook on the deployed Sandbox REST app and set `PAYPAL_WEBHOOK_ID` in the API environment after
+registration. The handler intentionally fails closed before the ID is configured. Then deliver real Sandbox events
+and verify event records and Donation status/capture ID changes in the database.
+
 ## Basket manual test
 
 1. Open `http://localhost:3000/commerce`.
