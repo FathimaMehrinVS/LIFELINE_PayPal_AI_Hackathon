@@ -9,7 +9,7 @@ in a sandbox, and what is simulated.
 | Supabase PostgreSQL            | not built yet |       |
 | Channel3 product search        | implemented; not externally verified | Server-side search adapter and local registry fallback are implemented; credentials/API response not manually tested. |
 | PayPal Orders (donor checkout) | implemented; Sandbox flow not verified | Shared OAuth client and create/approve/capture code are implemented; no live Sandbox checkout or database capture test has been run. |
-| PayPal Webhooks                | not built yet |       |
+| PayPal donation webhooks       | implemented; not externally verified | Signature verification and idempotent donation event handling are mocked in tests; Sandbox registration and live delivery wait until deployment and `PAYPAL_WEBHOOK_ID` setup. |
 | PayPal Payouts                 | not built yet | Real sandbox or simulated, depending on the Day 1 check |
 | Render deployment              | not built yet |       |
 

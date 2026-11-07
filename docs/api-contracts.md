@@ -43,7 +43,7 @@ Base URL: `http://localhost:4000`
 | POST   | `/api/payments/donations`             | `CreateDonationRequest`| `DonationResult`   | Member 3 |
 | POST   | `/api/payments/donations/:id/capture` | —                      | `DonationResult`   | Member 3 |
 | POST   | `/api/payments/payouts`               | `CreatePayoutRequest`  | `PayoutResult`     | Member 2 |
-| POST   | `/api/payments/webhooks/paypal`       | PayPal event           | `200`              | Member 2 |
+| POST   | `/api/payments/webhooks/paypal`       | Verified PayPal event  | `200`              | Member 3 |
 | POST   | `/api/cases`                          | `SituationRequest`     | `CaseResult`       | Member 1 |
 | GET    | `/api/cases`                          | —                      | `CaseResult[]`     | Member 1 |
 | POST   | `/api/allocations/approve`            | `ApproveAllocationRequest` | `AllocationResult` | Member 2 |

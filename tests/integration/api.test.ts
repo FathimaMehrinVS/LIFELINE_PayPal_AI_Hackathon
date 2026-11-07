@@ -35,10 +35,15 @@ describe("API foundation", () => {
   it.each([
     ["/api/allocations/approve", { case_id: "case_1", campaign_id: "camp_demo", amount: 285, currency: "EUR" }],
     ["/api/payments/payouts", { allocation_id: "alloc_1", amount: 285, currency: "EUR" }],
-    ["/api/payments/webhooks/paypal", {}],
   ])("%s is mounted (NOT_IMPLEMENTED until built)", async (path, body) => {
     const res = await request(app).post(path).send(body);
     expect(res.status).toBe(501);
+  });
+
+  it("mounts the PayPal webhook and fails closed when its server configuration is missing", async () => {
+    const res = await request(app).post("/api/payments/webhooks/paypal").set("Content-Type", "application/json").send("{}");
+    expect(res.status).toBe(500);
+    expect(res.body.error.message).toContain("PAYPAL_WEBHOOK_ID");
   });
 
   it("GET /api/cases is mounted (NOT_IMPLEMENTED until built)", async () => {
