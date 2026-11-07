@@ -24,8 +24,16 @@ export function recommendedRoute(c: CaseResult) {
   return c.finance?.routes.find((r) => r.route_id === c.finance?.recommended_route_id) ?? null;
 }
 
-/** "route_paypal" → "Paypal" (the route catalogue's names arrive with Member 2's module). */
+/** Names from Member 2's demo route catalogue (modules/finance/route-catalogue.ts). */
+const ROUTE_NAMES: Record<string, string> = {
+  route_bank: "Bank transfer",
+  route_agent: "Local cash-out agent",
+  route_paypal: "PayPal",
+};
+
+/** "route_paypal" → "PayPal"; unknown ids are turned into readable words. */
 export function routeName(routeId: string) {
+  if (ROUTE_NAMES[routeId]) return ROUTE_NAMES[routeId];
   const name = routeId.replace(/^route_/, "").replace(/_/g, " ");
   return (name.charAt(0).toUpperCase() + name.slice(1)).replace(/paypal/i, "PayPal");
 }

@@ -34,7 +34,8 @@ const URGENCY_STYLES: Record<Urgency, string> = {
 };
 
 /** What to ask the person for each missing field. Unlisted names fall back to the raw name. */
-const MISSING_QUESTIONS: Record<string, string> = {
+export const MISSING_QUESTIONS: Record<string, string> = {
+  needs: "What do they need most (food, water, medicine, shelter…)?",
   budget: "How much money is available to send?",
   currency: "Which currency is the money in?",
   location: "Where is the family (town or district)?",
