@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
-
-type DonationTarget = { allocationId: string; caseId: string; amount: number; currency: string };
+import { parseDonationTarget, type DonationTarget } from "./donation-target";
 
 export default function DonatePage() {
   const [target, setTarget] = useState<DonationTarget | null>(null);
@@ -31,18 +30,15 @@ export default function DonatePage() {
       }
     }
 
-    const allocationId = params.get("allocation_id")?.trim();
-    const caseId = params.get("case_id")?.trim();
-    const approvedAmount = Number(params.get("amount"));
-    const currency = params.get("currency") ?? "";
-    if (!allocationId || !caseId || !Number.isFinite(approvedAmount) || approvedAmount <= 0 || !/^[A-Z]{3}$/.test(currency)) {
+    const parsedTarget = parseDonationTarget(window.location.search);
+    if (!parsedTarget) {
       setTarget(null);
       setTargetMessage("Choose an NGO-approved assistance allocation from the dashboard before donating.");
       return;
     }
 
-    setTarget({ allocationId, caseId, amount: approvedAmount, currency });
-    setAmount(approvedAmount.toFixed(2));
+    setTarget(parsedTarget);
+    setAmount(parsedTarget.amount.toFixed(2));
     setTargetMessage("");
   }, []);
 

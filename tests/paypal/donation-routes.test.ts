@@ -38,7 +38,10 @@ describe("donation routes", () => {
     expect(response.body).toMatchObject({ allocation_id: "allocation-1", paypal_order_id: "ORDER-1", status: "created", approval_url: "https://sandbox.test/approve" });
     expect(prisma.donation.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ allocationId: "allocation-1", campaignId: "camp_demo", status: "CREATED", paypalOrderId: "ORDER-1" }) }));
     expect(createOrder).toHaveBeenCalledOnce();
-    expect(createOrder.mock.calls[0]?.[0].cancelUrl).toContain("donation_id=");
+    const cancelUrl = new URL(createOrder.mock.calls[0]![0].cancelUrl);
+    expect(cancelUrl.searchParams.get("donation_id")).toBeTruthy();
+    expect(cancelUrl.searchParams.get("ccy")).toBe("EUR");
+    expect(cancelUrl.searchParams.has("currency")).toBe(false);
   });
 
   it("rejects a missing allocation before creating a PayPal order", async () => {

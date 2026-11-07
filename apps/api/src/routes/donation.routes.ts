@@ -50,7 +50,8 @@ router.post("/donations", validateBody(CreateDonationRequestSchema), async (req,
 
   const donationId = crypto.randomUUID();
   const returnUrl = `${env.WEB_ORIGIN}/donate/return?donation_id=${encodeURIComponent(donationId)}`;
-  const cancelUrl = `${env.WEB_ORIGIN}/donate?donation_id=${encodeURIComponent(donationId)}&allocation_id=${encodeURIComponent(allocation.id)}&case_id=${encodeURIComponent(allocation.requestId)}&amount=${encodeURIComponent(allocation.amount.toString())}&currency=${encodeURIComponent(allocation.currency)}&state=cancelled`;
+  // `ccy` avoids PayPal's HTML handling of the `&curren` entity prefix in `&currency`.
+  const cancelUrl = `${env.WEB_ORIGIN}/donate?donation_id=${encodeURIComponent(donationId)}&allocation_id=${encodeURIComponent(allocation.id)}&case_id=${encodeURIComponent(allocation.requestId)}&amount=${encodeURIComponent(allocation.amount.toString())}&ccy=${encodeURIComponent(allocation.currency)}&state=cancelled`;
   const order = await createOrder({ donationId, amount: input.amount, currency: input.currency, returnUrl, cancelUrl });
   const donation = await prisma.donation.create({
     data: {
