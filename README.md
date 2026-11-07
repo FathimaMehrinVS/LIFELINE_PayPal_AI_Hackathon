@@ -19,6 +19,16 @@ Two deployment/live-verification items remain:
 
 The simulated disbursement is not a real PayPal transfer or proof of aid delivery. There is no authentication or role-based access control in this MVP. See the [complete project overview](docs/LIFELINE_PROJECT_OVERVIEW.md) for detailed implementation notes, state transitions, API routes, limitations, and evidence.
 
+## Member divisions
+
+| Member | Primary responsibilities |
+| --- | --- |
+| **Member 1 — Athira V** | Situation Intelligence: Situation Agent extraction and validation, case orchestration and persistence, situation flow, and case dashboard/review experience. |
+| **Member 2 — Fathima Mehrin V S** | Financial Intelligence: deterministic fee, accessibility, and route eligibility rules; finance assessment and explanations; NGO allocation approval; PayPal webhook verification; and simulated assistance disbursement. |
+| **Member 3 — Asiya Muhammed Sali** | Commerce and donor checkout: product sources and Channel3/local fallback, ranking and budget basket construction, allocation-linked donations, PayPal Sandbox order/capture/cancellation flow, and donation UI. |
+
+These are the project’s implementation areas. The end-to-end workflow and shared API/contracts connect the work across members.
+
 ## End-to-end flow
 
 ```text
