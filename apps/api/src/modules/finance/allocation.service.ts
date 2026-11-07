@@ -80,25 +80,9 @@ export async function approveAllocation(
         throw new HttpError("VALIDATION_ERROR", "A rejected allocation cannot be approved");
       }
 
-      const [captured, allocated] = await Promise.all([
-        tx.donation.aggregate({
-          where: { campaignId: campaign.id, currency: input.currency, status: "CAPTURED" },
-          _sum: { amount: true },
-        }),
-        tx.aidAllocation.aggregate({
-          where: { campaignId: campaign.id, currency: input.currency, status: { in: ["APPROVED", "DISBURSED"] } },
-          _sum: { amount: true },
-        }),
-      ]);
-      const capturedAmount = captured._sum.amount ?? new Prisma.Decimal(0);
-      const allocatedAmount = allocated._sum.amount ?? new Prisma.Decimal(0);
-      const available = capturedAmount.minus(allocatedAmount);
+      // Approval records the NGO's decision for this case. Funding is collected against this approved allocation;
+      // any future payout must separately verify that captured donations cover it.
       const requested = new Prisma.Decimal(input.amount);
-      if (available.lessThan(requested)) {
-        throw new HttpError("VALIDATION_ERROR", "Captured campaign donations are insufficient for this allocation", {
-          available: Math.max(0, available.toNumber()), currency: input.currency,
-        });
-      }
 
       const approvedAt = new Date();
       const allocation = existing

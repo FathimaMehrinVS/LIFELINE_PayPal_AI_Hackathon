@@ -30,10 +30,10 @@ function setup(options: {
       findUnique: vi.fn(async () => options.campaignExists === false ? null : { id: "camp_demo", active: true, currency: "EUR" }),
     },
     donation: {
-      aggregate: vi.fn(async () => ({ _sum: { amount: new Prisma.Decimal(options.captured ?? "100.00") } })),
+      aggregate: vi.fn(),
     },
     aidAllocation: {
-      aggregate: vi.fn(async () => ({ _sum: { amount: new Prisma.Decimal(options.allocated ?? "20.00") } })),
+      aggregate: vi.fn(),
       findUnique: vi.fn(async () => assistance.allocation),
       create: vi.fn(async ({ data }: any) => {
         const allocation = { id: `allocation_${++allocationId}`, ...data };
@@ -114,13 +114,12 @@ describe("NGO allocation approval", () => {
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
   });
 
-  it("rejects an allocation above remaining captured campaign donations", async () => {
-    const h = setup({ captured: "100.00", allocated: "30.00" });
-    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, amount: 71 });
-    expect(response.status).toBe(400);
-    expect(response.body.error.message).toContain("insufficient");
-    expect(response.body.error.details).toMatchObject({ available: 70, currency: "EUR" });
-    expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
+  it("approves an eligible allocation before donations have been captured", async () => {
+    const h = setup({ captured: "0.00", allocated: "0.00" });
+    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("approved");
+    expect(h.tx.donation.aggregate).not.toHaveBeenCalled();
   });
 
   it("rejects a case or campaign currency mismatch", async () => {

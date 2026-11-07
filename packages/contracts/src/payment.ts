@@ -9,7 +9,7 @@ export type DonationStatus = z.infer<typeof DonationStatusSchema>;
 
 /** POST /api/payments/donations — creates a PayPal Sandbox order. */
 export const CreateDonationRequestSchema = z.object({
-  campaign_id: z.string().min(1),
+  allocation_id: z.string().min(1),
   amount: AmountSchema.positive(),
   currency: CurrencySchema,
 });
@@ -18,6 +18,8 @@ export type CreateDonationRequest = z.infer<typeof CreateDonationRequestSchema>;
 /** Returned by POST /api/payments/donations and POST /api/payments/donations/:id/capture */
 export const DonationResultSchema = z.object({
   donation_id: z.string(),
+  /** Present for donations created against an approved assistance allocation. */
+  allocation_id: z.string().optional(),
   paypal_order_id: z.string(),
   paypal_capture_id: z.string().optional(),
   status: DonationStatusSchema,

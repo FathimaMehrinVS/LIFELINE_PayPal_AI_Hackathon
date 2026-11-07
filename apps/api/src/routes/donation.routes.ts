@@ -5,6 +5,7 @@ import { getPrisma } from "../database/prisma";
 import { captureDonationOrder, createDonationOrder } from "../integrations/paypal/orders";
 import { validateBody } from "../middleware/validate";
 import { HttpError } from "../utils/http-error";
+import { Prisma } from "../generated/prisma/client";
 
 // Owner: Member 3 (feature/commerce-payments). Mounted at /api/payments.
 export function createDonationRouter(deps: {
@@ -20,18 +21,57 @@ export function createDonationRouter(deps: {
 router.post("/donations", validateBody(CreateDonationRequestSchema), async (req, res) => {
   const input = CreateDonationRequestSchema.parse(req.body);
   const prisma = db();
-  const campaign = await prisma.campaign.findUnique({ where: { id: input.campaign_id } });
-  if (!campaign?.active) throw new HttpError("NOT_FOUND", "Active campaign not found");
-  if (campaign.currency !== input.currency) throw new HttpError("VALIDATION_ERROR", "Donation currency must match the campaign currency");
+  const allocation = await prisma.aidAllocation.findUnique({
+    where: { id: input.allocation_id },
+    include: { campaign: true, request: true },
+  });
+  if (!allocation) throw new HttpError("NOT_FOUND", "Approved assistance allocation not found");
+  if (allocation.status !== "APPROVED") {
+    throw new HttpError("VALIDATION_ERROR", "Donations can only be created for an approved assistance allocation");
+  }
+  if (!allocation.request) {
+    throw new HttpError("NOT_FOUND", "The allocation's assistance case was not found");
+  }
+  if (allocation.request.status !== "APPROVED") {
+    throw new HttpError("VALIDATION_ERROR", "The assistance case is not approved for donations");
+  }
+  if (!allocation.campaign?.active) {
+    throw new HttpError("NOT_FOUND", "The allocation's active campaign was not found");
+  }
+  if (!/^[A-Z]{3}$/.test(allocation.currency) || new Prisma.Decimal(allocation.amount).lessThanOrEqualTo(0)) {
+    throw new HttpError("VALIDATION_ERROR", "The approved allocation has an invalid amount or currency");
+  }
+  if (allocation.currency !== allocation.campaign.currency || input.currency !== allocation.currency) {
+    throw new HttpError("VALIDATION_ERROR", "Donation currency must match the approved allocation and campaign");
+  }
+  if (new Prisma.Decimal(input.amount).greaterThan(allocation.amount)) {
+    throw new HttpError("VALIDATION_ERROR", "Donation amount cannot exceed the approved allocation amount");
+  }
 
   const donationId = crypto.randomUUID();
   const returnUrl = `${env.WEB_ORIGIN}/donate/return?donation_id=${encodeURIComponent(donationId)}`;
-  const cancelUrl = `${env.WEB_ORIGIN}/donate?state=cancelled`;
+  const cancelUrl = `${env.WEB_ORIGIN}/donate?allocation_id=${encodeURIComponent(allocation.id)}&case_id=${encodeURIComponent(allocation.requestId)}&amount=${encodeURIComponent(allocation.amount.toString())}&currency=${encodeURIComponent(allocation.currency)}&state=cancelled`;
   const order = await createOrder({ donationId, amount: input.amount, currency: input.currency, returnUrl, cancelUrl });
   const donation = await prisma.donation.create({
-    data: { id: donationId, campaignId: campaign.id, amount: input.amount.toFixed(2), currency: input.currency, status: "CREATED", paypalOrderId: order.orderId },
+    data: {
+      id: donationId,
+      campaignId: allocation.campaignId,
+      allocationId: allocation.id,
+      amount: input.amount.toFixed(2),
+      currency: input.currency,
+      status: "CREATED",
+      paypalOrderId: order.orderId,
+    },
   });
-  res.status(201).json({ donation_id: donation.id, paypal_order_id: donation.paypalOrderId, status: "created", amount: Number(donation.amount), currency: donation.currency, approval_url: order.approvalUrl });
+  res.status(201).json({
+    donation_id: donation.id,
+    allocation_id: donation.allocationId ?? undefined,
+    paypal_order_id: donation.paypalOrderId,
+    status: "created",
+    amount: Number(donation.amount),
+    currency: donation.currency,
+    approval_url: order.approvalUrl,
+  });
 });
 
 router.post("/donations/:id/capture", async (req, res) => {
@@ -39,7 +79,7 @@ router.post("/donations/:id/capture", async (req, res) => {
   const donation = await prisma.donation.findUnique({ where: { id: req.params.id } });
   if (!donation) throw new HttpError("NOT_FOUND", "Donation not found");
   if (donation.status === "CAPTURED") {
-    res.json({ donation_id: donation.id, paypal_order_id: donation.paypalOrderId, paypal_capture_id: donation.paypalCaptureId ?? undefined, status: "captured", amount: Number(donation.amount), currency: donation.currency });
+    res.json({ donation_id: donation.id, allocation_id: donation.allocationId ?? undefined, paypal_order_id: donation.paypalOrderId, paypal_capture_id: donation.paypalCaptureId ?? undefined, status: "captured", amount: Number(donation.amount), currency: donation.currency });
     return;
   }
   if (donation.status !== "CREATED" && donation.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", `Donation cannot be captured from status ${donation.status}`);
@@ -57,7 +97,7 @@ router.post("/donations/:id/capture", async (req, res) => {
     const current = await prisma.donation.findUnique({ where: { id: donation.id } });
     if (current?.status !== "CAPTURED") throw new HttpError("VALIDATION_ERROR", "Donation status changed while capture was in progress");
   }
-  res.json({ donation_id: donation.id, paypal_order_id: donation.paypalOrderId, paypal_capture_id: capture.captureId, status: "captured", amount: Number(donation.amount), currency: donation.currency });
+  res.json({ donation_id: donation.id, allocation_id: donation.allocationId ?? undefined, paypal_order_id: donation.paypalOrderId, paypal_capture_id: capture.captureId, status: "captured", amount: Number(donation.amount), currency: donation.currency });
 });
   return router;
 }

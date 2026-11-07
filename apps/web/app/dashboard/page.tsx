@@ -2,6 +2,7 @@
 
 import type { CaseResult } from "@lifeline/contracts";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ApiRequestError, api } from "../../services/api";
 import { SituationResultView } from "../situation/situation-result";
@@ -101,6 +102,14 @@ function CaseDetail({ row, onClose }: { row: CaseRow; onClose: () => void }) {
             Total {formatMoney(commerce.total, commerce.currency)}, reserve {formatMoney(commerce.reserve, commerce.currency)}.
           </p>
         </div>
+      )}
+      {row.approval?.state === "approved" && (
+        <Link
+          href={`/donate?allocation_id=${encodeURIComponent(row.approval.result.allocation_id)}&amount=${encodeURIComponent(String(row.approval.result.amount))}&currency=${encodeURIComponent(row.approval.result.currency)}&case_id=${encodeURIComponent(row.approval.result.case_id)}`}
+          className="inline-flex rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          Start donation for this approved case
+        </Link>
       )}
       </div>
     </section>

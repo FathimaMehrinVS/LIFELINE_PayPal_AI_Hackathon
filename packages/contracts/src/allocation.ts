@@ -7,7 +7,7 @@ import { AmountSchema, CurrencySchema } from "./common";
 export const AllocationStatusSchema = z.enum(["proposed", "approved", "rejected", "disbursed"]);
 export type AllocationStatus = z.infer<typeof AllocationStatusSchema>;
 
-/** POST /api/allocations/approve — allowed only if amount ≤ captured donations − already allocated. */
+/** POST /api/allocations/approve — records an NGO-approved amount for an eligible assistance case. */
 export const ApproveAllocationRequestSchema = z.object({
   case_id: z.string().min(1),
   campaign_id: z.string().min(1),

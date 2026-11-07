@@ -114,13 +114,13 @@ synthetic registry are used.
 
 - Approve: `{ case_id, campaign_id, amount, currency }` → `{ allocation_id, case_id, status, amount, currency, approved_at }`
 - Allocation status: `proposed` · `approved` · `rejected` · `disbursed`
-- Approved only if `amount ≤ captured donations − already allocated` for that campaign (internal ledger, not a
-  PayPal balance)
+- Approval records the NGO decision for an eligible case; captured donation funding is checked before any future
+  payout, not at approval time.
 
 ## Payments (donations: Member 3, payouts: Member 2)
 
-- Donation: `{ campaign_id, amount, currency }` → `{ donation_id, paypal_order_id, status, amount, currency, approval_url? }`; creation validates an active campaign and matching currency and stores status `created`.
-- Capture: no request body → `{ donation_id, paypal_order_id, paypal_capture_id?, status, amount, currency }`; `paypal_capture_id` is present after PayPal confirms a completed capture. The return page does not infer success from the redirect.
+- Donation: `{ allocation_id, amount, currency }` → `{ donation_id, allocation_id, paypal_order_id, status, amount, currency, approval_url? }`; creation requires an approved allocation, an active matching campaign, and an amount no greater than the allocation.
+- Capture: no request body → `{ donation_id, allocation_id?, paypal_order_id, paypal_capture_id?, status, amount, currency }`; `paypal_capture_id` is present after PayPal confirms a completed capture. The return page does not infer success from the redirect.
 - Donation status: `created` · `approved` · `captured` · `failed` · `cancelled` · `refunded`
 - Payout: `{ allocation_id, amount, currency }` → `{ payout_id, allocation_id, status, amount, currency, mode, paypal_batch_id? }`
 - Payout `mode`: `sandbox` (real PayPal Sandbox) or `simulated` (demo fallback, must be labelled in the UI)

@@ -150,8 +150,8 @@ Merge `main` into your branch first.
   - store a `WebhookEvent` (`verified` true/false). The unique `eventId` means a duplicate is ignored.
   - on `PAYMENT.CAPTURE.COMPLETED`, mark the matching `Donation` as confirmed
 - [ ] **`rules/approval.ts` + `allocation.routes.ts`** (2 h)
-  - an allocation may be approved only if `amount ≤ captured donations for the campaign − amount already allocated`
-    (the internal ledger)
+  - approve an eligible case as an NGO decision; captured campaign funds must be checked before a future payout,
+    since donations are now linked to an already-approved allocation
   - store an `AidAllocation` with `APPROVED`, the approver and the time; write an `AuditLog` row
   - a payout may run only for an `APPROVED` allocation
 - [ ] **Payouts** `integrations/paypal/payouts.ts` (2 h)

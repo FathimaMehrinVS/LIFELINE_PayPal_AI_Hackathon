@@ -52,8 +52,9 @@ Browser                         LIFELINE API / database             PayPal Sandb
 ```
 
 The API uses the shared `paypal.paypalFetch(...)` client for cached OAuth and authenticated REST requests.
-`POST /api/payments/donations` validates an active campaign and matching currency, creates a CAPTURE order, then
-stores the Donation as `CREATED` with its PayPal order ID. The response includes `donation_id`,
+`POST /api/payments/donations` requires an approved assistance allocation, validates its active campaign and
+currency, and limits the amount to the approved allocation. It creates a CAPTURE order, then stores the Donation as
+`CREATED` with both the allocation ID and PayPal order ID. The response includes `allocation_id`, `donation_id`,
 `paypal_order_id`, `status`, `amount`, `currency`, and `approval_url`.
 
 The return page calls `POST /api/payments/donations/:id/capture`. The API only records `CAPTURED` and
@@ -78,12 +79,13 @@ verification are deployment steps and have not been completed locally.
 
 ## API endpoints
 
-- `POST /api/payments/donations` — body `{ "campaign_id": "camp_demo", "amount": 25, "currency": "EUR" }`.
+- `POST /api/payments/donations` — body `{ "allocation_id": "<approved allocation ID>", "amount": 25, "currency": "EUR" }`.
 - `POST /api/payments/donations/:id/capture` — no body; returns the Donation status and, after capture,
   `paypal_capture_id`.
 
 Request and response schemas live in `packages/contracts/src/payment.ts`. The demo seed creates campaign
-`camp_demo` in EUR.
+`camp_demo` in EUR. The NGO dashboard supplies the allocation ID after approval; opening `/donate` without that
+target does not start checkout.
 
 ## Local run
 

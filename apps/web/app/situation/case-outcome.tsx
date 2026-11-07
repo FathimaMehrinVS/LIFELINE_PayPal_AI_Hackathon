@@ -126,8 +126,8 @@ function Ready({ result }: { result: CaseResult }) {
           <Link href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
             Open in NGO dashboard
           </Link>
-          <Link href="/donate" className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            Support with a donation
+          <Link href="/dashboard" className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+            NGO approval is required before donation
           </Link>
         </div>
       </div>

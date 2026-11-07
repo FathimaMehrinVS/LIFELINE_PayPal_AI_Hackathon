@@ -100,7 +100,7 @@
             "url": "{{baseUrl}}/api/payments/donations",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"campaign_id\": \"camp_demo\",\n  \"amount\": 300,\n  \"currency\": \"EUR\"\n}"
+              "raw": "{\n  \"allocation_id\": \"<approved-allocation-id>\",\n  \"amount\": 25,\n  \"currency\": \"EUR\"\n}"
             }
           }
         },

@@ -6,28 +6,102 @@ import { createDonationRouter } from "../../apps/api/src/routes/donation.routes"
 import { getPrisma } from "../../apps/api/src/database/prisma";
 
 function setup(status = "CREATED") {
-  const donation = { id: "don-1", campaignId: "camp_demo", amount: "10.00", currency: "EUR", status, paypalOrderId: "ORDER-1", paypalCaptureId: null };
+  const donation = { id: "don-1", campaignId: "camp_demo", allocationId: "allocation-1", amount: "10.00", currency: "EUR", status, paypalOrderId: "ORDER-1", paypalCaptureId: null };
+  const allocation: {
+    id: string; requestId: string; campaignId: string; amount: string; currency: string; status: string;
+    campaign: { id: string; currency: string; active: boolean };
+    request: { id: string; status: string } | null;
+  } = {
+    id: "allocation-1", requestId: "case-1", campaignId: "camp_demo", amount: "100.00", currency: "EUR", status: "APPROVED",
+    campaign: { id: "camp_demo", currency: "EUR", active: true }, request: { id: "case-1", status: "APPROVED" },
+  };
   const prisma = {
-    campaign: { findUnique: vi.fn().mockResolvedValue({ id: "camp_demo", currency: "EUR", active: true }) },
+    aidAllocation: { findUnique: vi.fn().mockResolvedValue(allocation) },
     donation: {
       create: vi.fn().mockImplementation(async ({ data }) => ({ ...data, id: data.id })),
       findUnique: vi.fn().mockResolvedValue(donation),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   } as unknown as ReturnType<typeof getPrisma>;
-  const app = express(); app.use(express.json());
-  app.use("/api/payments", createDonationRouter({ getPrisma: () => prisma, createOrder: async () => ({ orderId: "ORDER-1", approvalUrl: "https://sandbox.test/approve" }), captureOrder: vi.fn().mockResolvedValue({ orderId: "ORDER-1", status: "COMPLETED", captureId: "CAP-1", amount: { value: "10.00", currency_code: "EUR" } }) }));
-  app.use(errorHandler);
-  return { app, prisma };
+  const createOrder = vi.fn(async () => ({ orderId: "ORDER-1", approvalUrl: "https://sandbox.test/approve" }));
+  const harness = express(); harness.use(express.json());
+  harness.use("/api/payments", createDonationRouter({ getPrisma: () => prisma, createOrder, captureOrder: vi.fn().mockResolvedValue({ orderId: "ORDER-1", status: "COMPLETED", captureId: "CAP-1", amount: { value: "10.00", currency_code: "EUR" } }) }));
+  harness.use(errorHandler);
+  return { app: harness, prisma, allocation, createOrder };
 }
 
 describe("donation routes", () => {
-  it("creates a CREATED donation after a sandbox order and returns approval URL", async () => {
-    const { app, prisma } = setup();
-    const response = await request(app).post("/api/payments/donations").send({ campaign_id: "camp_demo", amount: 10, currency: "EUR" });
+  it("creates a CREATED donation linked to an approved allocation and returns the PayPal approval URL", async () => {
+    const { app, prisma, createOrder } = setup();
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "EUR" });
     expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({ paypal_order_id: "ORDER-1", status: "created", approval_url: "https://sandbox.test/approve" });
-    expect(prisma.donation.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "CREATED", paypalOrderId: "ORDER-1" }) }));
+    expect(response.body).toMatchObject({ allocation_id: "allocation-1", paypal_order_id: "ORDER-1", status: "created", approval_url: "https://sandbox.test/approve" });
+    expect(prisma.donation.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ allocationId: "allocation-1", campaignId: "camp_demo", status: "CREATED", paypalOrderId: "ORDER-1" }) }));
+    expect(createOrder).toHaveBeenCalledOnce();
+  });
+
+  it("rejects a missing allocation before creating a PayPal order", async () => {
+    const { app, prisma, createOrder } = setup();
+    (prisma.aidAllocation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "missing", amount: 10, currency: "EUR" });
+    expect(response.status).toBe(404);
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an allocation whose assistance case is missing", async () => {
+    const { app, prisma, allocation, createOrder } = setup();
+    allocation.request = null;
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "EUR" });
+    expect(response.status).toBe(404);
+    expect(response.body.error.message).toContain("assistance case");
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unapproved allocation before creating a PayPal order", async () => {
+    const { app, prisma, allocation, createOrder } = setup();
+    allocation.status = "PROPOSED";
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "EUR" });
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("approved");
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an amount above the approved allocation before creating a PayPal order", async () => {
+    const { app, prisma, createOrder } = setup();
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 100.01, currency: "EUR" });
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("cannot exceed");
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a currency mismatch before creating a PayPal order", async () => {
+    const { app, prisma, createOrder } = setup();
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "USD" });
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("currency");
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a campaign currency inconsistent with the approved allocation", async () => {
+    const { app, allocation, createOrder } = setup();
+    allocation.campaign.currency = "USD";
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "EUR" });
+    expect(response.status).toBe(400);
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("rejects an inactive campaign before creating a PayPal order", async () => {
+    const { app, prisma, allocation, createOrder } = setup();
+    allocation.campaign.active = false;
+    const response = await request(app).post("/api/payments/donations").send({ allocation_id: "allocation-1", amount: 10, currency: "EUR" });
+    expect(response.status).toBe(404);
+    expect(createOrder).not.toHaveBeenCalled();
+    expect(prisma.donation.create).not.toHaveBeenCalled();
   });
 
   it("stores the capture ID and transitions the donation to CAPTURED", async () => {
@@ -36,6 +110,7 @@ describe("donation routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("captured");
     expect(response.body.paypal_capture_id).toBe("CAP-1");
+    expect(response.body.allocation_id).toBe("allocation-1");
     expect(prisma.donation.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "CAPTURED", paypalCaptureId: "CAP-1" } }));
   });
 

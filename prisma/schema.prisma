@@ -206,11 +206,15 @@ model Donation {
   status          DonationStatus @default(CREATED)
   paypalOrderId   String         @unique
   paypalCaptureId String?        @unique
+  allocationId    String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   campaign Campaign @relation(fields: [campaignId], references: [id])
   donor    User?    @relation(fields: [donorId], references: [id])
+  allocation AidAllocation? @relation(fields: [allocationId], references: [id], onDelete: Restrict)
+
+  @@index([allocationId])
 }
 
 enum AllocationStatus {
@@ -236,6 +240,7 @@ model AidAllocation {
   request    AssistanceRequest @relation(fields: [requestId], references: [id])
   approvedBy User?             @relation("ApprovedBy", fields: [approvedById], references: [id])
   payouts    Payout[]
+  donations  Donation[]
 }
 
 enum PayoutStatus {

@@ -56,9 +56,11 @@ The seed creates the demo campaign `camp_demo` with currency EUR. `npm run dev` 
 
 ## PayPal Sandbox manual test
 
-1. Open `http://localhost:3000/donate` and enter a positive EUR amount.
-2. Submit. In the browser Network panel, verify `POST /api/payments/donations` returns HTTP 201 with a donation
-   ID, PayPal order ID, `created` status, amount, currency and `approval_url`.
+1. Open a complete assistance case in the NGO dashboard and approve it. Approval records the NGO decision; it does
+   not claim funds have been transferred.
+2. From that case, open the approved allocation's donation link, enter an amount up to the allocation amount, and
+   submit. In the browser Network panel, verify `POST /api/payments/donations` returns HTTP 201 with the allocation
+   ID, donation ID, PayPal order ID, `created` status, amount, currency and `approval_url`.
 3. Verify the donation row exists in Supabase with that `paypalOrderId` and `CREATED` status. The order is also
    visible in Sandbox activity.
 4. The browser opens PayPal Sandbox. Sign in using the Sandbox Personal buyer account, review and approve.
@@ -66,8 +68,8 @@ The seed creates the demo campaign `camp_demo` with currency EUR. `npm run dev` 
    `POST /api/payments/donations/:id/capture` to LIFELINE.
 6. Wait for the backend response. Verify the response contains `status: "captured"` and `paypal_capture_id`, and
    the page shows success only after that response.
-7. In the database, verify the Donation row has `status = CAPTURED`, the same PayPal order ID, and a non-null
-   `paypalCaptureId`.
+7. In the database, verify the Donation row has the expected `allocationId`, `status = CAPTURED`, the same PayPal
+   order ID, and a non-null `paypalCaptureId`.
 8. Negative case: start another donation and cancel on PayPal. The app returns to `/donate?state=cancelled`; it
    must not show capture success. Verify that donation is not `CAPTURED`.
 
