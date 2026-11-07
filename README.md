@@ -1,162 +1,191 @@
 # LIFELINE
 
-AI-Powered Humanitarian Financial Access and Payment Coordination Network.
+**AI-Powered Humanitarian Financial Access and Payment Coordination Network**
 
 > Money should reach people. Access should reach them too.
 
-A person describes a crisis in plain language. LIFELINE works out what they need and what financial access they
-actually have, compares the routes for getting money to them, builds a basket of essentials within budget, and
-handles the payment through PayPal Sandbox, with human approval before any money moves.
+LIFELINE is a humanitarian assistance coordination prototype. An NGO worker records a family’s needs and financial access constraints; the application structures the report, evaluates available payment routes, and builds a budget-aware basket of essentials. An NGO coordinator reviews and approves an assistance allocation. Donors can fund an approved allocation through PayPal Sandbox.
 
-LIFELINE is not a bank, a wallet or a charity platform. It is a decision layer between people in crisis and the
-payment infrastructure that still works.
+AI extracts, explains, and ranks. Deterministic backend rules validate amounts, currencies, budgets, eligibility, and state transitions. NGO approval controls allocation authorization. PayPal Sandbox handles the donor checkout only: the application does not send PayPal payouts to beneficiaries. Its assistance disbursement endpoint is an explicitly simulated internal state.
 
-## Three AI modules
+## Current status
 
-| Module                 | AI                         | Also owns                                           | Branch                           | Handoff |
-| ---------------------- | -------------------------- | --------------------------------------------------- | -------------------------------- | ------- |
-| Situation Intelligence | Situation Agent            | Orchestrator, `/api/cases`, dashboard, Render deploy | `feature/situation-agent`        | [Member 1](docs/handoffs/member-1-situation.md) |
-| Financial Intelligence | Explanation Agent          | Fee/score/approval rules, PayPal webhooks + payouts | `feature/financial-intelligence` | [Member 2](docs/handoffs/member-2-financial.md) |
-| Commerce Intelligence  | Ranking Agent              | Basket rules, Channel3, PayPal donor checkout       | `feature/commerce-payments`      | [Member 3](docs/handoffs/member-3-commerce.md) |
+The main case, finance, commerce, NGO approval, donation, and dashboard flows are implemented. The API supports PayPal Sandbox order creation, capture validation, cancellation, and signature-verified webhook processing. Channel3 product search is optional and falls back to a local synthetic registry.
 
-Each member has about 25 hours of work: one AI part, one set of deterministic rules, one external service, one
-frontend page and one final-day job.
+Two deployment/live-verification items remain:
 
-AI extracts, compares, ranks and explains. Deterministic code calculates scores, fees and totals. Humans and
-backend rules authorise payments.
+- PayPal Sandbox buyer approval for EUR currently fails with `UNSUPPORTED_PAYEE_CURRENCY`, even though OAuth and EUR order creation succeed and the configured German Sandbox seller has EUR as its primary currency. No successful capture has been established for that failing checkout.
+- Live webhook delivery requires a deployed public HTTPS endpoint, webhook registration in the PayPal Sandbox app, `PAYPAL_WEBHOOK_ID`, and a delivery test.
 
+The simulated disbursement is not a real PayPal transfer or proof of aid delivery. There is no authentication or role-based access control in this MVP. See the [complete project overview](docs/LIFELINE_PROJECT_OVERVIEW.md) for detailed implementation notes, state transitions, API routes, limitations, and evidence.
+
+## End-to-end flow
+
+```text
+Situation report
+      ↓
+Situation Agent extracts needs and missing information
+      ↓
+Deterministic finance and accessibility rules
+      ↓
+Commerce sources + ranking → budget-aware basket
+      ↓
+Persisted assistance case → NGO review and approval
+      ↓
+Donation linked to approved allocation → PayPal Sandbox order
+      ↓
+Buyer approval → backend capture validation / verified webhook
+      ↓
+Captured funds can support an explicitly simulated disbursement
+      ↓
+NGO coordinates actual assistance outside this application
 ```
-message ─► Situation ─► Financial ─► Commerce ─► NGO/donor approval ─► PayPal Sandbox ─► dashboard
-          (needs,       (route,      (basket,
-           access)       usable €)    reserve)
+
+The beneficiary does not need to shop online, use PayPal, or receive PayPal funds. A browser redirect alone does not mean a donation was captured.
+
+## AI and decision boundaries
+
+| Component | Purpose | Deterministic controls |
+| --- | --- | --- |
+| Situation Agent | Extract structured needs, location, budget, urgency, access factors, and missing information from a report | Output is validated and post-processed; missing required facts can stop the workflow for clarification. |
+| Finance explanation | Explain a route assessment | Route fees, usable value, accessibility scores, and eligibility outcomes are calculated by backend rules. |
+| Commerce ranking | Rank eligible product candidates and provide reasons | Product IDs are checked against candidates; basket needs, quantities, currency, reserve, and budget are enforced by code. |
+
+The supported LLM providers use an OpenAI-compatible client: Groq and optionally Gemini. Provider/model credentials are configured on the API server. If an LLM call fails, finance explanation and commerce ranking have deterministic fallbacks; situation extraction requires an available provider and otherwise returns an error rather than fabricating extracted facts.
+
+## Commerce and assistance
+
+Commerce uses a local synthetic product registry and can optionally search Channel3 at `POST https://api.trychannel3.com/v1/search` with server-side `x-api-key` authentication. Channel3 results are normalized and validated; missing configuration or upstream errors leave the local products available. Prices are estimates, not guaranteed offers or stock.
+
+The basket builder uses integer-cent arithmetic, validates currency and budget, applies the configured reserve, selects at most one item per need, and returns alternatives and unmet needs. NGO approval requires an eligible persisted assistance case and basket, a valid amount/currency, and a matching active campaign. Approval does not mean that the allocation is funded; funding is recorded through the donation/payment lifecycle.
+
+## PayPal and disbursement
+
+PayPal credentials and API calls are server-side. The application is configured for the PayPal Sandbox base URL. Donation creation validates an approved allocation before creating an order. Capture checks the PayPal order status, capture ID, amount, and currency before persisting `CAPTURED`. Cancellation is tied to the specific donation and cannot overwrite a successful capture. Verified webhook events are idempotent and protected against terminal-state regressions.
+
+The webhook endpoint is `POST /api/payments/webhooks/paypal`. It preserves raw request bytes, requires PayPal transmission headers and `PAYPAL_WEBHOOK_ID`, and calls PayPal’s verification API. It handles `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, and `PAYMENT.CAPTURE.DENIED`. Automated tests mock PayPal verification; live webhook registration/delivery is still pending deployment.
+
+The payout endpoint records only a simulated assistance disbursement after verifying an approved allocation and sufficient captured donations. It does not call a PayPal Payouts API and does not claim that a beneficiary received money.
+
+## Main screens
+
+| Page | Purpose |
+| --- | --- |
+| `/` | Project landing page and entry point. |
+| `/situation` | Record or review a situation and structured needs. |
+| `/finance` | Inspect financial route and accessibility analysis. |
+| `/commerce` | Build a commerce basket from needs and budget. |
+| `/dashboard` | Review cases, approve eligible allocations, and request simulated disbursement. |
+| `/donate` | Fund a selected approved allocation through PayPal Sandbox. |
+| `/donate/return` | Ask the API to capture the returned order and show the verified result. |
+
+The dashboard is a demo UI, not a secured NGO portal. See the [API contracts](docs/api-contracts.md) and [PayPal integration notes](docs/paypal-integration.md) for more details.
+
+## Architecture
+
+```mermaid
+flowchart TD
+  UI[Next.js web app] --> API[Express API]
+  API --> ORCH[Case orchestration]
+  ORCH --> AI[LLM extraction / explanation / ranking]
+  ORCH --> RULES[Deterministic rules and validation]
+  RULES --> COMMERCE[Local registry / optional Channel3]
+  API --> DB[(Prisma + PostgreSQL / Supabase)]
+  API --> PP[PayPal Sandbox OAuth, Orders, webhook verification]
+  API --> SIM[Simulated assistance disbursement]
 ```
-
-## Status
-
-| Part                                    | State                          |
-| --------------------------------------- | ------------------------------ |
-| Monorepo, contracts, samples, AI client | ✅ Done                        |
-| Shared PayPal client, route placeholders | ✅ Done                       |
-| Database schema, seed, Postman, Render config | ✅ Done (no migration run yet) |
-| Situation Intelligence + Orchestrator   | ⏳ In progress (Member 1)      |
-| Financial Intelligence + payouts        | ⏳ In progress (Member 2)      |
-| Commerce Intelligence + donor checkout  | ✅ Implemented; Sandbox/database manual verification pending (Member 3) |
-
-What is real, sandbox-tested or simulated: [integration status](docs/integration-status.md).
-
-## Timeline
-
-| Day           | Goal                                                                       |
-| ------------- | -------------------------------------------------------------------------- |
-| Day 1 · 6 Nov | Supabase + PayPal sandbox set up; each module's core works on its sample   |
-| Day 2 · 7 Nov | AI + rules tested, module pages built; **PRs into `main` in the evening**  |
-| Day 3 · 8 Nov | Orchestrator, dashboard, donate flow, approval and payouts: demo works end to end |
-| Day 4 · 9 Nov | Deploy on Render, integration status, Postman, end-to-end test, demo video |
-| 10–12 Nov     | Buffer only. Submit before **12 Nov 12:00 PT**                              |
-
-Day-by-day tasks are in each member's handoff.
-
-## Tech stack (free tier)
-
-| Layer             | Technology                                  |
-| ----------------- | ------------------------------------------- |
-| Frontend          | Next.js, React, TypeScript, Tailwind CSS    |
-| Dashboard         | AG Grid Community, Recharts                 |
-| Backend           | Node.js, Express, TypeScript                |
-| Contracts         | Shared TypeScript types + Zod validation    |
-| LLM               | Groq (primary), Gemini (fallback)           |
-| Database          | Supabase PostgreSQL + Prisma                |
-| Product discovery | Channel3 API + local merchant registry      |
-| Payments          | PayPal Sandbox                              |
-| Hosting           | Render                                      |
-| API testing       | Postman, Vitest + Supertest                 |
 
 ## Repository layout
 
-```
-apps/web/                 Next.js frontend: one page per module + dashboard
-apps/api/src/
-  ai/                     Shared LLM client (Groq → Gemini fallback)
-  rules/                  Deterministic decision engine (no AI)
-  modules/                situation/ · finance/ · commerce/  (one per member)
-  integrations/           paypal/ · channel3/
-  orchestration/          Chains the three modules (integration phase)
-  routes/ middleware/ config/ database/ utils/
-packages/contracts/       Shared request/response schemas + sample JSON
-prisma/                   Shared database schema
+```text
+apps/web/                 Next.js frontend pages and UI
+apps/api/src/             Express API, AI, routes, rules, modules, integrations
+  ai/                     LLM clients and provider configuration
+  modules/                situation, finance, commerce, and assistance services
+  orchestration/          Case workflow
+  rules/                  Deterministic financial and eligibility rules
+  integrations/            PayPal and Channel3 clients/adapters
+packages/contracts/       Shared request/response schemas and types
+prisma/                   Prisma schema, migrations, and seed
 tests/                    Unit and integration tests
-postman/                  API collection
-docs/                     Architecture, AI design, PayPal, contracts, workflow
+postman/                  API request collection
+docs/                     Architecture, integration, API, and project references
 ```
 
-## Getting started
+## Requirements and setup
 
-Requires Node.js 22 or later.
+- Node.js 22 or later
+- PostgreSQL/Supabase for persisted cases, baskets, allocations, donations, and audit data
+- PayPal Sandbox app credentials for donation checkout
+- An LLM provider/model pair for Situation Agent extraction; LLM credentials are otherwise optional for API startup
+- Channel3 key is optional; local products remain available without it
 
 ```bash
-npm install                 # also generates the Prisma client
-cp .env.example .env        # add your own keys
-npm test                    # should pass before you start
-npm run dev                 # API → http://localhost:4000, web → http://localhost:3000
+npm install
+cp .env.example .env
+# Set the required values in .env; keep secrets server-side and out of Git.
+npm run db:validate
+npm run db:migrate
+npm run db:seed
+npm run dev
 ```
 
-The API process can start without external keys. The implemented Member 3 endpoints require PostgreSQL, and donor checkout also requires PayPal Sandbox credentials; Channel3 and the LLM have local/deterministic fallbacks.
+`npm run dev` starts the API and web app together. The API defaults to port 4000 and the web app to port 3000. `npm run db:migrate` runs Prisma’s development migration command; use the deployment migration workflow for deployed environments. Do not run a reset against a database with data you need to keep.
 
-### Keys you need
+### Important environment variables
 
-| Variable                                 | Where to get it                               | Needed by      |
-| ---------------------------------------- | --------------------------------------------- | -------------- |
-| `GROQ_API_KEY`, `GROQ_MODEL`             | console.groq.com                              | All modules    |
-| `GEMINI_API_KEY`, `GEMINI_MODEL`         | aistudio.google.com (optional fallback)       | All modules    |
-| `DATABASE_URL`, `DIRECT_URL`             | Supabase → Connect                            | Saving results |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_BASE_URL` | developer.paypal.com → Sandbox app; base URL must remain `https://api-m.sandbox.paypal.com` | Member 3 donor checkout |
-| `PAYPAL_WEBHOOK_ID`                      | PayPal Sandbox app webhook (after deployment) | Member 3 donation webhooks; set after registration |
-| `CHANNEL3_API_KEY`                       | Channel3 (optional; local synthetic registry works without it) | Commerce |
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Prisma application database connection. |
+| `DIRECT_URL` | Direct database connection used by Prisma configuration/seed when provided. |
+| `LLM_PROVIDER` | Selects the preferred supported LLM provider. |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Groq provider configuration. |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional Gemini provider/fallback configuration. |
+| `CHANNEL3_API_KEY` | Optional server-side Channel3 product search. |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Server-side PayPal Sandbox OAuth credentials. |
+| `PAYPAL_BASE_URL` | PayPal API base URL; payment routes require the Sandbox host. |
+| `PAYPAL_WEBHOOK_ID` | Registered webhook ID required to verify incoming webhook requests. |
+| `WEB_ORIGIN` | API CORS origin. |
+| `NEXT_PUBLIC_API_URL` | API base URL used by the web app; do not put secrets in `NEXT_PUBLIC_*`. |
 
-Each module can be built and tested with the sample JSON in `packages/contracts/samples/` before the others exist.
+Use `.env.example` for the repository’s current template. Never commit `.env` or expose server credentials through frontend configuration.
 
-### Database (Supabase)
+## Useful commands
 
-1. Create a free project at supabase.com.
-2. **Connect** → copy the transaction pooler URL into `DATABASE_URL` and the session URL into `DIRECT_URL`.
-3. `npm run db:migrate` to create the tables (the shared Prisma schema already defines Basket, BasketItem, and Donation; no Member 3 schema migration was added).
-4. `npm run db:seed` to add the demo NGO user and the demo campaign `camp_demo`.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Run API and web app together. |
+| `npm run dev:api` / `npm run dev:web` | Run one application. |
+| `npm test` | Run the Vitest suite. |
+| `npm run typecheck` | Type-check workspaces and root TypeScript. |
+| `npm run build` | Run available workspace production builds. |
+| `npm run db:validate` | Validate Prisma schema. |
+| `npm run db:generate` | Generate Prisma client. |
+| `npm run db:migrate` | Run Prisma migrate dev. |
+| `npm run db:seed` | Seed demo NGO/campaign data. |
+| `npm run db:studio` | Open Prisma Studio. |
 
-Member 3 does this once on Day 1 and shares the two URLs privately.
-
-Free Supabase projects pause after a week without activity. Open the dashboard before a demo.
-
-## Scripts
-
-| Command               | What it does                               |
-| --------------------- | ------------------------------------------ |
-| `npm run dev`         | Start API and web together                 |
-| `npm run dev:api`     | Start only the API                         |
-| `npm run dev:web`     | Start only the web app                     |
-| `npm run typecheck`   | Type-check every package                   |
-| `npm test`            | Run all tests                              |
-| `npm run build`       | Production build                           |
-| `npm run db:validate` | Validate the Prisma schema                 |
-| `npm run db:migrate`  | Create/apply migrations                    |
-| `npm run db:seed`     | Add the demo NGO user and campaign         |
-| `npm run db:studio`   | Browse the database                        |
-
-## Documentation
-
-- [Project overview](docs/project-overview.md)
-- [Architecture](docs/architecture.md)
-- [AI design](docs/ai-design.md)
-- [PayPal integration](docs/paypal-integration.md)
-- [Integration status](docs/integration-status.md): what's real, sandbox-tested or simulated
-- [API contracts](docs/api-contracts.md)
-- [Git workflow](docs/git-workflow.md): read this before you start
-- Handoffs: [Member 1](docs/handoffs/member-1-situation.md) · [Member 2](docs/handoffs/member-2-financial.md) · [Member 3](docs/handoffs/member-3-commerce.md)
+Tests mock external services and do not perform live PayPal, Channel3, LLM, or production database calls. See [tests/README.md](tests/README.md) for test coverage notes.
 
 ## Known limitations
 
-- All demo data (recipients, merchants, locations, fees) is synthetic.
-- PayPal runs in Sandbox only. Sandbox proves a technical workflow, not permission to operate real payments.
-- Any simulated payout is labelled as a demo fallback in the UI.
+- PayPal is Sandbox-only; the current EUR approval failure is `UNSUPPORTED_PAYEE_CURRENCY` and its PayPal-side receiving/eligibility cause remains unresolved.
+- Live PayPal webhook registration and public HTTPS delivery verification remain deployment tasks.
+- Assistance disbursement is simulated; actual payments to aid recipients and delivery confirmation are outside this MVP.
+- The project has no authentication or role-based authorization.
+- Product registry entries and demo humanitarian data are synthetic; Channel3 price/availability data is external and may not represent local stock.
+- The demo dashboard is not suitable as a production NGO case-management portal.
+
+## Further documentation
+
+- [Complete project overview and developer reference](docs/LIFELINE_PROJECT_OVERVIEW.md)
+- [Architecture](docs/architecture.md)
+- [AI design](docs/ai-design.md)
+- [PayPal integration](docs/paypal-integration.md)
+- [Integration status](docs/integration-status.md)
+- [API contracts](docs/api-contracts.md)
+- [Git workflow](docs/git-workflow.md)
+- [Member handoffs](docs/handoffs/)
 
 ## Licence
 
