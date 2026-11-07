@@ -375,3 +375,23 @@ npm install && npm test && git push
 - Her registry has **EUR prices only**, so an INR case gets `unmet_needs` instead of invented products: honest, and a
   good thing to show. The demo story uses EUR.
 - Test without network or database: real basket from the registry, total within 80% of €285, reserve at least 20%.
+
+### Connecting Member 2's Finance module (7 Nov)
+
+- Fetched `feature/financial-intelligence` (39 commits by FathimaMehrinVS). `git merge-tree` showed **no conflicts**
+  with my branch or with `main`. Merged it into my branch only; `main` is unchanged until the team agrees.
+- `modules.ts`: the two "not merged yet" placeholders became her functions, exactly as her README suggested:
+  `evaluateRoutes(input, llm)` and `getDemoRouteCatalogue()`. The `notMerged` helper is gone: all three modules are real.
+- New tests (no network, no database; only the Situation Agent is faked):
+  - the contract sample (bank unavailable, wallet unknown) → `needs_information` asking for `wallet_acceptance`,
+    because the PayPal route is held back only by that unknown. The case asks instead of dying.
+  - same case with wallet accepted → `complete`: PayPal route recommended, €285 usable after the illustrative 5% fee,
+    real basket from Member 3's registry within 80% of €285.
+- Checks: typecheck clean, **107 tests** pass, production build passes.
+
+### Still open
+
+- `POST /api/allocations/approve` (Member 2) still answers 501, so the dashboard's Approve shows "Retry · Not merged".
+- Saving finance results needs an `AssistanceRequest` row first (her `saveFinancialAssessment(requestId, …)`); my
+  case store is still in memory. Next: a Prisma case store that creates the request, then saves both assessments.
+- Render deployment, demo script, video, Devpost write-up.
