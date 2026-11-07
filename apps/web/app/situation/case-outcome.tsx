@@ -28,7 +28,7 @@ export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
       )}
       {result.status === "no_usable_route" && <NoRoute result={result} />}
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
           onClick={() => setShowDetails((v) => !v)}
@@ -64,7 +64,7 @@ function Ready({ result }: { result: CaseResult }) {
   if (!route || !finance) return null;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
       <div className="flex items-center gap-3 bg-emerald-50 px-5 py-4">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white" aria-hidden="true">
           ✓
@@ -143,7 +143,7 @@ function Figure({ label, value, highlight = false }: { label: string; value: str
 function NeedsAnswers({ questions, onAnswer, busy }: { questions: string[]; onAnswer: (answers: string) => void; busy: boolean }) {
   const [answers, setAnswers] = useState("");
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
       <h2 className="text-lg font-semibold text-amber-900">A few answers, and we can find a route</h2>
       <p className="mt-1 text-sm text-amber-800">
         LIFELINE never guesses these, because a wrong guess could send money where it can&apos;t be used.
@@ -185,7 +185,7 @@ function NeedsAnswers({ questions, onAnswer, busy }: { questions: string[]; onAn
 
 function NoRoute({ result }: { result: CaseResult }) {
   return (
-    <section className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-300 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">No safe route yet</h2>
       <p className="mt-1 text-sm text-slate-600">
         None of the payment routes would get the money to the family safely with what we know now. The case is saved, and an
