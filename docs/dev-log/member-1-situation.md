@@ -440,3 +440,19 @@ npm install && npm test && git push
   worried family member.
 - **Fix:** each route with a plain reason built from Member 2's flag codes ("PayPal needs a mobile wallet they can't
   use"), plus Yes / No questions for access that is still unknown, because a new answer may open a route.
+
+### Voice and "Tap to answer" (7 Nov)
+
+- **Revisited the voice decision (#15).** It was dropped because the family may have no internet. But the person typing
+  is the sender abroad (or an NGO worker), who does have internet and may be too panicked to type. So voice input came
+  back, and only for them.
+- **Voice:** the browser's own Web Speech API (no new service or key). 🎤 *Speak instead of typing* with a language
+  picker (English, Hindi, Malayalam, Tamil, Arabic, Ukrainian, Spanish, French); the words appear in the message box.
+  Works in Chrome and Edge; elsewhere the button is hidden. Chrome sends the audio to its own speech service, which is
+  why the "Keep them safe" note matters. 🔊 *Listen* buttons read the result and the follow-up questions aloud.
+- **Tap to answer:** a second tab with 7 quick questions (who, where, needs, amount, urgency, six Yes / No / Not sure
+  access questions, anything else). The taps become full sentences, shown as "What we'll send to LIFELINE", and go
+  through the same Situation Agent. "Not sure" adds nothing, so it stays unknown.
+- **Result:** in the browser test, a case made only with taps went straight to "We found a way to help", with no
+  follow-up questions.
+- The answer sentences now live in one file (`app/situation/answers.ts`), shared by the tap form and the follow-up form.

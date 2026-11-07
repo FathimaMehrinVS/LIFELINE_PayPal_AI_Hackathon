@@ -4,11 +4,12 @@ import type { CaseResult } from "@lifeline/contracts";
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney, recommendedRoute, routeName } from "../dashboard/case-row";
+import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
+import { ListenButton } from "./voice";
 
 // Owner: Member 1. The answer to "can we help, and how?" for one case, in plain words.
 
-const NEED_LABELS: Record<string, string> = { baby_supplies: "baby supplies" };
 
 interface CaseOutcomeProps {
   result: CaseResult;
@@ -69,10 +70,13 @@ function Ready({ result }: { result: CaseResult }) {
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white" aria-hidden="true">
           ✓
         </span>
-        <div>
+        <div className="flex-1">
           <h2 className="text-lg font-semibold text-emerald-900">We found a way to help</h2>
           <p className="text-sm text-emerald-800">An NGO reviews it next. Nothing is paid until they approve.</p>
         </div>
+        <ListenButton
+          text={`We found a way to help. ${formatMoney(route.usable_value, finance.currency)} can reach the family through ${routeName(route.route_id)}, after ${formatMoney(route.estimated_fee, finance.currency)} in fees.${commerce && commerce.items.length > 0 ? ` Suggested essentials: ${commerce.items.map((i) => i.name).join(", ")}.` : ""} An NGO reviews it next. Nothing is paid until they approve.`}
+        />
       </div>
 
       <div className="grid gap-4 p-5 sm:grid-cols-3">
@@ -140,26 +144,12 @@ function Figure({ label, value, highlight = false }: { label: string; value: str
   );
 }
 
-/** Facts the person can give back to us, and how each answer is written into the message. */
-const ACCESS_ANSWERS: Record<string, { yes: string; no: string }> = {
-  bank_availability: { yes: "They can use a bank account or branch.", no: "They cannot use a bank." },
-  atm_access: { yes: "There is a working ATM they can reach.", no: "They cannot reach a working ATM." },
-  wallet_acceptance: { yes: "They can receive and pay with a mobile wallet.", no: "They cannot use a mobile wallet." },
-  cash_availability: { yes: "They can get physical cash locally.", no: "They cannot get physical cash locally." },
-  merchant_acceptance: { yes: "Local shops are open and accept payments.", no: "Local shops are closed or cannot accept payments." },
-  connectivity: { yes: "They have working internet or phone signal.", no: "They have no internet or phone signal." },
-};
-
-const NEED_OPTIONS = ["food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport"] as const;
-
 export interface CaseAnswers {
   /** Plain sentences added to the message, e.g. "They cannot use a mobile wallet." */
   sentences: string[];
   location?: string;
   currency?: string;
 }
-
-type Choice = "yes" | "no" | "unsure";
 
 interface NeedsAnswersProps {
   questions: string[];
@@ -180,11 +170,10 @@ function NeedsAnswers({ questions, onAnswer, busy, title, intro }: NeedsAnswersP
   function collect(): CaseAnswers {
     const answers: CaseAnswers = { sentences: [] };
     for (const q of questions) {
-      const access = ACCESS_ANSWERS[q];
       const text = texts[q]?.trim();
-      if (access) {
-        const choice = choices[q];
-        if (choice === "yes" || choice === "no") answers.sentences.push(access[choice]);
+      if (ACCESS_ANSWERS[q]) {
+        const sentence = accessSentence(q, choices[q]);
+        if (sentence) answers.sentences.push(sentence);
       } else if (q === "budget" && text) {
         answers.sentences.push(`I can send ${text}${texts.currency ? ` ${texts.currency}` : ""}.`);
       } else if (q === "currency" && text) {
@@ -207,9 +196,12 @@ function NeedsAnswers({ questions, onAnswer, busy, title, intro }: NeedsAnswersP
 
   return (
     <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
-      <h2 className="text-lg font-semibold text-amber-900">
-        {title ?? (questions.length === 1 ? "One answer, and we can look again" : "A few answers, and we can look again")}
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="text-lg font-semibold text-amber-900">
+          {title ?? (questions.length === 1 ? "One answer, and we can look again" : "A few answers, and we can look again")}
+        </h2>
+        <ListenButton label="Listen to the questions" text={questions.map((q) => MISSING_QUESTIONS[q] ?? q).join(" ")} />
+      </div>
       <p className="mt-1 text-sm text-amber-800">
         {intro ?? "LIFELINE never guesses these, because a wrong guess could send money where it can't be used."}
       </p>
@@ -379,7 +371,14 @@ function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (an
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border border-slate-300 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">No safe route yet</h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-lg font-semibold text-slate-900">No safe route yet</h2>
+          {finance && (
+            <ListenButton
+              text={`No safe route yet. ${finance.routes.map((r) => `${routeName(r.route_id)} ${plainReason(r, finance.currency)}.`).join(" ")}`}
+            />
+          )}
+        </div>
         <p className="mt-1 text-sm text-slate-600">
           With what we know now, none of the ways to send money would safely reach the family. The case is saved, and an NGO
           worker can look at other options.

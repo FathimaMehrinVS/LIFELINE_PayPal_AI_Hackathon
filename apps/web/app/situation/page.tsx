@@ -5,6 +5,8 @@ import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useStat
 import { BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, SparkleIcon, UsersIcon } from "../../components/icons";
 import { ApiRequestError, api } from "../../services/api";
 import { type CaseAnswers, CaseOutcome } from "./case-outcome";
+import { QuickAnswers, type QuickRequest } from "./quick-answers";
+import { VoiceInput } from "./voice";
 import { SituationResultView } from "./situation-result";
 
 // Owner: Member 1 (feature/situation-agent)
@@ -120,6 +122,7 @@ function errorMessage(err: unknown) {
 
 export default function SituationPage() {
   const [role, setRole] = useState<Role>("family");
+  const [mode, setMode] = useState<"write" | "tap">("write");
   const [message, setMessage] = useState("");
   const [location, setLocation] = useState("");
   const [currency, setCurrency] = useState("");
@@ -183,6 +186,14 @@ export default function SituationPage() {
     }
   }
 
+  /** "Tap to answer" builds the message from the taps; it also fills the written form, so nothing is hidden. */
+  function onQuickSubmit(request: QuickRequest) {
+    setMessage(request.message);
+    if (request.location) setLocation(request.location);
+    if (request.currency) setCurrency(request.currency);
+    void run("case", request.message, { location: request.location, currency: request.currency });
+  }
+
   /**
    * Adds the answers to the message as plain sentences ("They cannot use a mobile wallet."), so the AI reads them
    * the way they were meant, and re-runs the same case.
@@ -241,7 +252,32 @@ export default function SituationPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <form onSubmit={onSubmit} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1" role="tablist" aria-label="How to describe the situation">
+          {(
+            [
+              ["write", "Write or speak", "In your own words, any language"],
+              ["tap", "Tap to answer", "Quick questions, no typing"],
+            ] as const
+          ).map(([value, label, sub]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={mode === value}
+              onClick={() => setMode(value)}
+              className={`rounded-xl px-4 py-2.5 text-left transition ${mode === value ? "bg-white shadow-sm" : "hover:bg-white/60"}`}
+            >
+              <span className={`block text-sm font-semibold ${mode === value ? "text-indigo-700" : "text-slate-700"}`}>{label}</span>
+              <span className="block text-xs text-slate-500">{sub}</span>
+            </button>
+          ))}
+        </div>
+
+        {mode === "tap" ? (
+          <QuickAnswers busy={busy} onSubmit={onQuickSubmit} />
+        ) : (
+        <form onSubmit={onSubmit} className="space-y-6">
           <div>
             <h2 className="mb-3 text-sm font-semibold text-slate-700">Start from an example, or write your own below</h2>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -287,6 +323,9 @@ export default function SituationPage() {
               <span className="tabular shrink-0">
                 {message.length}/{MAX_LENGTH}
               </span>
+            </div>
+            <div className="mt-3">
+              <VoiceInput onText={(t) => setMessage((m) => (m.trim() ? `${m.trim()} ${t}` : t).slice(0, MAX_LENGTH))} />
             </div>
           </div>
 
@@ -352,8 +391,11 @@ export default function SituationPage() {
             <span className="text-xs text-slate-500">{empty ? "Write a few words, or pick an example, to start." : "Ctrl + Enter also sends."}</span>
           </div>
         </form>
+        )}
+        </div>
 
         <aside className="space-y-4">
+          {mode === "write" && (
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="font-bold text-slate-900">What helps us</h2>
             <p className="mt-1 text-xs text-slate-500">Ticks turn green as your message covers them. Anything missing, we ask about instead of guessing.</p>
@@ -380,6 +422,7 @@ export default function SituationPage() {
               })}
             </ul>
           </section>
+          )}
           <section className="rounded-3xl bg-indigo-50 p-5 text-sm text-indigo-900">
             <h2 className="flex items-center gap-2 font-bold">
               <ShieldCheckIcon className="h-5 w-5 text-indigo-600" /> Keep them safe
