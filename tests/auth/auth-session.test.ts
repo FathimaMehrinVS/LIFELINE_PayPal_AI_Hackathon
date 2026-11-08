@@ -9,7 +9,7 @@ function setup(profile: { id: string; email: string | null; role: string | null 
   id: "profile-1", email: "ngo@example.test", role: "NGO",
 }) {
   const dependencies: SessionResolverDependencies = {
-    getSupabaseIdentity: vi.fn().mockResolvedValue({ id: "supabase-user-1" }),
+    getSupabaseIdentity: vi.fn().mockResolvedValue({ id: "supabase-user-1", email: "ngo@example.test", name: "NGO User" }),
     findProfile: vi.fn().mockResolvedValue(profile),
   };
   const app = express();
@@ -19,12 +19,12 @@ function setup(profile: { id: string; email: string | null; role: string | null 
 }
 
 describe("Supabase-backed auth session", () => {
-  it("resolves a valid authenticated user and returns only safe profile fields", async () => {
-    const { app, dependencies } = setup();
+  it.each(["NGO", "DONOR", "PARTNER"] as const)("resolves an authenticated user with the %s role", async (role) => {
+    const { app, dependencies } = setup({ id: "profile-1", email: "user@example.test", role });
     const response = await request(app).get("/api/auth/me").set("Authorization", "Bearer test-access-token");
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ id: "profile-1", email: "ngo@example.test", role: "NGO" });
+    expect(response.body).toEqual({ id: "profile-1", email: "ngo@example.test", role });
     expect(dependencies.getSupabaseIdentity).toHaveBeenCalledWith("test-access-token");
     expect(dependencies.findProfile).toHaveBeenCalledWith("supabase-user-1");
     expect(response.text).not.toContain("test-access-token");
@@ -46,6 +46,7 @@ describe("Supabase-backed auth session", () => {
 
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe("FORBIDDEN");
+    if (role === null) expect(response.body.error.message).toContain("pending assignment");
   });
 
   it("rejects an authenticated Supabase user without a linked LIFELINE profile", async () => {

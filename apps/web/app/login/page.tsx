@@ -4,6 +4,7 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, api, type AuthProfile } from "../../services/api";
+import { signInWithPassword, signOutLocally, signUpWithPassword } from "../../lib/auth-actions";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
 
 type Mode = "sign-in" | "sign-up";
@@ -12,7 +13,7 @@ type ProfileState = "loading" | "ready" | "pending" | "unsupported" | "session-e
 function profileStateForError(error: unknown): ProfileState {
   if (error instanceof ApiRequestError) {
     if (error.status === 401 || error.body.error.code === "AUTHENTICATION_REQUIRED") return "session-expired";
-    if (error.status === 403 && error.body.error.message.includes("No LIFELINE profile")) return "pending";
+    if (error.status === 403 && (error.body.error.message.includes("No LIFELINE profile") || error.body.error.message.includes("role is pending"))) return "pending";
     if (error.status === 403) return "unsupported";
   }
   return "error";
@@ -34,6 +35,7 @@ export default function LoginPage() {
     setProfileState("loading");
     setProfile(null);
     try {
+      await api.provisionAuthProfile(current.access_token);
       const result = await api.getAuthProfile(current.access_token);
       setProfile(result);
       setProfileState("ready");
@@ -66,7 +68,7 @@ export default function LoginPage() {
       setFormError("");
       setNotice("");
       if (next) {
-        // Keep the Supabase auth callback synchronous; do profile I/O in a microtask.
+        // Keep Supabase's auth state callback synchronous; do profile I/O in a microtask.
         queueMicrotask(() => { if (active) void loadProfile(next); });
       } else {
         setProfile(null);
@@ -106,17 +108,11 @@ export default function LoginPage() {
     try {
       const client = getSupabaseBrowserClient();
       if (mode === "sign-in") {
-        const { error } = await client.auth.signInWithPassword({ email: email.trim(), password });
-        if (error) throw error;
+        await signInWithPassword(client, email.trim(), password);
         setNotice("Signed in. Checking your LIFELINE account…");
       } else {
-        const { data, error } = await client.auth.signUp({ email: email.trim(), password });
-        if (error) throw error;
-        if (data.session) {
-          setNotice("Account created. Checking whether your LIFELINE profile is ready…");
-        } else {
-          setNotice("Sign-up started. Check your email to confirm your account. Application role assignment is handled separately.");
-        }
+        await signUpWithPassword(client, email.trim(), password);
+        setNotice("Account created. Checking your LIFELINE profile…");
       }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Authentication failed. Please try again.");
@@ -129,8 +125,7 @@ export default function LoginPage() {
     setBusy(true);
     setFormError("");
     try {
-      const { error } = await getSupabaseBrowserClient().auth.signOut({ scope: "local" });
-      if (error) throw error;
+      await signOutLocally(getSupabaseBrowserClient());
       setSession(null);
       setProfile(null);
       setProfileState("error");

@@ -23,6 +23,12 @@ export interface AuthProfile {
   role: "NGO" | "DONOR" | "PARTNER";
 }
 
+export interface AuthProfileProvisionResult {
+  id: string;
+  email: string;
+  role: AuthProfile["role"] | null;
+}
+
 export class ApiRequestError extends Error {
   constructor(readonly status: number, readonly body: ApiError) {
     super(body.error.message);
@@ -62,4 +68,5 @@ export const api = {
   listCases: () => get<CaseResult[]>("/api/cases"),
   approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
   getAuthProfile: (accessToken: string) => request<AuthProfile>("GET", "/api/auth/me", undefined, accessToken),
+  provisionAuthProfile: (accessToken: string) => request<AuthProfileProvisionResult>("POST", "/api/auth/profile", undefined, accessToken),
 };

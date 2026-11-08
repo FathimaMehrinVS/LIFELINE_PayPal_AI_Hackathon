@@ -28,7 +28,7 @@ model User {
   authUserId String?  @unique
   name       String
   email      String   @unique
-  role       Role
+  role       Role?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt @default(now())
 
