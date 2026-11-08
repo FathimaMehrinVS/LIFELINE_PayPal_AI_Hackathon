@@ -13,13 +13,17 @@ const caseFor = (id: string, status: CaseResult["status"]): CaseResult =>
 
 let base = "";
 let server: ReturnType<ReturnType<typeof createApp>["listen"]>;
+let activeSession = { id: "test-user", email: "test@example.test", role: "NGO" as const };
 beforeAll(async () => {
-  server = createApp().listen(0);
+  server = createApp({ resolveSession: async () => activeSession }).listen(0);
   await new Promise((r) => server.once("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
 afterAll(() => server.close());
-beforeEach(() => runCase.mockReset());
+beforeEach(() => {
+  runCase.mockReset();
+  activeSession = { id: "test-user", email: "test@example.test", role: "NGO" };
+});
 
 const post = (query = "") =>
   fetch(`${base}/api/cases${query}`, {
@@ -50,5 +54,28 @@ describe("POST /api/cases?replaces=", () => {
   it("answers 404 for an unknown case", async () => {
     expect((await post("?replaces=case_00000000-0000-0000-0000-000000000000")).status).toBe(404);
     expect((await post("?replaces=not-a-case")).status).toBe(404);
+  });
+
+  it("keeps owned requests private and prevents an NGO from re-running another user's case", async () => {
+    activeSession = { id: "request-owner", email: "owner@example.test", role: "DONOR" };
+    runCase.mockImplementation(async (id: string) => caseFor(id, "needs_information"));
+    const createdResponse = await post();
+    expect(createdResponse.status).toBe(201);
+    const created = await createdResponse.json() as CaseResult;
+
+    const ownerList = await fetch(`${base}/api/cases/mine`).then((response) => response.json()) as CaseResult[];
+    expect(ownerList.map((item) => item.case_id)).toContain(created.case_id);
+
+    activeSession = { id: "different-user", email: "reviewer@example.test", role: "NGO" };
+    const otherUserList = await fetch(`${base}/api/cases/mine`).then((response) => response.json()) as CaseResult[];
+    expect(otherUserList.map((item) => item.case_id)).not.toContain(created.case_id);
+
+    const denied = await post(`?replaces=${created.case_id}`);
+    expect(denied.status).toBe(404);
+
+    activeSession = { id: "request-owner", email: "owner@example.test", role: "DONOR" };
+    runCase.mockImplementation(async (id: string) => caseFor(id, "complete"));
+    const ownerUpdate = await post(`?replaces=${created.case_id}`);
+    expect(ownerUpdate.status).toBe(200);
   });
 });

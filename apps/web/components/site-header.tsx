@@ -2,26 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useAuthProfile } from "./auth-session";
 import { BasketIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon } from "./icons";
 
 const NAV = [
-  { href: "/", label: "Home", Icon: HomeIcon },
+  { href: "/workspace", label: "Dashboard", Icon: HomeIcon },
   { href: "/situation", label: "New request", Icon: PlusCircleIcon },
+  { href: "/requests", label: "My Requests", Icon: GridIcon },
   { href: "/finance", label: "Financial access", Icon: RouteIcon },
   { href: "/commerce", label: "Essentials", Icon: BasketIcon },
-  { href: "/donate", label: "Donate", Icon: HeartHandIcon },
-  { href: "/dashboard", label: "NGO dashboard", Icon: GridIcon },
-  { href: "/login", label: "Sign in", Icon: ShieldCheckIcon },
+  { href: "/donate", label: "Donations", Icon: HeartHandIcon },
+  { href: "/profile", label: "Profile", Icon: ShieldCheckIcon },
 ];
 
 /** A heart held in an open hand: help that reaches people. */
-export function LifelineMark({ className = "h-10 w-10" }: { className?: string }) {
+export function LifelineMark({ className = "h-10 w-10", inverse = false }: { className?: string; inverse?: boolean }) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
-      <path d="M24 26s-9-5.4-9-11.6A5.2 5.2 0 0 1 24 11a5.2 5.2 0 0 1 9 3.4C33 20.6 24 26 24 26Z" fill="#2F66C4" />
-      <path d="M27.5 13.2a5.2 5.2 0 0 1 5.5 1.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-      <path d="M5 31h6l9 3h7a2.6 2.6 0 0 0 0-5.2h-5.5" stroke="#0F2547" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M11 31v9.5l12 2 17-8.5a3 3 0 0 0-3-5.2l-8.5 4" stroke="#0F2547" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <rect x="2" y="2" width="44" height="44" rx="12" fill={inverse ? "#fff" : "#142D4E"} />
+      <path d="M8 25h7l3.2-6.5 5.5 13 4.3-8 2.4 3.5H40" stroke={inverse ? "#142D4E" : "#fff"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M31.5 14.5c-2-2-5.2-2-7.2 0l-.3.3-.3-.3c-2-2-5.2-2-7.2 0s-2 5.2 0 7.2l7.5 7.2 7.5-7.2c2-2 2-5.2 0-7.2Z" stroke={inverse ? "#159B91" : "#65D2C6"} strokeWidth="1.4" fill="none" />
     </svg>
   );
 }
@@ -33,6 +36,22 @@ function isActive(pathname: string, href: string) {
 /** Sidebar on large screens; a scrollable top bar on phones and tablets. */
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const profile = useAuthProfile();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function signOut() {
+    setSigningOut(true);
+    try {
+      await getSupabaseBrowserClient().auth.signOut({ scope: "local" });
+      await fetch("/api/auth-session", { method: "DELETE", credentials: "same-origin" });
+    } finally {
+      router.replace("/login");
+      router.refresh();
+      setSigningOut(false);
+    }
+  }
+
   return (
     <aside className="border-b border-slate-200 bg-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-60 lg:flex-col lg:border-b-0 lg:border-r">
       <Link href="/" className="flex items-center gap-2 px-5 pt-4 lg:flex-col lg:gap-1 lg:pt-8">
@@ -42,7 +61,7 @@ export function SiteHeader() {
       </Link>
 
       <nav className="flex gap-1 overflow-x-auto px-3 py-3 lg:mt-8 lg:flex-col lg:overflow-visible lg:px-4" aria-label="Main">
-        {NAV.map(({ href, label, Icon }) => {
+        {[...NAV.filter((item) => item.label !== "Donations" || profile.role !== "PARTNER"), ...(profile.role === "NGO" ? [{ href: "/dashboard", label: "NGO dashboard", Icon: GridIcon }, { href: "/overview", label: "Case overview", Icon: GridIcon }] : [])].map(({ href, label, Icon }) => {
           const active = isActive(pathname, href);
           return (
             <Link
@@ -62,12 +81,12 @@ export function SiteHeader() {
         })}
       </nav>
 
-      <div className="mx-4 mb-6 mt-auto hidden rounded-2xl bg-indigo-50 p-4 text-center lg:block">
-        <ShieldCheckIcon className="mx-auto h-8 w-8 text-indigo-600" />
-        <p className="mt-2 text-sm font-semibold text-slate-900">Demo mode</p>
-        <p className="mt-1 text-xs leading-relaxed text-slate-600">
-          Synthetic data only. Payments run in PayPal Sandbox; no real money moves.
-        </p>
+      <div className="mx-4 mb-4 mt-3 rounded-2xl bg-slate-50 p-4 lg:mb-6 lg:mt-auto">
+        <p className="truncate text-sm font-semibold text-slate-900">{profile.email}</p>
+        <p className="mt-1 text-xs text-slate-500">{profile.role === "NGO" ? "NGO team" : profile.role === "DONOR" ? "Donor account" : "Community partner"}</p>
+        <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white disabled:opacity-60">
+          {signingOut ? "Signing out…" : "Log out"}
+        </button>
       </div>
     </aside>
   );

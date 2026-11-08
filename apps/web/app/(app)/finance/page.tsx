@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { FinanceResult } from "@lifeline/contracts";
-import { ApiRequestError, api } from "../../services/api";
+import { ApiRequestError, api } from "@/services/api";
 import { FinancePageHeader } from "./components/FinancePageHeader";
 import { FinanceResults } from "./components/FinanceResults";
 import { SAMPLE_REQUEST } from "./finance-sample";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { DonationResult } from "@lifeline/contracts";
-import { api } from "../../../services/api";
+import { api } from "@/services/api";
 
 export default function DonationReturnPage() {
   const [state, setState] = useState<"capturing" | "captured" | "failed">("capturing");

@@ -28,7 +28,7 @@ model User {
   authUserId String?  @unique
   name       String
   email      String   @unique
-  role       Role
+  role       Role?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt @default(now())
 
@@ -36,6 +36,7 @@ model User {
   donations   Donation[]
   allocations AidAllocation[] @relation("ApprovedBy")
   auditLogs   AuditLog[]
+  requests    AssistanceRequest[] @relation("RequestCreator")
 }
 
 model Campaign {
@@ -71,6 +72,7 @@ model AssistanceRequest {
   location  String?
   currency  String?       @db.Char(3)
   status    RequestStatus @default(RECEIVED)
+  createdById String?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -78,6 +80,9 @@ model AssistanceRequest {
   financial  FinancialAssessment?
   basket     Basket?
   allocation AidAllocation?
+  createdBy  User? @relation("RequestCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
 }
 
 // ─── Member 1: Situation Intelligence ───────────────────────────────────

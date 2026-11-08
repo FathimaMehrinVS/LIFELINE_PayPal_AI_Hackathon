@@ -36,6 +36,15 @@ describe("memory case store", () => {
     expect((await store.list()).map((c) => c.case_id)).toEqual(["b", "a"]);
   });
 
+  it("returns only requests owned by the authenticated profile", async () => {
+    const store = createMemoryCaseStore();
+    await store.save(makeCase("owned-a"), undefined, "profile-a");
+    await store.save(makeCase("owned-b"), undefined, "profile-b");
+
+    expect((await store.listByOwner("profile-a")).map((item) => item.case_id)).toEqual(["owned-a"]);
+    expect(await store.ownerOf("owned-b")).toBe("profile-b");
+  });
+
   it("replaces a case saved again and moves it to the top", async () => {
     const store = createMemoryCaseStore();
     await store.save(makeCase("a"));
@@ -63,6 +72,8 @@ function createPrismaStub(options: { failBasket?: boolean } = {}) {
   };
   const prisma = {
     assistanceRequest: {
+      findUnique: record("request.findUnique", () => null),
+      findMany: record("request.findMany", () => []),
       create: record("request.create"),
       delete: record("request.delete"),
       deleteMany: record("request.deleteMany"),

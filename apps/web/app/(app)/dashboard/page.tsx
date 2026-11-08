@@ -4,14 +4,13 @@ import type { CaseResult } from "@lifeline/contracts";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ApiRequestError, api } from "../../services/api";
+import { ApiRequestError, api } from "@/services/api";
 import { SituationResultView } from "../situation/situation-result";
 import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, formatMoney, recommendedRoute, routeName } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
 // Owner: Member 1 (feature/situation-agent). NGO dashboard: triage cases and approve aid.
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 /** Demo campaign created by `npm run db:seed`. */
 const CAMPAIGN_ID = "camp_demo";
 
@@ -24,9 +23,7 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
 
 async function loadCases(sample: boolean): Promise<CaseResult[]> {
   if (!sample) return api.listCases();
-  const res = await fetch(`${API_URL}/api/cases/samples`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  return api.listSampleCases();
 }
 
 function approvalError(err: unknown) {
