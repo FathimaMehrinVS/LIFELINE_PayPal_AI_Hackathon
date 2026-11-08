@@ -10,17 +10,18 @@ Member 1.
 
 ## M3-1 Login and roles · 9 Nov · in progress
 
-Members 1 and 2 are waiting on this shape, so please confirm it or tell them what changed:
+**Already on `main`:** Supabase Auth, the login page, `GET /api/auth/me`, the `User.authUserId` link, and the roles
+`NGO`, `DONOR` and `PARTNER` (`PARTNER` is our supplier role). Details are in `docs/authentication.md`.
 
-- **Login uses Supabase Auth.** The browser signs in and sends the Supabase access token to our API.
-- **Backend:** a `requireRole("NGO")` middleware that verifies the token on the server and sets `req.user` to
-  `{ id, role }`. Use the existing `Role` values: `NGO`, `DONOR`, `MERCHANT`.
-- **Keep the role in Supabase `app_metadata`,** not `user_metadata`, because users can edit their own `user_metadata`.
-  Never trust a role sent by the browser.
-- **Keys:** the Supabase service role key stays on the server only. Add any new variables to `.env.example` and tell
-  Member 1, so they can be set on Render.
+**Still needed, and Members 1 and 2 are waiting on the first item:**
+
+- **Backend:** a `requireRole("NGO")` middleware built on `resolveAuthenticatedSession`, setting `req.user` to
+  `{ id, email, role }`. Until this exists, no feature route is protected. Roles come from the `User` table, so never
+  trust a role sent by the browser.
+- **API calls:** send the Supabase access token as `Authorization: Bearer <token>` from `services/api.ts`.
 - **Frontend:** a way for any page to get the current user, and a sidebar that shows only that role's pages.
-- **Demo accounts:** one NGO, one donor and one supplier in the seed, written in the README for the judges.
+- **Demo accounts:** one NGO, one donor and one partner, linked to Supabase users and written in the README for the
+  judges.
 - **Tests:** a simple way to pass a fake user, so all tests keep passing without a real login.
 - **Families never log in.**
 
@@ -28,7 +29,7 @@ Members 1 and 2 are waiting on this shape, so please confirm it or tell them wha
 |---|---|
 | Open | `/health`, sending a report, `GET /api/plans`, the PayPal webhook (it checks its own signature) |
 | NGO only | Approve, suppliers, supplier payments, cases list |
-| NGO or supplier | Purchase order status updates |
+| NGO or partner | Purchase order status updates |
 
 Decide whether a donor must log in to pay, and tell the team. Letting guests donate keeps the demo shorter.
 

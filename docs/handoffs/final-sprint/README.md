@@ -69,7 +69,8 @@ We no longer use feature branches. **All three members work on the same branch, 
 4. Stay in your own files (see each member's file). Tell the team before editing `packages/contracts`,
    `prisma/schema.prisma`, `apps/api/src/app.ts` or `apps/web/services/api.ts`.
 5. **Only Member 1 runs `prisma migrate dev`.** Everyone else runs `npx prisma migrate deploy`. `migrate dev` can
-   offer to reset the shared database. If you need a database change, ask Member 1.
+   offer to reset the shared database. If you need a database change, ask Member 1. The login migration is already
+   on `main`, so M1-1 builds on top of it.
 
 ## Database changes (M1-1)
 
@@ -139,5 +140,5 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
-| 8 Nov | Member 1 | Login will use Supabase Auth | Member 3, Member 1 (deploy) |
+| 8 Nov | Member 3 | Supabase login is on `main`. Roles are in the `User` table; suppliers log in as `PARTNER`. `requireRole` is still to come | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |
