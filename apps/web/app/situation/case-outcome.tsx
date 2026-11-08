@@ -14,23 +14,28 @@ import { ListenButton } from "./voice";
 interface CaseOutcomeProps {
   role: ReporterRole;
   result: CaseResult;
+  /** The full analysis is hidden when the page has already shown it. */
+  showDetails?: boolean;
   /** Re-runs the case with the person's answers added to the message. */
   onAnswer: (answers: CaseAnswers) => void;
   busy: boolean;
 }
 
-export function CaseOutcome({ role, result, onAnswer, busy }: CaseOutcomeProps) {
+export function CaseOutcome({ role, result, onAnswer, busy, showDetails: detailsAllowed = true }: CaseOutcomeProps) {
   const [showDetails, setShowDetails] = useState(result.status !== "complete");
+
+  // Costs are the NGO's job: a family is never asked how much money there is.
+  const familyQuestions = role === "ngo" ? result.missing_information : result.missing_information.filter((q) => q !== "budget" && q !== "currency");
 
   return (
     <div className="space-y-6">
       {result.status === "complete" && <Ready role={role} result={result} />}
-      {result.status === "needs_information" && (
-        <NeedsAnswers questions={result.missing_information} onAnswer={onAnswer} busy={busy} />
+      {result.status === "needs_information" && familyQuestions.length > 0 && (
+        <NeedsAnswers questions={familyQuestions} onAnswer={onAnswer} busy={busy} />
       )}
       {result.status === "no_usable_route" && <NoRoute role={role} result={result} onAnswer={onAnswer} busy={busy} />}
 
-      <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      {detailsAllowed && <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
           onClick={() => setShowDetails((v) => !v)}
@@ -47,15 +52,15 @@ export function CaseOutcome({ role, result, onAnswer, busy }: CaseOutcomeProps) 
             <SituationResultView result={result.situation} showMissing={false} />
           </div>
         )}
-      </section>
+      </section>}
 
-      <p className="text-xs text-slate-500">
+      {detailsAllowed && <p className="text-xs text-slate-500">
         Case reference <span className="font-mono">{result.case_id}</span>. Every case is listed on the{" "}
         <Link href="/dashboard" className="underline">
           NGO dashboard
         </Link>
         .
-      </p>
+      </p>}
     </div>
   );
 }

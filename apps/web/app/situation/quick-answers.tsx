@@ -10,6 +10,12 @@ import { VoiceInput } from "./voice";
 // guessing, and fewer follow-up questions are needed.
 
 const WHO: Record<ReporterRole, { value: string; label: string; sentence: string }[]> = {
+  self: [
+    { value: "self", label: "Me", sentence: "I need help." },
+    { value: "family", label: "My family", sentence: "My family needs help." },
+    { value: "children", label: "My children", sentence: "My children need help." },
+    { value: "elderly", label: "An elderly relative", sentence: "An elderly relative needs help." },
+  ],
   ngo: [
     { value: "family", label: "A family", sentence: "A family needs help." },
     { value: "children", label: "Children", sentence: "Children need help." },
@@ -61,7 +67,7 @@ export function QuickAnswers({ role, onSubmit, busy }: QuickAnswersProps) {
     place.trim() && `They are in ${place.trim()}.`,
     needs.length > 0 && `They need ${needs.map(needLabel).join(", ")}.`,
     // The NGO's amount is a decision, sent separately; it isn't part of what the family reported.
-    role === "family" && amount && `I can send ${amount} ${currency}.`,
+    role !== "ngo" && amount && `I can send ${amount} ${currency}.`,
     URGENCY.find((u) => u.value === urgency)?.sentence,
     ...Object.keys(ACCESS_ANSWERS).map((key) => accessSentence(key, access[key])),
     extra.trim(),

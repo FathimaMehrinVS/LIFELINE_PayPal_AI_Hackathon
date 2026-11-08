@@ -1,4 +1,5 @@
 import type { AllocationResult, CaseResult, PayoutResult, Urgency } from "@lifeline/contracts";
+import { api } from "../../services/api";
 
 // Owner: Member 1. One dashboard row: a case plus what happened when the NGO pressed Approve.
 
@@ -16,6 +17,16 @@ export interface CaseRow {
   case: CaseResult;
   approval?: Approval;
   disbursement?: Disbursement;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+/** Real cases, or the clearly labelled preview samples with `?sample=1`. */
+export async function loadCases(sample: boolean): Promise<CaseResult[]> {
+  if (!sample) return api.listCases();
+  const res = await fetch(`${API_URL}/api/cases/samples`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export const URGENCY_RANK: Record<Urgency, number> = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -47,6 +58,11 @@ export function routeName(routeId: string) {
 /** Where a basket item came from, stated plainly so demo data is never mistaken for real stock. */
 export function sourceLabel(source: "channel3" | "local_registry") {
   return source === "channel3" ? "Online listing (Channel3), price estimate" : "Synthetic demo catalogue";
+}
+
+/** A short reference people can read aloud, e.g. "LL-C63F40D4". The full id stays in the data. */
+export function caseRef(caseId: string) {
+  return `LL-${caseId.replace(/^case_/, "").slice(0, 8).toUpperCase()}`;
 }
 
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined) {

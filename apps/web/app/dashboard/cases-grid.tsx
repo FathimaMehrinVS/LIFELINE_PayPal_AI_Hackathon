@@ -7,13 +7,12 @@ import {
   type ICellRendererParams,
   type IRowNode,
   ModuleRegistry,
-  type RowClassParams,
-  type RowStyle,
   themeQuartz,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
-import { type CaseRow, STATUS_LABELS, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
+import { Badge, type BadgeTone } from "../../components/ui";
+import { type CaseRow, STATUS_LABELS, caseRef, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
 
 // Owner: Member 1. NGO case grid (AG Grid Community).
 
@@ -21,30 +20,24 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 // The LIFELINE theme colours (see app/globals.css), passed to AG Grid's Quartz theme.
 const theme = themeQuartz.withParams({
-  accentColor: "#1C4FA8",
+  accentColor: "#159B91",
   backgroundColor: "#FFFFFF",
-  foregroundColor: "#0F2547",
-  borderColor: "#DCE4EE",
+  foregroundColor: "#142D4E",
+  borderColor: "#E1E7EF",
   fontFamily: "inherit",
-  headerBackgroundColor: "#EAF0F7",
-  headerTextColor: "#0F2547",
+  headerBackgroundColor: "#F7F9FC",
+  headerTextColor: "#4F5F73",
   headerFontWeight: 600,
-  rowHoverColor: "#EEF4FC",
-  selectedRowBackgroundColor: "#D9E6F8",
+  rowHoverColor: "#EEF7F6",
+  selectedRowBackgroundColor: "#E3F2F0",
   rowHeight: 52,
   headerHeight: 44,
   wrapperBorderRadius: 16,
 });
 
-export type StatusFilter = "all" | "complete" | "needs_information" | "no_usable_route";
+export type StatusFilter = "all" | "urgent" | "complete" | "needs_information" | "no_usable_route";
 
-/** Dot colour and text colour per urgency: red only for critical. */
-const URGENCY_STYLES: Record<Urgency, { dot: string; text: string }> = {
-  low: { dot: "bg-slate-400", text: "text-slate-600" },
-  medium: { dot: "bg-indigo-500", text: "text-indigo-700" },
-  high: { dot: "bg-amber-400", text: "text-amber-700" },
-  critical: { dot: "bg-red-500", text: "text-red-600" },
-};
+const URGENCY_TONE: Record<Urgency, BadgeTone> = { critical: "critical", high: "warning", medium: "info", low: "neutral" };
 
 /** Short labels for the grid; the filter buttons use the full STATUS_LABELS. */
 const SHORT_STATUS: Record<CaseRow["case"]["status"], string> = {
@@ -53,46 +46,24 @@ const SHORT_STATUS: Record<CaseRow["case"]["status"], string> = {
   no_usable_route: "No route",
 };
 
-const STATUS_STYLES: Record<CaseRow["case"]["status"], string> = {
-  complete: "bg-emerald-100 text-emerald-800",
-  needs_information: "bg-amber-100 text-amber-800",
-  no_usable_route: "bg-red-100 text-red-800",
-};
+const STATUS_TONE: Record<CaseRow["case"]["status"], BadgeTone> = { complete: "success", needs_information: "warning", no_usable_route: "critical" };
+
+function CaseIdCell({ data }: ICellRendererParams<CaseRow>) {
+  return data ? <span className="font-mono text-[13px] font-bold text-teal-text">{caseRef(data.case.case_id)}</span> : null;
+}
 
 function UrgencyCell({ value }: ICellRendererParams<CaseRow, Urgency>) {
-  if (!value) return null;
-  const style = URGENCY_STYLES[value];
-  return (
-    <span className={`flex h-full items-center gap-2 text-sm font-semibold capitalize ${style.text}`}>
-      <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} aria-hidden="true" />
-      {value}
-    </span>
-  );
+  return value ? <Badge tone={URGENCY_TONE[value]} className="capitalize">{value}</Badge> : null;
 }
 
 function StatusCell({ data }: ICellRendererParams<CaseRow>) {
   if (!data) return null;
   const { status, missing_information } = data.case;
-  return (
-    <span
-      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[status]}`}
-      title={missing_information.length > 0 ? `Waiting for: ${missing_information.join(", ")}` : undefined}
-    >
-      {SHORT_STATUS[status]}
-    </span>
-  );
+  return <span title={missing_information.length > 0 ? `Waiting for: ${missing_information.join(", ")}` : undefined}><Badge tone={STATUS_TONE[status]}>{SHORT_STATUS[status]}</Badge></span>;
 }
 
 function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
-  return (
-    <span className="flex h-full flex-wrap content-center items-center gap-1">
-      {data?.case.situation.needs.map((need) => (
-        <span key={need} className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium capitalize text-sky-800 ring-1 ring-sky-100">
-          {need.replace("_", " ")}
-        </span>
-      ))}
-    </span>
-  );
+  return <span className="capitalize text-slate-600">{data?.case.situation.needs.map((need) => need.replace("_", " ")).join(", ")}</span>;
 }
 
 interface ApprovalCellProps extends ICellRendererParams<CaseRow> {
@@ -104,9 +75,9 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
   const { approval } = data;
   if (approval?.state === "approved") {
     if (approval.result.status === "disbursed") {
-      return <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900" title="Simulated demo disbursement; no money was transferred">Demo disbursed</span>;
+      return <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated" title="Simulated demo disbursement; no money was transferred">Demo disbursed</span>;
     }
-    return <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">✓ Approved</span>;
+    return <Badge tone="success">✓ Approved</Badge>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-400">Not ready</span>;
   return (
@@ -118,7 +89,7 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
           event.stopPropagation();
           onApprove(data);
         }}
-        className="rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:bg-slate-300"
+        className="rounded-lg bg-navy px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {approval?.state === "pending" ? "Approving…" : approval?.state === "error" ? "Retry" : "Approve"}
       </button>
@@ -129,14 +100,6 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
       )}
     </span>
   );
-}
-
-/** Coloured left edge by urgency, so critical cases stand out while scrolling. */
-function getRowStyle({ data }: RowClassParams<CaseRow>): RowStyle | undefined {
-  const urgency = data?.case.situation.urgency;
-  if (urgency === "critical") return { backgroundColor: "#FDF1F0", boxShadow: "inset 4px 0 0 #D64545" };
-  if (urgency === "high") return { boxShadow: "inset 4px 0 0 #E8A33D" };
-  return undefined;
 }
 
 interface CasesGridProps {
@@ -151,14 +114,21 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
   const columnDefs = useMemo<ColDef<CaseRow>[]>(
     () => [
       {
+        headerName: "Case ID",
+        colId: "caseId",
+        valueGetter: (p) => (p.data ? caseRef(p.data.case.case_id) : ""),
+        cellRenderer: CaseIdCell,
+        pinned: "left",
+        width: 128,
+      },
+      {
         headerName: "Urgency",
         colId: "urgency",
         valueGetter: (p) => p.data?.case.situation.urgency,
         cellRenderer: UrgencyCell,
         comparator: (a: Urgency, b: Urgency) => URGENCY_RANK[a] - URGENCY_RANK[b],
         sort: "desc",
-        pinned: "left",
-        width: 118,
+        width: 128,
       },
       {
         headerName: "Situation",
@@ -240,7 +210,10 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
 
   const isExternalFilterPresent = useCallback(() => statusFilter !== "all", [statusFilter]);
   const doesExternalFilterPass = useCallback(
-    (node: IRowNode<CaseRow>) => node.data?.case.status === statusFilter,
+    (node: IRowNode<CaseRow>) =>
+      statusFilter === "urgent"
+        ? node.data?.case.situation.urgency === "high" || node.data?.case.situation.urgency === "critical"
+        : node.data?.case.status === statusFilter,
     [statusFilter],
   );
 
@@ -251,16 +224,15 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
       columnDefs={columnDefs}
       defaultColDef={{ sortable: true, resizable: true }}
       getRowId={(p) => p.data.case.case_id}
-      getRowStyle={getRowStyle}
       quickFilterText={quickFilter}
       isExternalFilterPresent={isExternalFilterPresent}
       doesExternalFilterPass={doesExternalFilterPass}
       onRowClicked={(e) => e.data && onSelect(e.data)}
       rowSelection={{ mode: "singleRow", checkboxes: false, enableClickSelection: true }}
-      rowHeight={48}
+      rowHeight={56}
       tooltipShowDelay={300}
       domLayout="autoHeight"
-      overlayNoRowsTemplate="No cases yet. Analyse a situation to create one."
+      overlayNoRowsTemplate="No cases yet. Use New case to record one."
     />
   );
 }
