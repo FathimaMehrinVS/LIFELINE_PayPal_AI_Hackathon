@@ -57,16 +57,16 @@ describe("runCase", () => {
     await runCase("case_1", { message: "..." }, modules);
 
     expect(modules.evaluateRoutes).toHaveBeenCalledWith(expect.objectContaining({ amount: 300, currency: "EUR", routes }));
-    expect(modules.buildBasket).toHaveBeenCalledWith({
+    expect(modules.buildBasket).toHaveBeenCalledWith(expect.objectContaining({
       needs: situation.needs,
       budget: 285,
       currency: "EUR",
       location: "Demo region (synthetic)",
-    });
+    }));
   });
 
   it("stops before finance when budget, currency or location is missing, and asks for all of them", async () => {
-    const modules = fakeModules({ situation: { ...situation, budget: null, currency: null, location: null } });
+    const modules = fakeModules({ situation: { ...situation, urgency: "medium", budget: null, currency: null, location: null } });
     const result = await runCase("case_2", { message: "please help" }, modules);
 
     expect(result.status).toBe("needs_information");
@@ -113,4 +113,75 @@ describe("runCase", () => {
     expect(result.commerce).toBeNull();
     expect(modules.buildBasket).not.toHaveBeenCalled();
   });
+
+  describe("the amount a case is planned around", () => {
+    const noBudget = (overrides: Partial<SituationResult> = {}): SituationResult => ({
+      ...situation,
+      budget: null,
+      currency: null,
+      urgency: "medium",
+      missing_information: ["budget", "currency"],
+      ...overrides,
+    });
+
+    it("uses the NGO's amount instead of asking the family", async () => {
+      const modules = fakeModules({ situation: noBudget({ currency: "EUR", missing_information: ["budget"] }) });
+      const result = await runCase("case_1", { message: "...", assistance_amount: 120 }, modules);
+
+      expect(result.status).toBe("complete");
+      expect(result.budget_source).toBe("ngo");
+      expect(result.situation.budget).toBe(120);
+      expect(result.situation.missing_information).not.toContain("budget");
+      expect(modules.evaluateRoutes).toHaveBeenCalledWith(expect.objectContaining({ amount: 120, currency: "EUR" }));
+    });
+
+    it("prefers the NGO's amount over one in the message", async () => {
+      const result = await runCase("case_1", { message: "...", assistance_amount: 120 }, fakeModules());
+      expect(result.situation.budget).toBe(120);
+      expect(result.budget_source).toBe("ngo");
+    });
+
+    it("still asks for a currency when the NGO gave only an amount", async () => {
+      const result = await runCase("case_1", { message: "...", assistance_amount: 120 }, fakeModules({ situation: noBudget() }));
+      expect(result.status).toBe("needs_information");
+      expect(result.missing_information).toEqual(["currency"]);
+    });
+
+    it("gives an urgent family a standard package instead of asking for money it doesn't have", async () => {
+      const modules = fakeModules({ situation: noBudget({ urgency: "critical", needs: ["food", "medicine"], household_size: 3 }) });
+      const result = await runCase("case_1", { message: "..." }, modules);
+
+      expect(result.status).toBe("complete");
+      expect(result.budget_source).toBe("emergency_package");
+      expect(result.situation.budget).toBe(66); // (16 + 6) x 3 people
+      expect(result.situation.currency).toBe("EUR");
+    });
+
+    it("doesn't invent an exchange rate for an urgent case in another currency", async () => {
+      const result = await runCase("case_1", { message: "..." }, fakeModules({ situation: noBudget({ urgency: "high", currency: "INR" }) }));
+      expect(result.status).toBe("needs_information");
+      expect(result.missing_information).toContain("budget");
+    });
+
+    it("still asks when the case isn't urgent", async () => {
+      const result = await runCase("case_1", { message: "..." }, fakeModules({ situation: noBudget() }));
+      expect(result.status).toBe("needs_information");
+      expect(result.missing_information).toEqual(expect.arrayContaining(["budget", "currency"]));
+    });
+
+    it("marks a budget from the message as stated", async () => {
+      expect((await runCase("case_1", { message: "..." }, fakeModules())).budget_source).toBe("stated");
+    });
+
+    it("plans for the stated household, or the default when none is given", async () => {
+      const known = fakeModules({ situation: { ...situation, household_size: 6 } });
+      await runCase("case_1", { message: "..." }, known);
+      expect(known.buildBasket).toHaveBeenCalledWith(expect.objectContaining({ household_size: 6, days_of_cover: 7 }));
+
+      const unknown = fakeModules();
+      await runCase("case_1", { message: "..." }, unknown);
+      expect(unknown.buildBasket).toHaveBeenCalledWith(expect.objectContaining({ household_size: 4 }));
+    });
+  });
 });
+

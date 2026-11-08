@@ -41,6 +41,7 @@ GROQ_MODEL=openai/gpt-oss-20b npx tsx --env-file=.env tests/situation/evaluate.t
 | v3: "each statement sets only the key it is about"; "ATMs are empty" → unavailable | gpt-oss-120b | **12/12** | **118/118 (100%)** | **0/59** |
 | v3 | gpt-oss-20b | 12/12 | 118/118 (100%) | 0/59 |
 | v4: form location combined with the message's ("Ernakulam, Kerala"); mismatches flagged in the summary | gpt-oss-120b | **13/13** | **128/128 (100%)** | **0/65** |
+| v5: added household size and special needs | gpt-oss-120b | **13/13** | **128/128 (100%)** | **0/65** |
 
 What each change fixed:
 

@@ -13,6 +13,10 @@ import { SituationResultSchema } from "./situation";
 export const CaseStatusSchema = z.enum(["complete", "needs_information", "no_usable_route"]);
 export type CaseStatus = z.infer<typeof CaseStatusSchema>;
 
+/** Where the case's budget came from: the message, the NGO, or a standard emergency package. */
+export const BudgetSourceSchema = z.enum(["stated", "ngo", "emergency_package"]);
+export type BudgetSource = z.infer<typeof BudgetSourceSchema>;
+
 /** Returned by POST /api/cases (one case) and GET /api/cases (a list). Later steps are null when the case stopped. */
 export const CaseResultSchema = z.object({
   case_id: z.string(),
@@ -21,5 +25,6 @@ export const CaseResultSchema = z.object({
   finance: FinanceResultSchema.nullable(),
   commerce: CommerceResultSchema.nullable(),
   missing_information: z.array(z.string()),
+  budget_source: BudgetSourceSchema.optional(),
 });
 export type CaseResult = z.infer<typeof CaseResultSchema>;

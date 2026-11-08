@@ -1,6 +1,6 @@
 "use client";
 
-import type { CaseResult } from "@lifeline/contracts";
+import { type CaseResult, PLANNING_DAYS_OF_COVER, PLANNING_HOUSEHOLD_SIZE } from "@lifeline/contracts";
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
@@ -80,7 +80,7 @@ function Ready({ result }: { result: CaseResult }) {
       </div>
 
       <div className="grid gap-4 p-5 sm:grid-cols-3">
-        <Figure label="You send" value={formatMoney(situation.budget, situation.currency)} />
+        <Figure label={FUNDING_LABELS[result.budget_source ?? "stated"]} value={formatMoney(situation.budget, situation.currency)} />
         <Figure label={`Fees (${route.fee_label})`} value={formatMoney(route.estimated_fee, finance.currency)} />
         <Figure label="Arrives for the family" value={formatMoney(route.usable_value, finance.currency)} highlight />
       </div>
@@ -120,6 +120,11 @@ function Ready({ result }: { result: CaseResult }) {
               {commerce.unmet_needs.length > 0 &&
                 ` Not covered yet: ${commerce.unmet_needs.map((n) => NEED_LABELS[n] ?? n).join(", ")}.`}
             </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {situation.household_size
+                ? `Planned for ${situation.household_size} ${situation.household_size === 1 ? "person" : "people"} for ${PLANNING_DAYS_OF_COVER} days.`
+                : `The report didn't say how many people, so this is planned for ${PLANNING_HOUSEHOLD_SIZE} people for ${PLANNING_DAYS_OF_COVER} days. The NGO should check this before approving.`}
+            </p>
           </div>
         )}
 
@@ -135,6 +140,12 @@ function Ready({ result }: { result: CaseResult }) {
     </section>
   );
 }
+
+const FUNDING_LABELS: Record<NonNullable<CaseResult["budget_source"]>, string> = {
+  stated: "You send",
+  ngo: "NGO assistance amount",
+  emergency_package: "Standard emergency package",
+};
 
 function Figure({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (

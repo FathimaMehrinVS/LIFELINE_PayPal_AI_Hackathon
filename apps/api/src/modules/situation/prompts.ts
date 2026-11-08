@@ -31,6 +31,8 @@ Return one JSON object with exactly these keys and no others:
   Each statement sets only the key it is about. "ATMs are empty" sets "atm_access"; it does not tell you whether cash can be obtained in other ways.
   Having money, or having no money, is the budget. It says nothing about any access key, even when the sender and the recipient are the same person. Set "cash_availability" only from what the message says about getting cash locally ("cash points are open", "no cash in the market", "agents are closed").
 - "missing_information": array of the key names that are null or "unknown", for example "budget", "location", "wallet_acceptance". Use only key names from this output.
+- "household_size": how many people need help, as a whole number, only when the message makes it clear ("my parents" = 2, "2 children and their mother" = 3), otherwise null. "My family" alone is null.
+- "special_needs": array of short phrases in the message's own terms about people's circumstances (for example "diabetic mother", "2 children", "elderly", "pregnant"), or [] if none are stated. Never diagnose or add a condition the message does not state.
 - "confidence": a number from 0 to 1 for how clearly the message states the facts you extracted. A clear, specific message is about 0.8 to 0.9. A vague one is 0.3 or lower.
 
 ## Never guess
@@ -51,10 +53,10 @@ If the message gives no sign of urgency, use "medium".
 Input:
 {"message": "My parents are in a conflict-affected area. Their bank is inaccessible and internet is intermittent. I have €300 to send. They need food and medicine.", "currency": "EUR"}
 Output:
-{"summary": "Parents in a conflict-affected area need food and medicine. Their bank is inaccessible and internet is intermittent. The sender has €300.", "needs": ["food", "medicine"], "budget": 300, "currency": "EUR", "location": null, "urgency": "high", "access": {"bank_availability": "unavailable", "atm_access": "unknown", "wallet_acceptance": "unknown", "cash_availability": "unknown", "merchant_acceptance": "unknown", "connectivity": "limited"}, "missing_information": ["location", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance"], "confidence": 0.85}
+{"summary": "Parents in a conflict-affected area need food and medicine. Their bank is inaccessible and internet is intermittent. The sender has €300.", "needs": ["food", "medicine"], "budget": 300, "currency": "EUR", "location": null, "urgency": "high", "access": {"bank_availability": "unavailable", "atm_access": "unknown", "wallet_acceptance": "unknown", "cash_availability": "unknown", "merchant_acceptance": "unknown", "connectivity": "limited"}, "missing_information": ["location", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance"], "confidence": 0.85, "household_size": 2, "special_needs": []}
 
 Input:
 {"message": "please help us we have nothing"}
 Output:
-{"summary": "The sender asks for help and says they have nothing. No specific needs, amount or place are given.", "needs": ["other"], "budget": null, "currency": null, "location": null, "urgency": "medium", "access": {"bank_availability": "unknown", "atm_access": "unknown", "wallet_acceptance": "unknown", "cash_availability": "unknown", "merchant_acceptance": "unknown", "connectivity": "unknown"}, "missing_information": ["budget", "currency", "location", "bank_availability", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance", "connectivity"], "confidence": 0.2}
+{"summary": "The sender asks for help and says they have nothing. No specific needs, amount or place are given.", "needs": ["other"], "budget": null, "currency": null, "location": null, "urgency": "medium", "access": {"bank_availability": "unknown", "atm_access": "unknown", "wallet_acceptance": "unknown", "cash_availability": "unknown", "merchant_acceptance": "unknown", "connectivity": "unknown"}, "missing_information": ["budget", "currency", "location", "bank_availability", "atm_access", "wallet_acceptance", "cash_availability", "merchant_acceptance", "connectivity"], "confidence": 0.2, "household_size": null, "special_needs": []}
 `.trim();

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CommerceRequest } from "@lifeline/contracts";
-import { buildBasket } from "../../apps/api/src/rules/basket";
+import { buildBasket, targetQuantity } from "../../apps/api/src/rules/basket";
 import type { ProductCandidate } from "../../apps/api/src/modules/commerce/product-source";
 import { rankProducts } from "../../apps/api/src/modules/commerce/service";
 
@@ -90,4 +90,44 @@ describe("deterministic basket rules", () => {
       expect(result.alternatives.some((item) => item.product_id === "c3-food")).toBe(false);
     });
   });
+
+  describe("quantities", () => {
+    it("keeps quantity 1 when no household size is given", () => {
+      expect(buildBasket(request, products).items.every((item) => item.quantity === 1)).toBe(true);
+    });
+
+    it("plans per-person items for the household and the days covered", () => {
+      expect(targetQuantity("food", "Rice", 4, 7)).toBe(8);
+      expect(targetQuantity("food", "Rice", 4, 14)).toBe(16);
+    });
+
+    it("buys household items and kits once", () => {
+      expect(targetQuantity("medicine", "Oral rehydration salts", 6, 7)).toBe(1);
+      expect(targetQuantity("hygiene", "Family hygiene kit", 6, 7)).toBe(1);
+      expect(targetQuantity("water", "Portable water filter", 6, 7)).toBe(1);
+      expect(targetQuantity("food", "Emergency Food Supply Bucket", 6, 7)).toBe(1);
+    });
+
+    it("fills the household's quantity and keeps totals exact", () => {
+      const result = buildBasket({ ...request, needs: ["food"], budget: 100, household_size: 4, days_of_cover: 7 }, products);
+      const item = result.items[0]!;
+      expect(item).toMatchObject({ product_id: "lentils", quantity: 8, unit_price: 3.2, subtotal: 25.6 });
+      expect(result.total).toBe(25.6);
+      expect(result.reserve).toBe(74.4);
+    });
+
+    it("buys fewer when the money runs short, and always keeps the reserve", () => {
+      const result = buildBasket({ ...request, needs: ["food"], budget: 10, household_size: 4, days_of_cover: 7 }, products);
+      expect(result.items[0]?.quantity).toBe(2);
+      expect(result.total).toBeLessThanOrEqual(8);
+      expect(result.reserve).toBeGreaterThanOrEqual(2);
+    });
+
+    it("leaves money for the other needs", () => {
+      const result = buildBasket({ ...request, budget: 10, household_size: 4, days_of_cover: 7 }, products);
+      expect(result.items.map((item) => item.product_id)).toEqual(["lentils", "water"]);
+      expect(result.unmet_needs).toEqual([]);
+    });
+  });
 });
+

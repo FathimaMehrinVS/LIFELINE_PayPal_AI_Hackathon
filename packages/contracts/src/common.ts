@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 /** ISO 4217 currency code, e.g. "EUR", "INR". */
+/** Planning defaults used when a report doesn't say. Shown to the NGO, which reviews every plan before approving it. */
+export const PLANNING_HOUSEHOLD_SIZE = 4;
+export const PLANNING_DAYS_OF_COVER = 7;
+
 export const CurrencySchema = z.string().regex(/^[A-Z]{3}$/, "Must be a 3-letter ISO 4217 code");
 export type Currency = z.infer<typeof CurrencySchema>;
 
