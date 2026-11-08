@@ -14,6 +14,7 @@ import type {
   SituationRequest,
   SituationResult,
 } from "@lifeline/contracts";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -38,7 +39,10 @@ export class ApiRequestError extends Error {
 async function request<TResponse>(method: "GET" | "POST", path: string, body?: unknown, accessToken?: string): Promise<TResponse> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const token = accessToken ?? (typeof window !== "undefined"
+    ? (await getSupabaseBrowserClient().auth.getSession()).data.session?.access_token
+    : undefined);
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
@@ -66,6 +70,8 @@ export const api = {
   createCase: (body: SituationRequest, replaces?: string) =>
     post<CaseResult>(replaces ? `/api/cases?replaces=${encodeURIComponent(replaces)}` : "/api/cases", body),
   listCases: () => get<CaseResult[]>("/api/cases"),
+  listMyCases: () => get<CaseResult[]>("/api/cases/mine"),
+  listSampleCases: () => get<CaseResult[]>("/api/cases/samples"),
   approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
   getAuthProfile: (accessToken: string) => request<AuthProfile>("GET", "/api/auth/me", undefined, accessToken),
   provisionAuthProfile: (accessToken: string) => request<AuthProfileProvisionResult>("POST", "/api/auth/profile", undefined, accessToken),

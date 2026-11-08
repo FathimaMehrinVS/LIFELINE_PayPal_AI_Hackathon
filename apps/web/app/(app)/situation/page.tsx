@@ -2,8 +2,8 @@
 
 import type { CaseResult, SituationRequest, SituationResult } from "@lifeline/contracts";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, SparkleIcon, UsersIcon } from "../../components/icons";
-import { ApiRequestError, api } from "../../services/api";
+import { BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, SparkleIcon, UsersIcon } from "@/components/icons";
+import { ApiRequestError, api } from "@/services/api";
 import { type CaseAnswers, CaseOutcome } from "./case-outcome";
 import { QuickAnswers, type QuickRequest } from "./quick-answers";
 import { VoiceInput } from "./voice";

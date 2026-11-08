@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createSessionResolver, type SessionResolverDependencies } from "../../apps/api/src/auth/session";
 import { errorHandler } from "../../apps/api/src/middleware/error-handler";
 import { createAuthRouter } from "../../apps/api/src/routes/auth.routes";
+import { HttpError } from "../../apps/api/src/utils/http-error";
 
 function setup(profile: { id: string; email: string | null; role: string | null } | null = {
   id: "profile-1", email: "ngo@example.test", role: "NGO",
@@ -37,6 +38,15 @@ describe("Supabase-backed auth session", () => {
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe("AUTHENTICATION_REQUIRED");
     expect(dependencies.getSupabaseIdentity).not.toHaveBeenCalled();
+    expect(dependencies.findProfile).not.toHaveBeenCalled();
+  });
+
+  it("does not look up a profile when Supabase rejects the access token", async () => {
+    const { app, dependencies } = setup();
+    (dependencies.getSupabaseIdentity as ReturnType<typeof vi.fn>).mockRejectedValue(new HttpError("AUTHENTICATION_REQUIRED", "Supabase access token is invalid or expired"));
+    const response = await request(app).get("/api/auth/me").set("Authorization", "Bearer invalid-token");
+
+    expect(response.status).toBe(401);
     expect(dependencies.findProfile).not.toHaveBeenCalled();
   });
 

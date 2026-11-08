@@ -4,7 +4,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../../apps/api/src/app";
 
-const app = createApp();
+const app = createApp({ resolveSession: async () => ({ id: "ngo-profile", email: "ngo@example.test", role: "NGO" }) });
 const sample = (file: string) =>
   JSON.parse(readFileSync(join(import.meta.dirname, "../../packages/contracts/samples", file), "utf8"));
 
@@ -19,6 +19,19 @@ describe("API foundation", () => {
     const res = await request(app).get("/api/auth/me");
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("AUTHENTICATION_REQUIRED");
+  });
+
+  it("rejects unauthenticated application API access", async () => {
+    const response = await request(createApp()).get("/api/cases");
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("AUTHENTICATION_REQUIRED");
+  });
+
+  it("rejects non-NGO access to NGO case review endpoints", async () => {
+    const donorApp = createApp({ resolveSession: async () => ({ id: "donor-profile", email: "donor@example.test", role: "DONOR" }) });
+    const response = await request(donorApp).get("/api/cases");
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
   });
 
   it("rejects bodies that break the contract with VALIDATION_ERROR", async () => {

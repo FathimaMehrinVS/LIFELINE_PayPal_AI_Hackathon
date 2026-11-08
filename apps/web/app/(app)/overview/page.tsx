@@ -14,9 +14,9 @@ import {
   ShieldCheckIcon,
   SparkleIcon,
   UsersIcon,
-} from "../components/icons";
-import { api } from "../services/api";
-import { formatMoney, recommendedRoute, routeName } from "./dashboard/case-row";
+} from "@/components/icons";
+import { api } from "@/services/api";
+import { formatMoney, recommendedRoute, routeName } from "../dashboard/case-row";
 
 // Owner: Member 1. Home: what LIFELINE does, and where the latest request stands (real cases only).
 

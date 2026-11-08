@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CommerceResult, NeedCategory } from "@lifeline/contracts";
-import { api } from "../../services/api";
+import { api } from "@/services/api";
 
 const categories: NeedCategory[] = ["food", "water", "medicine", "hygiene", "baby_supplies", "clothing", "shelter", "other"];
 const money = (value: number, currency: string) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);

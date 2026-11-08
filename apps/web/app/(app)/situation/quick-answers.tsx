@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RouteIcon } from "../../components/icons";
+import { RouteIcon } from "@/components/icons";
 import { ACCESS_ANSWERS, type Choice, NEED_OPTIONS, accessSentence, needLabel } from "./answers";
 import { VoiceInput } from "./voice";
 
