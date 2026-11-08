@@ -17,7 +17,7 @@ Two deployment/live-verification items remain:
 - PayPal Sandbox buyer approval for EUR currently fails with `UNSUPPORTED_PAYEE_CURRENCY`, even though OAuth and EUR order creation succeed and the configured German Sandbox seller has EUR as its primary currency. No successful capture has been established for that failing checkout.
 - Live webhook delivery requires a deployed public HTTPS endpoint, webhook registration in the PayPal Sandbox app, `PAYPAL_WEBHOOK_ID`, and a delivery test.
 
-The simulated disbursement is not a real PayPal transfer or proof of aid delivery. There is no authentication or role-based access control in this MVP. See the [complete project overview](docs/LIFELINE_PROJECT_OVERVIEW.md) for detailed implementation notes, state transitions, API routes, limitations, and evidence.
+Supabase email/password authentication, linked LIFELINE profiles, and server-side role/ownership authorization are implemented. Supported application roles are NGO, DONOR, and PARTNER; users without an assigned role remain pending, and beneficiaries do not need login accounts. The simulated disbursement is not a real PayPal transfer or proof of aid delivery. See the [authentication guide](docs/authentication.md) and [complete project overview](docs/LIFELINE_PROJECT_OVERVIEW.md) for implementation details and limitations.
 
 ## Member divisions
 
@@ -25,7 +25,7 @@ The simulated disbursement is not a real PayPal transfer or proof of aid deliver
 | --- | --- |
 | **Member 1 — Athira V** | Situation Intelligence: Situation Agent extraction and validation, case orchestration and persistence, situation flow, and case dashboard/review experience. |
 | **Member 2 — Fathima Mehrin V S** | Financial Intelligence: deterministic fee, accessibility, and route eligibility rules; finance assessment and explanations; NGO allocation approval; PayPal webhook verification; and simulated assistance disbursement. |
-| **Member 3 — Asiya Muhammed Sali** | Commerce and donor checkout: product sources and Channel3/local fallback, ranking and budget basket construction, allocation-linked donations, PayPal Sandbox order/capture/cancellation flow, and donation UI. |
+| **Member 3 — Asiya Muhammed Sali** | Commerce and donor checkout: product sources and Channel3/local fallback, ranking and budget basket construction, allocation-linked donations, PayPal Sandbox order/capture/cancellation flow, and donation UI. Also implemented Supabase login, profile provisioning, and role-based authorization. A successful live Sandbox capture remains unverified. |
 
 These are the project’s implementation areas. The end-to-end workflow and shared API/contracts connect the work across members.
 
@@ -182,7 +182,7 @@ Tests mock external services and do not perform live PayPal, Channel3, LLM, or p
 - PayPal is Sandbox-only; the current EUR approval failure is `UNSUPPORTED_PAYEE_CURRENCY` and its PayPal-side receiving/eligibility cause remains unresolved.
 - Live PayPal webhook registration and public HTTPS delivery verification remain deployment tasks.
 - Assistance disbursement is simulated; actual payments to aid recipients and delivery confirmation are outside this MVP.
-- The project has no authentication or role-based authorization.
+- Supabase authentication and role-based authorization are implemented; live PayPal Sandbox capture is not yet verified because buyer approval fails with `UNSUPPORTED_PAYEE_CURRENCY`.
 - Product registry entries and demo humanitarian data are synthetic; Channel3 price/availability data is external and may not represent local stock.
 - The demo dashboard is not suitable as a production NGO case-management portal.
 

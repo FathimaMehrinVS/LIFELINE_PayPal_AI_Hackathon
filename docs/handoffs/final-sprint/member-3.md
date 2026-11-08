@@ -1,29 +1,26 @@
-# Member 3 (Asiya Muhammed Sali): login and PayPal
+# Member 3 (Asiya Muhammed Sali): authentication, authorization and PayPal
 
 Back to the [team board](README.md). Update status there, and details here.
 
-You have the shortest list on purpose, because login is a big job. Commerce and the donor plans page have moved to
-Member 1.
+Commerce and the donor plans page have moved to Member 1. Authentication and authorization implementation is complete;
+the remaining tracked item is a successful PayPal Sandbox capture.
 
 **Your files:** new `apps/api/src/middleware/auth.ts`, login pages in `apps/web/app/`, `integrations/paypal/`,
 `routes/donation.routes.ts`, `apps/web/app/donate/`.
 
-## M3-1 Login and roles · 9 Nov · in progress
+## M3-1 Login, profiles and roles · complete
 
-**Already on `main`:** Supabase Auth, the login page, `GET /api/auth/me`, the `User.authUserId` link, and the roles
-`NGO`, `DONOR` and `PARTNER` (`PARTNER` is our supplier role). Details are in `docs/authentication.md`.
+**Implemented on `main`:** Supabase email/password signup, login and logout; server-side profile provisioning linked by
+`User.authUserId`; unassigned users remain pending; roles are assigned through the controlled operator path. Signup
+cannot assign a role. Details are in `docs/authentication.md`.
 
-**Still needed, and Members 1 and 2 are waiting on the first item:**
+**Authorization checkpoint (`4e93e02`):** API requests verify Supabase access tokens, resolve the application role from
+the server-side `User` profile, and enforce authentication, role and ownership checks. NGO-only actions are protected;
+supported DONOR and PARTNER access is role-checked. The web app sends its current access token to the API, and existing
+application routes use the authenticated shell while `/login` remains standalone. Families/beneficiaries do not log in.
 
-- **Backend:** a `requireRole("NGO")` middleware built on `resolveAuthenticatedSession`, setting `req.user` to
-  `{ id, email, role }`. Until this exists, no feature route is protected. Roles come from the `User` table, so never
-  trust a role sent by the browser.
-- **API calls:** send the Supabase access token as `Authorization: Bearer <token>` from `services/api.ts`.
-- **Frontend:** a way for any page to get the current user, and a sidebar that shows only that role's pages.
-- **Demo accounts:** one NGO, one donor and one partner, linked to Supabase users and written in the README for the
-  judges.
-- **Tests:** a simple way to pass a fake user, so all tests keep passing without a real login.
-- **Families never log in.**
+Do not put demo passwords or credentials in tracked documentation. Provision demo identities through the documented
+operator process in `docs/authentication.md` and supply credentials securely for the demo.
 
 | Access | Endpoints |
 |---|---|
@@ -31,20 +28,20 @@ Member 1.
 | NGO only | Approve, suppliers, supplier payments, cases list |
 | NGO or partner | Purchase order status updates |
 
-Decide whether a donor must log in to pay, and tell the team. Letting guests donate keeps the demo shorter.
+The table records the current intended access boundaries; the implementation is enforced server-side by the committed
+authorization middleware and route checks, not by hiding navigation links.
 
-Push the middleware early, even before the pages are finished, so Members 1 and 2 can add it to their own routes.
-You don't need to protect their endpoints for them.
+## M3-2 One real PayPal Sandbox capture · still open
 
-## M3-2 One real PayPal capture · 9 Nov · max half a day
-
-Our EUR checkout fails at buyer approval with `UNSUPPORTED_PAYEE_CURRENCY`, so we have never captured a payment.
-
-1. Try a USD order with a fresh Sandbox business account.
-2. If USD works, tell Member 1 so that `camp_demo`, the demo case and the supplier prices can move to USD.
-3. If nothing works after half a day, stop, write down what you tried in the change log, and tell the team. We'll
-   state the limitation honestly.
+OAuth and Sandbox order creation have succeeded, but buyer approval has failed with `UNSUPPORTED_PAYEE_CURRENCY`;
+there is no verified successful capture. The seller/app chain and EUR balance were checked, but holding EUR did not
+resolve the Checkout receiving error. Do not create another order or change currencies until the team explicitly
+authorizes a new test and the receiving restriction is resolved.
 
 - Done when: one Sandbox donation shows as captured, confirmed by the server and saved in the database.
+- Verify the persisted capture ID, exact amount/currency, and Donation → approved allocation → case relationship.
+- Do not mark an order captured from a browser redirect or fabricate webhook events. Live webhook verification remains
+  a separate deployment task requiring a public HTTPS endpoint and registered PayPal webhook.
 
-**If you fall behind:** finish M3-1 first. Keep the login simple; a working demo login is enough.
+**Current status:** M3-1 is complete. M3-2 remains blocked on PayPal Sandbox buyer approval; report the exact PayPal
+error and keep Donation/payment state truthful until a capture succeeds.

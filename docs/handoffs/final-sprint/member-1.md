@@ -6,7 +6,7 @@ Back to the [team board](README.md). Update status there, and details here.
 `routes/cases.routes.ts`, new `routes/suppliers.routes.ts`, `routes/plans.routes.ts`, `apps/web/app/situation/`,
 `dashboard/`, `commerce/`, new `suppliers/` and `plans/`, `prisma/`, `render.yaml`.
 
-Commerce moved to you so Member 3 can focus on login and PayPal.
+Commerce and donor plans moved to you. Member 3's login/profile provisioning and role-based authorization checkpoint is complete; the remaining Member 3 item is a verified PayPal Sandbox capture.
 
 ## M1-1 Database migration · 8 Nov · do this first
 
