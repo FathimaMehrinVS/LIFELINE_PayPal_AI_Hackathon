@@ -17,6 +17,7 @@ describe("finance explanation fallback without a recommendation", () => {
 
     expect(result.recommended_route_id).toBeNull();
     expect(result.routes[0]!.verdict).toBe("block");
-    expect(result.explanation).toContain("No route passed");
+    expect(result.explanation).toContain("could not confirm a suitable way");
+    expect(result.explanation).not.toMatch(/flags|deterministic|eligibility|route_paypal|score/i);
   });
 });

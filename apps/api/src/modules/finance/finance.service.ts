@@ -43,11 +43,10 @@ function formatMoney(currency: string, amount: number): string {
 
 function fallbackExplanation(
   currency: string,
-  routes: EvaluatedRoute[],
   recommended: EvaluatedRoute | null,
 ): string {
   if (!recommended) {
-    return "No route passed the deterministic eligibility checks, so there is no recommendation. Review the route flags before deciding how to proceed.";
+    return "We could not confirm a suitable way to deliver the money with the information available. An NGO worker can review the options and help decide what to do next.";
   }
 
   const { route, assessment } = recommended;
@@ -56,24 +55,7 @@ function fallbackExplanation(
     confirmed: "confirmed fee",
     illustrative: "illustrative fee",
   }[assessment.fee_label];
-  const article = assessment.fee_label === "confirmed" ? "a" : "an";
-  const others = routes
-    .filter((candidate) => candidate !== recommended)
-    .map(({ route: otherRoute, assessment: otherAssessment }) => {
-      if (otherAssessment.verdict === "pass") {
-        return `${otherRoute.name} also passed with ${formatMoney(currency, otherAssessment.usable_value)} usable and an accessibility score of ${otherAssessment.accessibility.score}/100`;
-      }
-      const reason = otherAssessment.flags
-        .find((flag) => flag.severity === "critical" || flag.severity === "warning")
-        ?.message.replace(/[.!?]+$/, "");
-      const verdict = otherAssessment.verdict === "block" ? "was blocked" : "needs review";
-      return `${otherRoute.name} ${verdict}${reason ? `: ${reason}` : ""}`;
-    });
-  const comparison = others.length
-    ? `Other routes: ${others.join("; ")}.`
-    : "It has the highest usable value among the routes that passed.";
-
-  return `${route.name} is recommended with ${article} ${feeDescription} of ${formatMoney(currency, assessment.estimated_fee)}, leaving ${formatMoney(currency, assessment.usable_value)} usable. ${comparison}`;
+  return `We recommend ${route.name} for this plan. Its ${feeDescription} is ${formatMoney(currency, assessment.estimated_fee)}, leaving ${formatMoney(currency, assessment.usable_value)} for the family. An NGO worker can review the options with the family before proceeding.`;
 }
 
 /** Financial decisions are deterministic; the LLM is only asked to explain their results. */
@@ -95,9 +77,13 @@ export async function evaluateRoutes(
       system: EXPLANATION_PROMPT,
       user: JSON.stringify({
         currency: request.currency,
-        routes: evaluatedRoutes.map(({ route, assessment }) => ({ name: route.name, ...assessment })),
         recommended: recommended
-          ? { name: recommended.route.name, ...recommended.assessment }
+          ? {
+              name: recommended.route.name,
+              fee_label: recommended.assessment.fee_label,
+              estimated_fee: recommended.assessment.estimated_fee,
+              usable_value: recommended.assessment.usable_value,
+            }
           : null,
       }),
       schema: ExplanationSchema,
@@ -105,7 +91,7 @@ export async function evaluateRoutes(
     });
     explanation = generated.explanation;
   } catch {
-    explanation = fallbackExplanation(request.currency, evaluatedRoutes, recommended);
+    explanation = fallbackExplanation(request.currency, recommended);
   }
 
   return FinanceResultSchema.parse({

@@ -50,7 +50,7 @@ Status: `todo` · `doing` · `blocked` · `done`
 | M1-7 | Donor plans list and progress page | Member 1 | 10 Nov | M1-6 | todo |
 | M1-8 | Deploy to Render; register PayPal webhook | Member 1 | 11 Nov | M3-2 helps | todo |
 | M1-9 | README, status doc, demo script, video, Devpost | Member 1 | 12 Nov | all | todo |
-| M2-1 | Partner route and plain-language explanations | Member 2 | 8 Nov | none | todo |
+| M2-1 | Partner route and plain-language explanations | Member 2 | 8 Nov | none | doing |
 | M2-2 | Approve the real cost | Member 2 | 9 Nov | M1-1 | todo |
 | M2-3 | Purchase orders | Member 2 | 9 Nov | M1-1, M1-4 | todo |
 | M2-4 | Fulfilment events and pickup code | Member 2 | 10 Nov | M2-3 | todo |
@@ -140,5 +140,6 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
+| 8 Nov | Member 2 | Started M2-1: plain-language finance explanation; partner verification awaits M1 supplier status and service areas | M1, M2 |
 | 8 Nov | Member 3 | Supabase login is on `main`. Roles are in the `User` table; suppliers log in as `PARTNER`. `requireRole` is still to come | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |
