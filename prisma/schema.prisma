@@ -19,15 +19,18 @@ enum Role {
   RECIPIENT
   NGO
   MERCHANT
+  PARTNER
 }
 
-/// Demo accounts; the app uses a role switch instead of real sign-up.
+/// Application profile linked to Supabase Auth when authUserId is populated.
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  role      Role
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  authUserId String?  @unique
+  name       String
+  email      String   @unique
+  role       Role
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
 
   campaigns   Campaign[]
   donations   Donation[]

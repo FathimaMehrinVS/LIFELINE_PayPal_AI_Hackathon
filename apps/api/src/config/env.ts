@@ -6,6 +6,8 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   DATABASE_URL: optional,
+  SUPABASE_URL: optional,
+  SUPABASE_ANON_KEY: optional,
 
   LLM_PROVIDER: z.enum(["groq", "gemini"]).default("groq"),
   GROQ_API_KEY: optional,

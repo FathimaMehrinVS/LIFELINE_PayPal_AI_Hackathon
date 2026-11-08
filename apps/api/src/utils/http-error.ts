@@ -2,6 +2,8 @@ import type { ErrorCode } from "@lifeline/contracts";
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
+  AUTHENTICATION_REQUIRED: 401,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   NOT_IMPLEMENTED: 501,
   UPSTREAM_ERROR: 502,

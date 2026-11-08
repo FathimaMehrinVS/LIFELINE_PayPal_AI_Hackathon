@@ -15,6 +15,12 @@ describe("API foundation", () => {
     expect(res.body).toEqual({ status: "ok" });
   });
 
+  it("rejects unauthenticated GET /api/auth/me", async () => {
+    const res = await request(app).get("/api/auth/me");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("AUTHENTICATION_REQUIRED");
+  });
+
   it("rejects bodies that break the contract with VALIDATION_ERROR", async () => {
     const res = await request(app).post("/api/situation/analyze").send({ message: "" });
     expect(res.status).toBe(400);

@@ -189,6 +189,7 @@ Tests mock external services and do not perform live PayPal, Channel3, LLM, or p
 ## Further documentation
 
 - [Complete project overview and developer reference](docs/LIFELINE_PROJECT_OVERVIEW.md)
+- [Authentication foundation and role model](docs/authentication.md)
 - [Architecture](docs/architecture.md)
 - [AI design](docs/ai-design.md)
 - [PayPal integration](docs/paypal-integration.md)

@@ -3,6 +3,7 @@ import express from "express";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { allocationRouter } from "./routes/allocation.routes";
+import { authRouter } from "./routes/auth.routes";
 import { casesRouter } from "./routes/cases.routes";
 import { commerceRouter } from "./routes/commerce.routes";
 import { donationRouter } from "./routes/donation.routes";
@@ -22,6 +23,7 @@ export function createApp() {
     res.json({ status: "ok" });
   });
 
+  app.use("/api/auth", authRouter);
   app.use("/api/situation", situationRouter);
   app.use("/api/finance", financeRouter);
   app.use("/api/commerce", commerceRouter);

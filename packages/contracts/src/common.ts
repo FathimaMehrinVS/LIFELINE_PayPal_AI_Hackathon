@@ -52,6 +52,8 @@ export type AccessFactorKey = z.infer<typeof AccessFactorKeySchema>;
 
 export const ErrorCodeSchema = z.enum([
   "VALIDATION_ERROR",
+  "AUTHENTICATION_REQUIRED",
+  "FORBIDDEN",
   "NOT_FOUND",
   "NOT_IMPLEMENTED",
   "UPSTREAM_ERROR",
