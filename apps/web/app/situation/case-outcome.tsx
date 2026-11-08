@@ -4,7 +4,7 @@ import { type CaseResult, PLANNING_DAYS_OF_COVER, PLANNING_HOUSEHOLD_SIZE } from
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
-import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, accessSentence } from "./answers";
+import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, type ReporterRole, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
 import { ListenButton } from "./voice";
 
@@ -12,22 +12,23 @@ import { ListenButton } from "./voice";
 
 
 interface CaseOutcomeProps {
+  role: ReporterRole;
   result: CaseResult;
   /** Re-runs the case with the person's answers added to the message. */
   onAnswer: (answers: CaseAnswers) => void;
   busy: boolean;
 }
 
-export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
+export function CaseOutcome({ role, result, onAnswer, busy }: CaseOutcomeProps) {
   const [showDetails, setShowDetails] = useState(result.status !== "complete");
 
   return (
     <div className="space-y-6">
-      {result.status === "complete" && <Ready result={result} />}
+      {result.status === "complete" && <Ready role={role} result={result} />}
       {result.status === "needs_information" && (
         <NeedsAnswers questions={result.missing_information} onAnswer={onAnswer} busy={busy} />
       )}
-      {result.status === "no_usable_route" && <NoRoute result={result} onAnswer={onAnswer} busy={busy} />}
+      {result.status === "no_usable_route" && <NoRoute role={role} result={result} onAnswer={onAnswer} busy={busy} />}
 
       <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <button
@@ -59,7 +60,7 @@ export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
   );
 }
 
-function Ready({ result }: { result: CaseResult }) {
+function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
   const route = recommendedRoute(result);
   const { finance, commerce, situation } = result;
   if (!route || !finance) return null;
@@ -71,8 +72,10 @@ function Ready({ result }: { result: CaseResult }) {
           ✓
         </span>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-emerald-900">We found a way to help</h2>
-          <p className="text-sm text-emerald-800">An NGO reviews it next. Nothing is paid until they approve.</p>
+          <h2 className="text-lg font-semibold text-emerald-900">{role === "ngo" ? "A plan is ready for your review" : "We found a way to help"}</h2>
+          <p className="text-sm text-emerald-800">
+            {role === "ngo" ? "Check it and approve it on the NGO dashboard. Nothing is paid until you do." : "An NGO reviews it next. Nothing is paid until they approve."}
+          </p>
         </div>
         <ListenButton
           text={`We found a way to help. ${formatMoney(route.usable_value, finance.currency)} can reach the family through ${routeName(route.route_id)}, after ${formatMoney(route.estimated_fee, finance.currency)} in fees.${commerce && commerce.items.length > 0 ? ` Suggested essentials: ${commerce.items.map((i) => i.name).join(", ")}.` : ""} An NGO reviews it next. Nothing is paid until they approve.`}
@@ -80,7 +83,7 @@ function Ready({ result }: { result: CaseResult }) {
       </div>
 
       <div className="grid gap-4 p-5 sm:grid-cols-3">
-        <Figure label={FUNDING_LABELS[result.budget_source ?? "stated"]} value={formatMoney(situation.budget, situation.currency)} />
+        <Figure label={fundingLabel(result.budget_source ?? "stated", role)} value={formatMoney(situation.budget, situation.currency)} />
         <Figure label={`Fees (${route.fee_label})`} value={formatMoney(route.estimated_fee, finance.currency)} />
         <Figure label="Arrives for the family" value={formatMoney(route.usable_value, finance.currency)} highlight />
       </div>
@@ -130,7 +133,7 @@ function Ready({ result }: { result: CaseResult }) {
 
         <div className="flex flex-wrap gap-3 pt-1">
           <Link href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-            Open in NGO dashboard
+            {role === "ngo" ? "Review and approve" : "Open in NGO dashboard"}
           </Link>
           <Link href="/dashboard" className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
             NGO approval is required before donation
@@ -141,11 +144,11 @@ function Ready({ result }: { result: CaseResult }) {
   );
 }
 
-const FUNDING_LABELS: Record<NonNullable<CaseResult["budget_source"]>, string> = {
-  stated: "You send",
-  ngo: "NGO assistance amount",
-  emergency_package: "Standard emergency package",
-};
+function fundingLabel(source: NonNullable<CaseResult["budget_source"]>, role: ReporterRole) {
+  if (source === "ngo") return "NGO assistance amount";
+  if (source === "emergency_package") return "Standard emergency package";
+  return role === "ngo" ? "Amount in the report" : "Amount you stated";
+}
 
 function Figure({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
@@ -374,7 +377,7 @@ function plainReason(route: RouteAssessmentItem, currency: string): string {
   return "isn't confirmed yet, so a person must check it first";
 }
 
-function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (answers: CaseAnswers) => void; busy: boolean }) {
+function NoRoute({ role, result, onAnswer, busy }: { role: ReporterRole; result: CaseResult; onAnswer: (answers: CaseAnswers) => void; busy: boolean }) {
   const { finance, situation } = result;
   const unknown = Object.entries(situation.access)
     .filter(([key, value]) => value === "unknown" && ACCESS_ANSWERS[key])
@@ -392,8 +395,8 @@ function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (an
           )}
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          With what we know now, none of the ways to send money would safely reach the family. The case is saved, and an NGO
-          worker can look at other options.
+          With what we know now, none of the ways to send money would safely reach the family. The case is saved
+          {role === "ngo" ? ", so you can look at other options from the dashboard." : ", and an NGO worker can look at other options."}
         </p>
         {finance && finance.routes.length > 0 && (
           <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200">

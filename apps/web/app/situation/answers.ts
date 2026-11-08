@@ -18,6 +18,9 @@ export const ACCESS_ANSWERS: Record<string, { short: string; yes: string; no: st
   connectivity: { short: "Do they have internet or phone signal?", yes: "They have working internet or phone signal.", no: "They have no internet or phone signal." },
 };
 
+/** Who is filling in the form. The NGO worker comes first: LIFELINE is built for them. */
+export type ReporterRole = "ngo" | "family";
+
 export const NEED_OPTIONS = ["food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport"] as const;
 
 export const NEED_LABELS: Record<string, string> = { baby_supplies: "baby supplies" };

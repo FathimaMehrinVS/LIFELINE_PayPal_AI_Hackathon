@@ -4,38 +4,66 @@ import type { CaseResult, SituationRequest, SituationResult } from "@lifeline/co
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, SparkleIcon, UsersIcon } from "../../components/icons";
 import { ApiRequestError, api } from "../../services/api";
+import type { ReporterRole } from "./answers";
 import { type CaseAnswers, CaseOutcome } from "./case-outcome";
 import { QuickAnswers, type QuickRequest } from "./quick-answers";
 import { VoiceInput } from "./voice";
 import { SituationResultView } from "./situation-result";
 
 // Owner: Member 1 (feature/situation-agent)
-// For the person abroad sending money home, or the NGO worker writing the case down for them.
+// For the NGO worker writing a case down, or a relative reporting a family in need.
 
 const MAX_LENGTH = 4000;
 
-type Role = "family" | "ngo";
-
-const ROLES: Record<Role, { label: string; heading: string; intro: string; question: string; placeholder: string }> = {
-  family: {
-    label: "I'm helping my family",
-    heading: "Get help to your family",
-    intro: "Tell us what is happening, in your own words and any language. We find a way for the money to actually reach them.",
-    question: "What is happening to your family?",
-    placeholder:
-      "e.g. My parents' bank is closed and the internet keeps cutting out. I can send €300. They need food and medicine. Shops nearby take mobile payments.",
-  },
+const ROLES: Record<ReporterRole, { label: string; heading: string; intro: string; question: string; placeholder: string }> = {
   ngo: {
     label: "I'm an NGO worker",
     heading: "Log a request for help",
-    intro: "Write down what the family or caller told you. LIFELINE structures it, finds a payment route and a basket, and lists what to ask next.",
+    intro: "Write down what the family or caller told you, in any language. LIFELINE structures it, checks how aid can reach them, and prepares a plan for you to approve.",
     question: "What did the family tell you?",
     placeholder:
-      "e.g. Caller's parents are in a flooded district. Bank branch closed, ATM unknown. Sender has €200. Needs: water, baby supplies. Phone signal on and off.",
+      "e.g. Family of 4 arrived at the shelter. Two children, one diabetic adult. Bank branch closed, phone signal on and off. They need food and medicine.",
+  },
+  family: {
+    label: "I'm helping my family",
+    heading: "Report a family in need",
+    intro: "Tell us what is happening, in your own words and any language. Your report goes to the NGO, which checks how aid can reach them.",
+    question: "What is happening to your family?",
+    placeholder:
+      "e.g. My parents' bank is closed and the internet keeps cutting out. They need food and medicine. Shops nearby take mobile payments.",
   },
 };
 
-const EXAMPLES = [
+type Example = { title: string; detail: string; message: string; currency: string; amount?: string; Icon: (p: { className?: string }) => React.ReactNode };
+
+const EXAMPLES: Record<ReporterRole, Example[]> = {
+  ngo: [
+    {
+      title: "Displaced family at a shelter",
+      detail: "No money · 2 children · diabetic mother",
+      message:
+        "Family arrived at Demo Shelter in Demo Town (synthetic) after leaving a conflict area. Two children and their diabetic mother, no money. No functioning bank access, but they can use a mobile wallet and have phone signal. They need food and medicine.",
+      currency: "",
+      Icon: UsersIcon,
+    },
+    {
+      title: "Family of 5 after a flood",
+      detail: "NGO sets €150 · bank closed",
+      message:
+        "Family of 5 in Demo Town (synthetic) after a flood needs drinking water and hygiene items. Bank is closed. They can use a mobile wallet and the internet works.",
+      currency: "EUR",
+      amount: "150",
+      Icon: ShieldCheckIcon,
+    },
+    {
+      title: "A very short message",
+      detail: "See how LIFELINE asks instead of guessing",
+      message: "please help us",
+      currency: "",
+      Icon: SparkleIcon,
+    },
+  ],
+  family: [
   {
     title: "Parents in a conflict area",
     detail: "€300 · bank closed · patchy internet",
@@ -58,7 +86,8 @@ const EXAMPLES = [
     currency: "",
     Icon: SparkleIcon,
   },
-];
+  ],
+};
 
 const CURRENCIES = [
   { code: "EUR", label: "EUR · Euro" },
@@ -120,12 +149,21 @@ function errorMessage(err: unknown) {
   return "We can't reach LIFELINE right now. Check your connection, or that the API is running (npm run dev:api).";
 }
 
+type RunOverrides = { location?: string; currency?: string; assistance_amount?: number };
+
+/** A positive amount with at most two decimals, or undefined if the box is empty or invalid. */
+function validAmount(text: string): number | undefined {
+  const value = Number(text);
+  return text.trim() !== "" && Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : undefined;
+}
+
 export default function SituationPage() {
-  const [role, setRole] = useState<Role>("family");
+  const [role, setRole] = useState<ReporterRole>("ngo");
   const [mode, setMode] = useState<"write" | "tap">("write");
   const [message, setMessage] = useState("");
   const [location, setLocation] = useState("");
   const [currency, setCurrency] = useState("");
+  const [assistanceAmount, setAssistanceAmount] = useState("");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<"case" | "analysis" | null>(null);
@@ -137,16 +175,22 @@ export default function SituationPage() {
   useEffect(() => {
     if (loading || outcome || error) resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [loading, outcome, error]);
-  const covered = useMemo(() => new Set(TIPS.filter((t) => t.test(message, location)).map((t) => t.key)), [message, location]);
+  const covered = useMemo(
+    () => new Set(TIPS.filter((t) => t.test(message, location) || (t.key === "amount" && role === "ngo" && validAmount(assistanceAmount) !== undefined)).map((t) => t.key)),
+    [message, location, role, assistanceAmount],
+  );
   const empty = message.trim() === "";
   const busy = loading !== null;
 
-  function buildRequest(text: string, overrides: { location?: string; currency?: string } = {}): SituationRequest {
+  function buildRequest(text: string, overrides: RunOverrides = {}): SituationRequest {
     const body: SituationRequest = { message: text.trim().slice(0, MAX_LENGTH) };
     const loc = overrides.location ?? location.trim();
     const cur = overrides.currency ?? currency;
     if (loc) body.location = loc;
     if (/^[A-Z]{3}$/.test(cur)) body.currency = cur;
+    // Only the NGO sets an amount; a relative's report never does.
+    const amount = role === "ngo" ? (overrides.assistance_amount ?? validAmount(assistanceAmount)) : undefined;
+    if (amount !== undefined) body.assistance_amount = amount;
     return body;
   }
 
@@ -154,7 +198,7 @@ export default function SituationPage() {
   async function run(
     kind: "case" | "analysis",
     text = message,
-    options: { replaces?: string; location?: string; currency?: string } = {},
+    options: RunOverrides & { replaces?: string } = {},
   ) {
     if (!text.trim()) return;
     setLoading(kind);
@@ -191,7 +235,8 @@ export default function SituationPage() {
     setMessage(request.message);
     if (request.location) setLocation(request.location);
     if (request.currency) setCurrency(request.currency);
-    void run("case", request.message, { location: request.location, currency: request.currency });
+    setAssistanceAmount(request.assistance_amount !== undefined ? String(request.assistance_amount) : "");
+    void run("case", request.message, { location: request.location, currency: request.currency, assistance_amount: request.assistance_amount });
   }
 
   /**
@@ -233,7 +278,7 @@ export default function SituationPage() {
         <p className="relative mt-2 max-w-2xl text-indigo-100">{copy.intro}</p>
 
         <div className="relative mt-5 inline-flex rounded-full bg-white/10 p-1 ring-1 ring-white/20" role="radiogroup" aria-label="Who is writing">
-          {(Object.keys(ROLES) as Role[]).map((r) => (
+          {(Object.keys(ROLES) as ReporterRole[]).map((r) => (
             <button
               key={r}
               type="button"
@@ -275,19 +320,20 @@ export default function SituationPage() {
         </div>
 
         {mode === "tap" ? (
-          <QuickAnswers busy={busy} onSubmit={onQuickSubmit} />
+          <QuickAnswers role={role} busy={busy} onSubmit={onQuickSubmit} />
         ) : (
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
             <h2 className="mb-3 text-sm font-semibold text-slate-700">Start from an example, or write your own below</h2>
             <div className="grid gap-3 sm:grid-cols-3">
-              {EXAMPLES.map(({ title, detail, message: text, currency: cur, Icon }) => (
+              {EXAMPLES[role].map(({ title, detail, message: text, currency: cur, amount, Icon }) => (
                 <button
                   key={title}
                   type="button"
                   onClick={() => {
                     setMessage(text);
                     setCurrency(cur);
+                    setAssistanceAmount(amount ?? "");
                   }}
                   className="group flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50"
                 >
@@ -329,7 +375,7 @@ export default function SituationPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={`grid gap-4 ${role === "ngo" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
             <div>
               <label htmlFor="location" className="mb-1 block text-sm font-semibold text-slate-800">
                 Where is the family? <span className="font-normal text-slate-500">(optional)</span>
@@ -345,7 +391,7 @@ export default function SituationPage() {
             </div>
             <div>
               <label htmlFor="currency" className="mb-1 block text-sm font-semibold text-slate-800">
-                Currency you&apos;re sending in <span className="font-normal text-slate-500">(optional)</span>
+                {role === "ngo" ? "Currency" : "Currency, if you know it"} <span className="font-normal text-slate-500">(optional)</span>
               </label>
               <select
                 id="currency"
@@ -361,6 +407,27 @@ export default function SituationPage() {
                 ))}
               </select>
             </div>
+            {role === "ngo" && (
+              <div>
+                <label htmlFor="assistance-amount" className="mb-1 block text-sm font-semibold text-slate-800">
+                  Amount the NGO will spend <span className="font-normal text-slate-500">(optional)</span>
+                </label>
+                <input
+                  id="assistance-amount"
+                  inputMode="decimal"
+                  value={assistanceAmount}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d.]/g, "");
+                    setAssistanceAmount(value);
+                    if (value && !currency) setCurrency("EUR");
+                  }}
+                  placeholder="e.g. 150"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-slate-300 p-3 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                />
+                <p className="mt-1 text-xs text-slate-500">If left blank, urgent cases use a standard emergency package.</p>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5">
@@ -413,9 +480,9 @@ export default function SituationPage() {
                       <CheckIcon className="h-3.5 w-3.5" />
                     </span>
                     <span>
-                      <span className={`font-semibold ${done ? "text-slate-900" : "text-slate-700"}`}>{tip.title}</span>
+                      <span className={`font-semibold ${done ? "text-slate-900" : "text-slate-700"}`}>{tip.key === "amount" && role === "ngo" ? "Amount, if known" : tip.title}</span>
                       <span className="sr-only">{done ? " (covered)" : " (not mentioned yet)"}</span>
-                      <span className="block text-xs text-slate-500">{tip.text}</span>
+                      <span className="block text-xs text-slate-500">{tip.key === "amount" && role === "ngo" ? "from the report, or set by the NGO" : tip.text}</span>
                     </span>
                   </li>
                 );
@@ -441,7 +508,7 @@ export default function SituationPage() {
         )}
         {loading === "analysis" && <LoadingCard text="Reading the message…" />}
         {!busy && outcome?.kind === "case" && (
-          <CaseOutcome key={outcome.result.case_id} result={outcome.result} onAnswer={onAnswer} busy={busy} />
+          <CaseOutcome key={outcome.result.case_id} role={role} result={outcome.result} onAnswer={onAnswer} busy={busy} />
         )}
         {!busy && outcome?.kind === "analysis" && <SituationResultView result={outcome.result} />}
       </div>
