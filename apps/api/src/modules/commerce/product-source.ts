@@ -17,10 +17,6 @@ export class LocalRegistrySource implements ProductSource {
   }
 }
 
-function validCategory(value: unknown): value is NeedCategory {
-  return typeof value === "string" && ["food", "water", "medicine", "shelter", "hygiene", "baby_supplies", "clothing", "transport", "other"].includes(value);
-}
-
 function normalizeAvailability(value: unknown): Availability {
   if (typeof value !== "string") return "unknown";
   const normalized = value.toLowerCase().replace(/[\s_-]/g, "");
@@ -30,16 +26,76 @@ function normalizeAvailability(value: unknown): Availability {
   return "unknown";
 }
 
+/** Words that show a product meets a need. Whole words only: "water" alone would also match micellar water. */
+const NEED_TERMS: Record<NeedCategory, string[]> = {
+  food: ["food", "foods", "grocery", "groceries", "rice", "meal", "meals", "lentil", "lentils", "oat", "oats", "ration", "rations", "flour"],
+  water: ["drinking water", "bottled water", "emergency water", "water filter", "water purifier", "water purification", "water tablets", "water ration", "water rations", "water container"],
+  medicine: ["medicine", "medicines", "medical", "medication", "first aid", "bandage", "bandages", "rehydration", "antiseptic", "thermometer", "insulin", "paracetamol"],
+  shelter: ["shelter", "shelters", "tarp", "tarpaulin", "tent", "tents", "sleeping bag"],
+  hygiene: ["hygiene", "soap", "sanitary", "toothbrush", "toothpaste", "hand sanitizer"],
+  baby_supplies: ["infant formula", "baby formula", "baby food", "baby wipes", "baby kit", "diaper", "diapers", "nappy", "nappies", "newborn"],
+  clothing: ["clothing", "apparel", "sock", "socks", "blanket", "blankets", "coat", "coats", "jacket", "poncho"],
+  transport: ["transport", "transit", "bus ticket"],
+  other: ["household", "battery", "batteries", "flashlight", "torch"],
+};
+
+/** Products that are never emergency essentials, even when their name contains a need word. */
+const EXCLUDED_TERMS = [
+  "book", "books", "handbook", "guide", "guidebook", "novel", "magazine",
+  "cosmetic", "cosmetics", "skincare", "skin care", "serum", "micellar", "cleansing", "makeup", "moisturizer", "moisturiser", "toner", "fragrance", "perfume", "food mask", "sheet mask",
+  "toy", "toys", "plush", "watering can",
+  "food storage", "storage container", "food container", "freezer bags",
+  "hardness", "test strip",
+  "pet", "pets", "dog", "dogs", "cat", "cats", "puppy", "kitten",
+];
+
+/** Channel3 category branches that hold no emergency essentials (e.g. Cosmetics > Skin Care > Masks). */
+const EXCLUDED_CATEGORY_PATH = /(^|-)(cosmetics|skin-care|hair-care|makeup|fragrances?|kitchen-dining|kitchen-appliances|pet-supplies|pets|toys|books|media)($|-)/;
+
+const normalizeText = (text: string) => ` ${text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()} `;
+const hasTerm = (text: string, terms: string[]) => terms.some((term) => text.includes(` ${term} `));
+
+/**
+ * Decides which need an online product meets, or null if it isn't an essential. Uses the title and category only:
+ * descriptions mention too much (a survival handbook's description is full of "food" and "water").
+ */
+export function classifyProduct(title: string, categoryText: string, categoryPath: string[], needs: readonly NeedCategory[]): NeedCategory | null {
+  if (categoryPath.some((slug) => EXCLUDED_CATEGORY_PATH.test(slug))) return null;
+  const text = normalizeText(`${title} ${categoryText}`);
+  if (hasTerm(text, EXCLUDED_TERMS)) return null;
+  return needs.find((need) => hasTerm(text, NEED_TERMS[need])) ?? null;
+}
+
+/** What to search for each need: specific products, because vague phrases return car kits and toys. */
+const NEED_QUERIES: Record<NeedCategory, string> = {
+  food: "emergency food rations non-perishable",
+  water: "water purification tablets portable water filter",
+  medicine: "first aid kit medical supplies bandages",
+  shelter: "emergency tent tarpaulin shelter",
+  hygiene: "family hygiene kit soap toothbrush",
+  baby_supplies: "baby diapers infant formula",
+  clothing: "emergency blanket warm socks",
+  transport: "public transit bus ticket",
+  other: "flashlight batteries household emergency",
+};
+
 type Channel3SearchResponse = { products?: unknown[] };
 
 export class Channel3Source implements ProductSource {
   constructor(private readonly apiKey = env.CHANNEL3_API_KEY, private readonly fetchImpl: typeof fetch = fetch) {}
+  /** One search per need: a single combined search mostly returns whichever need ranks highest. */
   async search(request: CommerceRequest): Promise<ProductCandidate[]> {
-    if (!this.apiKey) return [];
+    const apiKey = this.apiKey;
+    if (!apiKey) return [];
+    const results = await Promise.all([...new Set(request.needs)].map((need) => this.searchNeed(apiKey, request, need)));
+    return [...new Map(results.flat().map((product) => [product.id, product])).values()];
+  }
+
+  private async searchNeed(apiKey: string, request: CommerceRequest, need: NeedCategory): Promise<ProductCandidate[]> {
     try {
       const response = await this.fetchImpl("https://api.trychannel3.com/v1/search", {
-        method: "POST", headers: { "x-api-key": this.apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: `affordable emergency essentials ${request.needs.join(" ")} near ${request.location}`, limit: 20, config: { currency: request.currency } }),
+        method: "POST", headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ query: NEED_QUERIES[need], limit: 10, config: { currency: request.currency } }),
         signal: AbortSignal.timeout(8_000),
       });
       if (!response.ok) return [];
@@ -51,14 +107,15 @@ export class Channel3Source implements ProductSource {
         const price = Number(offer?.price?.price ?? offer?.price?.amount);
         const currency = String(offer?.price?.currency_code ?? offer?.price?.currency ?? request.currency);
         const categoryDetails = item.category && typeof item.category === "object" && !Array.isArray(item.category)
-          ? item.category as { slug?: unknown; title?: unknown }
+          ? item.category as { slug?: unknown; title?: unknown; path?: unknown }
           : undefined;
-        const categoryValue = typeof item.category === "string" ? item.category : categoryDetails?.slug;
         const categoryText = [typeof item.category === "string" ? item.category : undefined, categoryDetails?.slug, categoryDetails?.title]
           .filter((value): value is string => typeof value === "string").join(" ");
-        const productText = `${categoryText} ${item.title ?? ""} ${item.description ?? ""}`.toLowerCase().replaceAll("_", " ");
-        const aliases: Record<NeedCategory, string[]> = { food: ["food", "grocery", "rice", "meal", "lentil", "oat"], water: ["water", "filter", "purif"], medicine: ["medicine", "medical", "health", "first aid"], shelter: ["shelter", "tarp", "tent"], hygiene: ["hygiene", "soap", "sanitary", "toothbrush"], baby_supplies: ["baby", "infant", "diaper", "nappy"], clothing: ["clothing", "apparel", "sock", "blanket", "coat"], transport: ["transport", "transit", "bus"], other: ["household", "battery", "flashlight"] };
-        const category = validCategory(categoryValue) ? categoryValue : request.needs.find((need) => aliases[need].some((alias) => productText.includes(alias)));
+        const categoryPath = [
+          ...(Array.isArray(categoryDetails?.path) ? categoryDetails.path : []).map((entry) => String((entry as { slug?: unknown } | null)?.slug ?? "")),
+          typeof categoryDetails?.slug === "string" ? categoryDetails.slug : "",
+        ].filter(Boolean);
+        const category = typeof item.title === "string" ? classifyProduct(item.title, categoryText, categoryPath, request.needs) : null;
         if (typeof item.id !== "string" || typeof item.title !== "string" || !Number.isFinite(price) || price <= 0 || currency !== request.currency || !category) return [];
         const rawUrl = typeof offer?.url === "string" ? offer.url : typeof item.url === "string" ? item.url : undefined;
         let url: string | undefined;

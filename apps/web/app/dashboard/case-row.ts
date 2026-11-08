@@ -44,6 +44,11 @@ export function routeName(routeId: string) {
   return (name.charAt(0).toUpperCase() + name.slice(1)).replace(/paypal/i, "PayPal");
 }
 
+/** Where a basket item came from, stated plainly so demo data is never mistaken for real stock. */
+export function sourceLabel(source: "channel3" | "local_registry") {
+  return source === "channel3" ? "Online listing (Channel3), price estimate" : "Synthetic demo catalogue";
+}
+
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined) {
   if (amount === null || amount === undefined) return "";
   if (!currency) return amount.toLocaleString();

@@ -46,4 +46,48 @@ describe("deterministic basket rules", () => {
     expect(ranking).toEqual([]);
     expect(result.items.map((item) => item.product_id)).toEqual(["lentils", "water"]);
   });
+
+  describe("online products", () => {
+    const online: ProductCandidate = { ...products[0]!, id: "c3-food", name: "Emergency rations", price: 3.9, source: "channel3" };
+
+    it("prefers a checked online product over the local catalogue", () => {
+      const result = buildBasket({ ...request, needs: ["food"] }, [...products, online], [{ product_id: "c3-food", reason: "Direct match" }]);
+      expect(result.items[0]?.product_id).toBe("c3-food");
+    });
+
+    it("falls back to local when the online product doesn't fit the budget", () => {
+      const pricey = { ...online, price: 500 };
+      const result = buildBasket({ ...request, needs: ["food"] }, [...products, pricey], [{ product_id: "c3-food", reason: "Direct match" }]);
+      expect(result.items[0]?.source).toBe("local_registry");
+    });
+
+    it("skips an online product the AI left out of its answer", () => {
+      const result = buildBasket({ ...request, needs: ["food"] }, [...products, online], [{ product_id: "rice", reason: "Staple" }]);
+      expect(result.items[0]?.source).toBe("local_registry");
+      expect(result.alternatives.some((item) => item.product_id === "c3-food")).toBe(false);
+    });
+
+    it("uses the local catalogue first when the AI is unavailable", () => {
+      const result = buildBasket({ ...request, needs: ["food"] }, [...products, online], []);
+      expect(result.items[0]?.source).toBe("local_registry");
+    });
+
+    it("still builds a basket from filtered online products when the AI is unavailable and there is no local stock", () => {
+      const result = buildBasket({ ...request, needs: ["food"] }, [online], []);
+      expect(result.items[0]?.product_id).toBe("c3-food");
+    });
+
+    it("doesn't let one expensive item take another need's money while a cheaper one fits", () => {
+      const needs: CommerceRequest["needs"] = ["food", "water"];
+      const kit = { ...online, price: 7.5 };
+      const result = buildBasket({ ...request, needs }, [...products, kit], [{ product_id: "c3-food", reason: "Direct match" }]);
+      expect(result.items.map((item) => item.product_id)).toEqual(["lentils", "water"]);
+    });
+
+    it("never uses or suggests a product the AI marked unsuitable", () => {
+      const result = buildBasket({ ...request, needs: ["food"] }, [...products, online], [{ product_id: "c3-food", reason: "A cosmetic", suitable: false }]);
+      expect(result.items.some((item) => item.product_id === "c3-food")).toBe(false);
+      expect(result.alternatives.some((item) => item.product_id === "c3-food")).toBe(false);
+    });
+  });
 });

@@ -3,7 +3,7 @@
 import type { CaseResult } from "@lifeline/contracts";
 import Link from "next/link";
 import { useState } from "react";
-import { formatMoney, recommendedRoute, routeName } from "../dashboard/case-row";
+import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
 import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
 import { ListenButton } from "./voice";
@@ -104,6 +104,7 @@ function Ready({ result }: { result: CaseResult }) {
                         {item.quantity} × {item.name}
                       </span>
                       <span className="text-slate-500"> · {item.merchant_name}</span>
+                      <span className="block text-xs text-slate-500">{sourceLabel(item.source)}</span>
                     </span>
                     <span className="tabular font-medium">{formatMoney(item.subtotal, commerce.currency)}</span>
                   </li>

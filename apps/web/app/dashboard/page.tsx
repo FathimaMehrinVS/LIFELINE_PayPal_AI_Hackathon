@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ApiRequestError, api } from "../../services/api";
 import { SituationResultView } from "../situation/situation-result";
-import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, formatMoney, recommendedRoute, routeName } from "./case-row";
+import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, formatMoney, sourceLabel, recommendedRoute, routeName } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
 // Owner: Member 1 (feature/situation-agent). NGO dashboard: triage cases and approve aid.
@@ -94,7 +94,7 @@ function CaseDetail({ row, onClose, onDisburse }: { row: CaseRow; onClose: () =>
           <ul className="text-sm">
             {commerce.items.map((item) => (
               <li key={item.product_id}>
-                {item.quantity} × {item.name} · {item.merchant_name} · {formatMoney(item.subtotal, commerce.currency)}
+                {item.quantity} × {item.name} · {item.merchant_name} · {formatMoney(item.subtotal, commerce.currency)} · {sourceLabel(item.source)}
               </li>
             ))}
           </ul>

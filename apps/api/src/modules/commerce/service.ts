@@ -5,14 +5,14 @@ import { llm } from "../../ai/llm-client";
 import { buildBasket } from "../../rules/basket";
 import { productSource, type ProductCandidate } from "./product-source";
 
-const RankingSchema = z.object({ ranked_products: z.array(z.object({ product_id: z.string(), reason: z.string().min(1).max(300) })).max(100) });
+const RankingSchema = z.object({ ranked_products: z.array(z.object({ product_id: z.string(), reason: z.string().min(1).max(300), suitable: z.boolean().default(true) })).max(100) });
 
 export async function rankProducts(request: CommerceRequest, products: ProductCandidate[], ranker = llm.generateJson.bind(llm)) {
   if (!products.length) return [];
   try {
     const result = await ranker({
       schema: RankingSchema, temperature: 0.1,
-      system: "Rank candidate products for humanitarian needs. Return JSON {ranked_products:[{product_id,reason}]}. Only use supplied product IDs. Prioritize direct need match, appropriate basic essentials, and affordability. Do not calculate or state authoritative totals or alter prices.",
+      system: "Rank candidate products for humanitarian needs. Return JSON {ranked_products:[{product_id,reason,suitable}]}. Set suitable to false for anything a family in an emergency would not use to meet the need, such as cosmetics, books, toys, kitchenware, pet products or decorative items; include those with suitable false rather than leaving them out. Only use supplied product IDs. Prioritize direct need match, appropriate basic essentials, and affordability. Do not calculate or state authoritative totals or alter prices.",
       user: JSON.stringify({ needs: request.needs, location: request.location, budget: request.budget, currency: request.currency,
         candidates: products.map(({ id, name, description, category, price, currency, availability }) => ({ id, name, description, category, price, currency, availability })) }),
     });
