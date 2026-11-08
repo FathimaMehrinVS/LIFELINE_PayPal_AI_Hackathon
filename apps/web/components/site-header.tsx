@@ -11,6 +11,7 @@ const NAV = [
   { href: "/commerce", label: "Essentials", Icon: BasketIcon },
   { href: "/donate", label: "Donate", Icon: HeartHandIcon },
   { href: "/dashboard", label: "NGO dashboard", Icon: GridIcon },
+  { href: "/login", label: "Sign in", Icon: ShieldCheckIcon },
 ];
 
 /** A heart held in an open hand: help that reaches people. */

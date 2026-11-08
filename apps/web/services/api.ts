@@ -17,16 +17,25 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+export interface AuthProfile {
+  id: string;
+  email: string;
+  role: "NGO" | "DONOR" | "PARTNER";
+}
+
 export class ApiRequestError extends Error {
   constructor(readonly status: number, readonly body: ApiError) {
     super(body.error.message);
   }
 }
 
-async function request<TResponse>(method: "GET" | "POST", path: string, body?: unknown): Promise<TResponse> {
+async function request<TResponse>(method: "GET" | "POST", path: string, body?: unknown, accessToken?: string): Promise<TResponse> {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   const res = await fetch(`${API_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const json = await res.json();
@@ -52,4 +61,5 @@ export const api = {
     post<CaseResult>(replaces ? `/api/cases?replaces=${encodeURIComponent(replaces)}` : "/api/cases", body),
   listCases: () => get<CaseResult[]>("/api/cases"),
   approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
+  getAuthProfile: (accessToken: string) => request<AuthProfile>("GET", "/api/auth/me", undefined, accessToken),
 };
