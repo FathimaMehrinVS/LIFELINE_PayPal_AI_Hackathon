@@ -17,16 +17,22 @@ services:
         sync: false
       - key: DIRECT_URL
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
       - key: LLM_PROVIDER
         value: groq
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
         sync: false
+      # Optional Gemini fallback; configure both Gemini variables to enable it.
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
         sync: false
+      # Optional product source; the local registry remains available without it.
       - key: CHANNEL3_API_KEY
         sync: false
       - key: PAYPAL_CLIENT_ID
@@ -35,6 +41,7 @@ services:
         sync: false
       - key: PAYPAL_BASE_URL
         value: https://api-m.sandbox.paypal.com
+      # Required when live PayPal webhook verification is enabled after registration.
       - key: PAYPAL_WEBHOOK_ID
         sync: false
 
@@ -48,4 +55,8 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
