@@ -12,7 +12,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
 import { Badge, type BadgeTone } from "@/components/ui";
-import { type CaseRow, STATUS_LABELS, caseRef, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
+import { type CaseRow, STATUS_LABELS, caseRef, fundingState, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
 
 // Owner: Member 1. NGO case grid (AG Grid Community).
 
@@ -60,6 +60,20 @@ function StatusCell({ data }: ICellRendererParams<CaseRow>) {
   if (!data) return null;
   const { status, missing_information } = data.case;
   return <span title={missing_information.length > 0 ? `Waiting for: ${missing_information.join(", ")}` : undefined}><Badge tone={STATUS_TONE[status]}>{SHORT_STATUS[status]}</Badge></span>;
+}
+
+function FundingCell({ data }: ICellRendererParams<CaseRow>) {
+  const funding = data && fundingState(data.case);
+  if (!data || !funding) return <span className="text-slate-400">—</span>;
+  const allocation = data.case.operations!.allocation!;
+  return <span title={`${formatMoney(funding.captured, allocation.currency)} captured of ${formatMoney(allocation.amount, allocation.currency)}`}><Badge tone={funding.tone}>{funding.label}</Badge></span>;
+}
+
+function SupplierPaymentCell({ data }: ICellRendererParams<CaseRow>) {
+  if (data?.disbursement?.state === "complete") {
+    return data.disbursement.result.mode === "simulated" ? <Badge tone="simulated">Simulated</Badge> : <Badge tone="success">Paid</Badge>;
+  }
+  return data?.approval?.state === "approved" ? <Badge tone="neutral">Not paid</Badge> : <span className="text-slate-400">—</span>;
 }
 
 function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
@@ -193,6 +207,21 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         valueGetter: (p) => p.data?.case.commerce?.total,
         valueFormatter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
         width: 92,
+      },
+      {
+        headerName: "Funding",
+        colId: "funding",
+        valueGetter: (p) => (p.data ? fundingState(p.data.case)?.label ?? "" : ""),
+        cellRenderer: FundingCell,
+        width: 125,
+      },
+      {
+        headerName: "Supplier payment",
+        colId: "payment",
+        headerTooltip: "Recorded separately from donations",
+        valueGetter: (p) => (p.data?.disbursement?.state === "complete" ? p.data.disbursement.result.mode : ""),
+        cellRenderer: SupplierPaymentCell,
+        width: 140,
       },
       {
         headerName: "Approval",

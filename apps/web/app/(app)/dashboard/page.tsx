@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ApiRequestError, api } from "@/services/api";
 import { Badge, type BadgeTone, button, fieldClass } from "@/components/ui";
-import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, loadCases, recommendedRoute, routeName } from "./case-row";
+import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, fundingState, loadCases, recommendedRoute, routeName, savedApproval, savedDisbursement } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
 // Owner: Member 1 (feature/situation-agent). NGO dashboard: triage cases and approve aid.
@@ -25,6 +25,7 @@ function approvalError(err: unknown) {
 function CasePanel({ row, sample, onClose, onDisburse }: { row: CaseRow; sample: boolean; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
   const { situation, finance, commerce, case_id, missing_information } = row.case;
   const route = recommendedRoute(row.case);
+  const funding = fundingState(row.case);
   const approved = row.approval?.state === "approved" ? row.approval.result : null;
   return (
     <aside className="h-fit space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
@@ -43,6 +44,7 @@ function CasePanel({ row, sample, onClose, onDisburse }: { row: CaseRow; sample:
         {route && finance && <div><dt className="text-slate-600">Arrives</dt><dd className="tabular font-semibold text-navy">{formatMoney(route.usable_value, finance.currency)}</dd></div>}
         {commerce && <div><dt className="text-slate-600">Basket</dt><dd className="tabular font-semibold text-navy">{formatMoney(commerce.total, commerce.currency)}</dd></div>}
         {commerce && <div><dt className="text-slate-600">Reserve</dt><dd className="tabular font-semibold text-navy">{formatMoney(commerce.reserve, commerce.currency)}</dd></div>}
+        {funding && row.case.operations?.allocation && <div className="col-span-2"><dt className="text-slate-600">Funding</dt><dd className="tabular font-semibold text-navy">{formatMoney(funding.captured, row.case.operations.allocation.currency)} captured of {formatMoney(row.case.operations.allocation.amount, row.case.operations.allocation.currency)}</dd></div>}
       </dl>
       {missing_information.length > 0 && (
         <div className="text-sm">
@@ -72,11 +74,34 @@ function CasePanel({ row, sample, onClose, onDisburse }: { row: CaseRow; sample:
               </button>
             </>
           ) : (
-            <p role="status" className="mt-2">{row.disbursement?.state === "complete" ? row.disbursement.result.notice : "Simulated disbursement recorded. No PayPal payout was sent and no money was transferred."}</p>
+            <p role="status" className="mt-2">{(row.disbursement?.state === "complete" && row.disbursement.result.notice) || "Simulated disbursement recorded. No PayPal payout was sent and no money was transferred."}</p>
           )}
         </section>
       )}
     </aside>
+  );
+}
+
+/** Styled from the design's payment summary. Only money that has actually been recorded is counted. */
+function FundsSummary({ cases }: { cases: CaseResult[] }) {
+  const records = cases.flatMap((item) => (item.operations?.allocation ? [item.operations] : []));
+  const currency = records[0]?.allocation?.currency;
+  if (!currency) return null;
+  const same = records.filter((record) => record.allocation?.currency === currency);
+  const sum = (values: number[]) => Math.round(values.reduce((total, value) => total + value, 0) * 100) / 100;
+  const donated = sum(same.map((record) => record.funding.captured));
+  const allocated = sum(same.map((record) => record.allocation!.amount));
+  const paid = sum(same.map((record) => record.payout?.amount ?? 0));
+  const tiles = [
+    { label: "Total donated (captured)", value: donated },
+    { label: "Total allocated to plans", value: allocated },
+    { label: "Supplier payments (simulated)", value: paid },
+  ];
+  return (
+    <section className="mt-4 grid gap-5 rounded-2xl bg-navy p-5 text-white sm:grid-cols-2 lg:grid-cols-4">
+      {tiles.map((tile) => <div key={tile.label}><p className="text-sm text-slate-300">{tile.label}</p><p className="tabular text-2xl font-extrabold">{formatMoney(tile.value, currency)}</p></div>)}
+      <div><p className="text-sm text-slate-300">Remaining balance</p><p className="tabular text-2xl font-extrabold text-accent">{formatMoney(Math.round((donated - paid) * 100) / 100, currency)}</p></div>
+    </section>
   );
 }
 
@@ -107,7 +132,7 @@ function Dashboard() {
     void refresh();
   }, [refresh]);
 
-  const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id], disbursement: disbursements[c.case_id] })), [cases, approvals, disbursements]);
+  const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id] ?? savedApproval(c), disbursement: disbursements[c.case_id] ?? savedDisbursement(c) })), [cases, approvals, disbursements]);
   const selected = rows.find((r) => r.case.case_id === selectedId) ?? null;
 
   const onApprove = useCallback(async (row: CaseRow) => {
@@ -175,6 +200,8 @@ function Dashboard() {
           <strong>Sample data:</strong> built from the shared contract samples to preview this screen. These are not real cases. <Link href="/dashboard" className="underline">Show real cases</Link>
         </p>
       )}
+
+      <FundsSummary cases={cases} />
 
       <nav className="mt-5 flex flex-wrap gap-1 border-b border-slate-200" aria-label="Filter cases">
         {tabs.map((tab) => {

@@ -1,12 +1,13 @@
 "use client";
 
-import type { AccessFactorKey, Availability, CaseResult } from "@lifeline/contracts";
+import type { AccessFactorKey, Availability, CaseResult, CaseTimelineEntry } from "@lifeline/contracts";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { AiPanel, Badge, type BadgeTone, Card, Overline } from "@/components/ui";
+import { api } from "@/services/api";
 import { MISSING_QUESTIONS } from "../../situation/situation-result";
-import { STATUS_LABELS, caseRef, formatMoney, loadCases, recommendedRoute, routeName, sourceLabel } from "../case-row";
+import { STATUS_LABELS, caseRef, formatMoney, fundingState, loadCases, recommendedRoute, routeName, sourceLabel } from "../case-row";
 
 // Owner: Member 1. One case, styled from "LIFELINE Screen Designs" page 11. Only recorded facts are shown.
 
@@ -27,6 +28,8 @@ const AVAILABILITY: Record<Availability, { tone: BadgeTone; label: string }> = {
 const URGENCY_TONE = { critical: "critical", high: "warning", medium: "info", low: "neutral" } as const;
 const STATUS_TONE = { complete: "success", needs_information: "warning", no_usable_route: "critical" } as const;
 
+const TIMELINE_DOT: Record<CaseTimelineEntry["kind"], string> = { case: "bg-accent", approval: "bg-navy", donation: "bg-success", payment: "bg-simulated" };
+
 function Tile({ label, value, known = true }: { label: string; value: string; known?: boolean }) {
   return (
     <div className="rounded-xl border border-slate-200 p-4">
@@ -37,15 +40,19 @@ function Tile({ label, value, known = true }: { label: string; value: string; kn
   );
 }
 
-function CaseView({ item }: { item: CaseResult }) {
+function CaseView({ item, timeline }: { item: CaseResult; timeline: CaseTimelineEntry[] }) {
   const { situation, finance, commerce, status, missing_information } = item;
   const route = recommendedRoute(item);
+  const allocation = item.operations?.allocation;
+  const payout = item.operations?.payout;
+  const funding = fundingState(item);
   const pipeline: { label: string; value: string; tone: BadgeTone }[] = [
     { label: "Financial assessment", value: route ? routeName(route.route_id) : finance ? "No route yet" : "Not started", tone: route ? "success" : finance ? "warning" : "neutral" },
     { label: "Product basket", value: commerce ? `${commerce.items.length} items` : "Not started", tone: commerce ? "success" : "neutral" },
-    { label: "NGO approval", value: status === "complete" ? "Awaiting review" : "Not ready", tone: status === "complete" ? "warning" : "neutral" },
+    { label: "NGO approval", value: allocation ? "Approved" : status === "complete" ? "Awaiting review" : "Not ready", tone: allocation ? "success" : status === "complete" ? "warning" : "neutral" },
     { label: "Supplier assignment", value: "Not started", tone: "neutral" },
-    { label: "Funding", value: "Not started", tone: "neutral" },
+    { label: "Funding", value: funding?.label ?? "Not started", tone: funding?.tone ?? "neutral" },
+    { label: "Supplier payment", value: payout ? (payout.mode === "simulated" ? "Simulated" : "Paid") : "Not started", tone: payout ? (payout.mode === "simulated" ? "simulated" : "success") : "neutral" },
     { label: "Delivery", value: "Not started", tone: "neutral" },
   ];
 
@@ -127,6 +134,22 @@ function CaseView({ item }: { item: CaseResult }) {
               ))}
             </ul>
           </Card>
+          {timeline.length > 0 && (
+            <Card className="p-6">
+              <h2 className="text-lg font-bold text-navy">Activity timeline</h2>
+              <ol className="mt-3 space-y-3">
+                {[...timeline].reverse().map((entry) => (
+                  <li key={`${entry.title}-${entry.at}`} className="flex gap-3 text-sm">
+                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${TIMELINE_DOT[entry.kind]}`} aria-hidden="true" />
+                    <span>
+                      <span className="font-semibold text-navy">{entry.title}</span>
+                      <span className="block text-[13px] text-slate-600">{entry.detail ? `${entry.detail} · ` : ""}{new Date(entry.at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
           {route && finance && (
             <Card className="p-6">
               <h2 className="text-lg font-bold text-navy">Recommended route</h2>
@@ -147,6 +170,7 @@ function CasePage() {
   const { id } = useParams<{ id: string }>();
   const sample = useSearchParams().get("sample") === "1";
   const [state, setState] = useState<{ item?: CaseResult; message?: string }>({});
+  const [timeline, setTimeline] = useState<CaseTimelineEntry[]>([]);
 
   useEffect(() => {
     const caseId = decodeURIComponent(id);
@@ -156,13 +180,14 @@ function CasePage() {
         setState(item ? { item } : { message: "This case was not found." });
       })
       .catch(() => setState({ message: "Can't load this case. Is the API running?" }));
+    if (!sample) api.getCaseTimeline(caseId).then(setTimeline).catch(() => setTimeline([]));
   }, [id, sample]);
 
   return (
     <div>
       <Link href={`/dashboard${sample ? "?sample=1" : ""}`} className="text-sm font-semibold text-teal-text hover:underline">← All cases</Link>
       <div className="mt-2">
-        {state.item ? <CaseView item={state.item} /> : <p className="text-slate-600">{state.message ?? "Loading…"}</p>}
+        {state.item ? <CaseView item={state.item} timeline={timeline} /> : <p className="text-slate-600">{state.message ?? "Loading…"}</p>}
       </div>
     </div>
   );

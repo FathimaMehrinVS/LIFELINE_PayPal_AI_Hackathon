@@ -24,6 +24,25 @@ export async function loadCases(sample: boolean): Promise<CaseResult[]> {
   return sample ? api.listSampleCases() : api.listCases();
 }
 
+/** The saved approval, so a refresh loses nothing. A status the browser has just set takes priority. */
+export function savedApproval(item: CaseResult): Approval | undefined {
+  const allocation = item.operations?.allocation;
+  return allocation && (allocation.status === "approved" || allocation.status === "disbursed") ? { state: "approved", result: allocation } : undefined;
+}
+
+export function savedDisbursement(item: CaseResult): Disbursement | undefined {
+  return item.operations?.payout ? { state: "complete", result: item.operations.payout } : undefined;
+}
+
+/** How much of the approved amount has been captured. Null before approval. */
+export function fundingState(item: CaseResult): { label: string; tone: "neutral" | "warning" | "success"; captured: number } | null {
+  const operations = item.operations;
+  if (!operations?.allocation) return null;
+  const { captured } = operations.funding;
+  if (captured <= 0) return { label: "Not funded", tone: "neutral", captured };
+  return captured >= operations.allocation.amount ? { label: "Funded", tone: "success", captured } : { label: "Partly funded", tone: "warning", captured };
+}
+
 export const URGENCY_RANK: Record<Urgency, number> = { critical: 4, high: 3, medium: 2, low: 1 };
 
 export const STATUS_LABELS: Record<CaseResult["status"], string> = {

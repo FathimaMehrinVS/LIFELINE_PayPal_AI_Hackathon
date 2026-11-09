@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { SituationRequestSchema } from "@lifeline/contracts";
 import { validateBody } from "../middleware/validate";
+import { env } from "../config/env";
+import { getPrisma } from "../database/prisma";
+import { attachOperations, getCaseTimeline } from "../orchestration/case-operations";
 import { caseStore } from "../orchestration/case-store";
 import { caseModules } from "../orchestration/modules";
 import { runCase } from "../orchestration/run-case";
@@ -46,7 +49,13 @@ casesRouter.get("/mine", async (_req, res) => {
 
 casesRouter.get("/", async (_req, res) => {
   if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view all assistance cases");
-  res.json(await caseStore.list());
+  const cases = await caseStore.list();
+  res.json(env.DATABASE_URL ? await attachOperations(getPrisma(), cases) : cases);
+});
+
+casesRouter.get("/:id/timeline", async (req, res) => {
+  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view a case timeline");
+  res.json(await getCaseTimeline(getPrisma(), String(req.params.id)));
 });
 
 /** Sample cases for previewing the dashboard; never mixed into the real list. */
