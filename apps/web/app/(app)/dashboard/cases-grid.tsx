@@ -64,7 +64,7 @@ function StatusCell({ data }: ICellRendererParams<CaseRow>) {
 
 function FundingCell({ data }: ICellRendererParams<CaseRow>) {
   const funding = data && fundingState(data.case);
-  if (!data || !funding) return <span className="text-slate-400">—</span>;
+  if (!data || !funding) return <span className="text-slate-500">—</span>;
   const allocation = data.case.operations!.allocation!;
   return <span title={`${formatMoney(funding.captured, allocation.currency)} captured of ${formatMoney(allocation.amount, allocation.currency)}`}><Badge tone={funding.tone}>{funding.label}</Badge></span>;
 }
@@ -73,7 +73,7 @@ function SupplierPaymentCell({ data }: ICellRendererParams<CaseRow>) {
   if (data?.disbursement?.state === "complete") {
     return data.disbursement.result.mode === "simulated" ? <Badge tone="simulated">Simulated</Badge> : <Badge tone="success">Paid</Badge>;
   }
-  return data?.approval?.state === "approved" ? <Badge tone="neutral">Not paid</Badge> : <span className="text-slate-400">—</span>;
+  return data?.approval?.state === "approved" ? <Badge tone="neutral">Not paid</Badge> : <span className="text-slate-500">—</span>;
 }
 
 function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
@@ -93,7 +93,7 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
     }
     return <Badge tone="success">✓ Approved</Badge>;
   }
-  if (data.case.status !== "complete") return <span className="text-xs text-slate-400">Not ready</span>;
+  if (data.case.status !== "complete") return <span className="text-xs text-slate-500">Not ready</span>;
   return (
     <span className="flex h-full items-center gap-2">
       <button
@@ -122,9 +122,14 @@ interface CasesGridProps {
   statusFilter: StatusFilter;
   onApprove: (row: CaseRow) => void;
   onSelect: (row: CaseRow) => void;
+  onVisibleCount: (count: number) => void;
 }
 
-export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect }: CasesGridProps) {
+function SituationCell({ value }: ICellRendererParams<CaseRow>) {
+  return <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug">{value}</span></span>;
+}
+
+export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect, onVisibleCount }: CasesGridProps) {
   const columnDefs = useMemo<ColDef<CaseRow>[]>(
     () => [
       {
@@ -148,6 +153,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         headerName: "Situation",
         colId: "summary",
         valueGetter: (p) => p.data?.case.situation.summary,
+        cellRenderer: SituationCell,
         tooltipValueGetter: (p) => p.value,
         flex: 1,
         minWidth: 130,
@@ -261,7 +267,8 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
       rowHeight={56}
       tooltipShowDelay={300}
       domLayout="autoHeight"
-      overlayNoRowsTemplate="No cases yet. Use New case to record one."
+      suppressNoRowsOverlay
+      onModelUpdated={(event) => onVisibleCount(event.api.getDisplayedRowCount())}
     />
   );
 }

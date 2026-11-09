@@ -179,7 +179,7 @@ export default function CaseDetailPage() {
         const item = cases.find((c) => c.case_id === caseId);
         setState(item ? { item } : { message: "This case was not found." });
       })
-      .catch(() => setState({ message: "Can't load this case. Is the API running?" }));
+      .catch(() => setState({ message: "Can't load this case. Please check your connection and try again." }));
     api.getCaseTimeline(caseId).then(setTimeline).catch(() => setTimeline([]));
   }, [id]);
 

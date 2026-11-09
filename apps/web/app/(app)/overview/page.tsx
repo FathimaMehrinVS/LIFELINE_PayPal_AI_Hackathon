@@ -62,7 +62,7 @@ export default function OverviewPage() {
     const now = new Date();
     const hour = now.getHours();
     setToday({ greeting: hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening", date: now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) });
-    api.listCases().then(setCases).catch(() => setError("Can't load cases. Is the API running?"));
+    api.listCases().then(setCases).catch(() => setError("Can't load cases. Please check your connection and try again."));
     api.getRecentActivity().then(setActivity).catch(() => setActivity([]));
     api.listSuppliers().then(setSuppliers).catch(() => setSuppliers([]));
   }, []);

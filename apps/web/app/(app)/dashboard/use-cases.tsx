@@ -22,7 +22,7 @@ export function useSelectedCase(qualifies: (item: CaseResult) => boolean) {
         setCases(usable);
         setSelectedId(usable.find((item) => item.case_id === requested)?.case_id ?? usable[0]?.case_id ?? null);
       })
-      .catch(() => setError("Can't load cases. Is the API running?"));
+      .catch(() => setError("Can't load cases. Please check your connection and try again."));
     // `qualifies` is a fixed test for each page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.role]);

@@ -3,8 +3,9 @@
 import type { CaseResult, Urgency } from "@lifeline/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ApiRequestError, api } from "@/services/api";
-import { Badge, type BadgeTone, button, fieldClass } from "@/components/ui";
+import { Badge, type BadgeTone, button, fieldClass, EmptyState } from "@/components/ui";
 import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, fundingState, recommendedRoute, routeName, savedApproval, savedDisbursement } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
@@ -32,7 +33,7 @@ function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => 
         <h2 className="font-mono text-lg font-bold text-navy">{caseRef(case_id)}</h2>
         <span className="flex items-center gap-2">
           <Badge tone={URGENCY_TONE[situation.urgency]} className="capitalize">{situation.urgency}</Badge>
-          <button type="button" onClick={onClose} aria-label="Close case summary" className="px-1 text-lg leading-none text-slate-400 hover:text-navy">×</button>
+          <button type="button" onClick={onClose} aria-label="Close case summary" className="flex h-8 w-8 items-center justify-center rounded-lg text-lg leading-none text-slate-500 hover:bg-slate-100 hover:text-navy">×</button>
         </span>
       </div>
       <p className="text-navy">{situation.summary}</p>
@@ -113,6 +114,8 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visible, setVisible] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState<CaseRow | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -120,7 +123,7 @@ export default function DashboardPage() {
       setCases(await api.listCases());
       setError(null);
     } catch {
-      setError("Can't load cases. Is the API running (npm run dev:api)?");
+      setError("Can't load cases. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -133,9 +136,14 @@ export default function DashboardPage() {
   const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id] ?? savedApproval(c), disbursement: disbursements[c.case_id] ?? savedDisbursement(c) })), [cases, approvals, disbursements]);
   const selected = rows.find((r) => r.case.case_id === selectedId) ?? null;
 
+  const failedApproval = rows.find((row) => row.approval?.state === "error");
+
   const onApprove = useCallback(async (row: CaseRow) => {
     const { case_id, situation } = row.case;
-    if (situation.budget === null || situation.currency === null) return;
+    if (situation.budget === null || situation.currency === null) {
+      setApprovals((a) => ({ ...a, [case_id]: { state: "error", message: "This case has no amount to approve yet." } }));
+      return;
+    }
     setApprovals((a) => ({ ...a, [case_id]: { state: "pending" } }));
     try {
       const result = await api.approveAllocation({
@@ -211,10 +219,29 @@ export default function DashboardPage() {
 
       {error && <p role="alert" className="mt-4 rounded-xl border border-critical/30 bg-critical-tint p-4 text-sm text-critical">{error}</p>}
 
-      <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
-        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} onApprove={onApprove} onSelect={(row) => setSelectedId(row.case.case_id)} />
+      {failedApproval?.approval?.state === "error" && <p role="alert" className="mt-4 rounded-xl border border-critical/30 bg-critical-tint p-4 text-sm text-critical">Couldn&apos;t approve {caseRef(failedApproval.case.case_id)}: {failedApproval.approval.message}</p>}
+
+      {!loading && !error && visible === 0 && (
+        <div className="mt-4">
+          {cases.length === 0
+            ? <EmptyState title="No cases yet" text="New reports appear here for review." action={<Link href="/situation" className={button.primary}>New case</Link>} />
+            : <EmptyState title="No cases match" text="Try a different search or status." action={<button type="button" onClick={() => { setQuickFilter(""); setStatusFilter("all"); }} className={button.secondary}>Clear filters</button>} />}
+        </div>
+      )}
+
+      <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""} ${visible === 0 ? "hidden" : ""}`}>
+        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} onApprove={setConfirming} onSelect={(row) => setSelectedId(row.case.case_id)} onVisibleCount={setVisible} />
         {selected && <CasePanel row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
       </div>
+      <ConfirmDialog
+        open={confirming !== null}
+        title="Approve this plan?"
+        confirmLabel="Approve plan"
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => { if (confirming) void onApprove(confirming); setConfirming(null); }}
+      >
+        {confirming && <p>You are approving <strong className="text-navy">{formatMoney(confirming.case.situation.budget, confirming.case.situation.currency)}</strong> for case <strong className="font-mono text-navy">{caseRef(confirming.case.case_id)}</strong>. Donors can fund it as soon as it is approved, and this can&apos;t be undone from LIFELINE.</p>}
+      </ConfirmDialog>
       <p className="mt-3 text-xs text-slate-500">Select a row to review a case. Disbursement is simulated and does not transfer money.</p>
     </div>
   );
