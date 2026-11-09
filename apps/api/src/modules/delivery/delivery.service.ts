@@ -3,6 +3,7 @@ import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
 import type { AuthSession } from "../../auth/session";
+import { canTransitionFulfilment, type FulfilmentStatus } from "../../rules/fulfilment";
 
 type Database = ReturnType<typeof getPrisma>;
 type Transaction = Prisma.TransactionClient;
@@ -24,14 +25,6 @@ const purchaseOrderInclude = {
   partnerUser: { select: { id: true, name: true, email: true } },
   events: { orderBy: { createdAt: "asc" as const } },
 } satisfies Prisma.PurchaseOrderInclude;
-
-const nextPartnerStatus: Record<string, string> = {
-  AWAITING_ACCEPTANCE: "ACCEPTED",
-  ACCEPTED: "PREPARING",
-  PREPARING: "READY",
-  READY: "DISPATCHED",
-  DISPATCHED: "HANDED_OVER",
-};
 
 function deliveredItems(value: Prisma.JsonValue | null): DeliveryRecord["events"][number]["delivered_items"] {
   if (!Array.isArray(value)) return [];
@@ -168,9 +161,12 @@ export async function submitDeliveryEvent(
     if (!order || order.partnerUserId !== actor.id) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
     if (allocation.status === "COMPLETED") throw new HttpError("VALIDATION_ERROR", "Completed assistance cannot receive more delivery updates");
 
-    const requestedStatus = input.status.toUpperCase() as "ACCEPTED" | "PREPARING" | "READY" | "DISPATCHED" | "HANDED_OVER";
-    if (nextPartnerStatus[order.fulfilmentStatus] !== requestedStatus) {
+    const requestedStatus = input.status.toUpperCase() as FulfilmentStatus;
+    if (!canTransitionFulfilment(order.fulfilmentStatus as FulfilmentStatus, requestedStatus, "SUPPLIER")) {
       throw new HttpError("VALIDATION_ERROR", `Delivery cannot transition from ${order.fulfilmentStatus} to ${requestedStatus}`);
+    }
+    if (requestedStatus === "ISSUE_REPORTED" && !input.note?.trim()) {
+      throw new HttpError("VALIDATION_ERROR", "A short note is required when reporting a delivery issue");
     }
 
     let savedItems: { basket_item_id: string; name: string; quantity: number }[] = [];

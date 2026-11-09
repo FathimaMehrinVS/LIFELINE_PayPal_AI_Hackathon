@@ -18,7 +18,7 @@ export const DeliveredItemSchema = z.object({
 });
 
 export const SubmitDeliveryEventRequestSchema = z.object({
-  status: z.enum(["accepted", "preparing", "ready", "dispatched", "handed_over"]),
+  status: z.enum(["accepted", "preparing", "ready", "dispatched", "handed_over", "issue_reported"]),
   note: z.string().trim().max(500).optional(),
   delivered_items: z.array(DeliveredItemSchema).min(1).max(100).optional(),
 });
