@@ -2,40 +2,35 @@
 
 ## Problem
 
-A relative abroad has €300 for a family in a conflict-affected area. The transfer can succeed and the family can
-still be unable to buy food: the bank is unreachable, cash agents take 20%, internet is intermittent and nearby
-merchants don't accept the wallet. **Sending money is not the same as making money usable.**
+Small NGOs get emergency requests by phone and chat, in messy, incomplete language. Someone has to work out what a
+family needs, how help can actually reach them, what it costs, and who can supply it. Donors then want to know where
+their money went. **Sending money is not the same as getting aid to a family.**
 
 ## What LIFELINE does
 
-1. **Understand** (Situation Intelligence): turn a plain-language message into needs, budget, urgency and the
-   recipient's practical financial access, keeping anything unstated as "unknown".
-2. **Route** (Financial Intelligence): compare routes on fees, usable value, accessibility and risk; flag
-   unusual fees; recommend only routes that can actually be used.
-3. **Shop** (Commerce Intelligence): rank essentials from Channel3 and a 25-product local synthetic registry,
-   then build a basket within the usable budget and keep an emergency reserve. Demo merchants are not represented
-   as verified businesses.
-4. **Approve and pay**: donor and NGO approve; the backend checks the rules; PayPal Sandbox processes the payment;
-   webhooks update the ledger; the dashboard shows the outcome.
+LIFELINE turns a messy emergency report into a verified, costed, NGO-approved aid plan that donors can fund, and
+records each step toward delivery.
+
+1. **Report:** a family, relative or NGO worker reports by voice, taps or text. Families need no bank or PayPal.
+2. **Understand:** AI extracts needs, urgency and practical access, leaves unknowns unknown, and asks only what blocks
+   a decision.
+3. **Verify:** rules compare ways to deliver help on fees, usable value, access and risk, and build a capped basket.
+4. **Decide:** an NGO reviewer approves or rejects the plan. AI never authorises a financial action.
+5. **Fund:** donors choose an approved plan and pay through PayPal Sandbox.
+6. **Track:** donors and the NGO see only recorded events. A captured donation never counts as a supplier payment or
+   a delivery.
 
 ## Principles
 
-- AI may assess, compare, explain and recommend. It never authorises a financial action.
+- AI understands, rules verify, NGOs decide, donors fund, partners deliver. LIFELINE never decides who deserves aid.
 - Agent output is untrusted until validated against the contract and the rules.
 - Missing data stays unknown.
-- The accessibility score explains; it never denies aid or lowers priority.
+- The accessibility score explains. It never denies aid or lowers priority.
 - A fee flag is a request for review, not proof of fraud.
-- Every amount is labelled estimate, confirmed or illustrative.
-- Simulations are labelled. The internal ledger is never presented as PayPal-held money.
-- Demo data is synthetic. Recipient data is never shown on shared dashboards.
+- Simulated steps are labelled wherever they appear.
+- Donors never see names, exact locations, photos or the original message.
+- Photos and ID documents are never required for a family to receive aid.
 
-## MVP
+See [integration-status.md](integration-status.md) for what is real, sandboxed and simulated.
 
-1. A donor makes a PayPal Sandbox contribution to a demo campaign; the backend captures it and records it.
-2. A synthetic recipient's situation is analysed (Member 1).
-3. Routes are compared and scored (Member 2).
-4. A basket is built within the usable budget (Member 3).
-5. The NGO approves; one sandbox payment action runs, or a clearly labelled simulated payout.
-6. Webhook and dashboard views show the lifecycle honestly.
-
-Deadline: **12 November 2026, 12:00 PT**.
+Deadline: **13 November 2026, 1:30 am IST**.

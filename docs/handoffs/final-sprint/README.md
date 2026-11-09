@@ -41,15 +41,15 @@ Status: `todo` · `doing` · `blocked` · `done`
 
 | ID | Task | Owner | Needed by | Depends on | Status |
 |---|---|---|---|---|---|
-| M1-1 | Database migration (blocks most tasks) | Member 1 | 8 Nov | none | todo |
-| M1-2 | Remove bad products; Channel3 first, local fallback | Member 1 | 8 Nov | none | todo |
-| M1-3 | NGO amount, household details, kits, real quantities | Member 1 | 9 Nov | none | todo |
-| M1-4 | Supplier API, AG Grid page, seed data, scorecard | Member 1 | 9 Nov | M1-1 | todo |
-| M1-5 | NGO-first request page | Member 1 | 9 Nov | M1-3 | todo |
-| M1-6 | Dashboard: saved status, new columns, timeline | Member 1 | 10 Nov | M2-3, M2-4 | todo |
-| M1-7 | Donor plans list and progress page | Member 1 | 10 Nov | M1-6 | todo |
+| M1-1 | Database migration (blocks most tasks) | Member 1 | 8 Nov | none | done |
+| M1-2 | Remove bad products; Channel3 first, local fallback | Member 1 | 8 Nov | none | done |
+| M1-3 | NGO amount, household details, kits, real quantities | Member 1 | 9 Nov | none | done |
+| M1-4 | Supplier API, AG Grid page, seed data, scorecard | Member 1 | 9 Nov | M1-1 | done |
+| M1-5 | NGO-first request page | Member 1 | 9 Nov | M1-3 | done |
+| M1-6 | Dashboard: saved status, new columns, timeline | Member 1 | 10 Nov | M2-3, M2-4 | blocked |
+| M1-7 | Donor plans list and progress page | Member 1 | 10 Nov | M1-6 | done |
 | M1-8 | Deploy to Render; register PayPal webhook | Member 1 | 11 Nov | M3-2 helps | todo |
-| M1-9 | README, status doc, demo script, video, Devpost | Member 1 | 12 Nov | all | todo |
+| M1-9 | README, status doc, demo script, video, Devpost | Member 1 | 12 Nov | all | doing |
 | M2-1 | Partner route and plain-language explanations | Member 2 | 8 Nov | none | todo |
 | M2-2 | Approve the real cost | Member 2 | 9 Nov | M1-1 | todo |
 | M2-3 | Purchase orders | Member 2 | 9 Nov | M1-1, M1-4 | todo |
@@ -96,7 +96,8 @@ verification is recorded in `AuditLog`.
 | Endpoint | Owner | Access |
 |---|---|---|
 | `GET/POST /api/suppliers`, `POST /api/suppliers/:id/status` | Member 1 | NGO |
-| `GET /api/plans`, `GET /api/plans/:id` (no family details) | Member 1 | Public |
+| `GET /api/plans`, `GET /api/plans/:id`, `GET /api/plans/contributions` (no family details) | Member 1 | NGO, donor (login required for now) |
+| `GET /api/records/ledger`, `GET /api/records/audit` | Member 1 | NGO |
 | `GET /api/cases/:id/timeline` | Member 1 | NGO |
 | `POST /api/allocations/approve` with `case_id`, `campaign_id`, `merchant_id` (server works out the amount) | Member 2 | NGO |
 | `GET /api/purchase-orders` | Member 2 | NGO, supplier (own orders) |
@@ -140,5 +141,6 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
+| 9 Nov | Member 1 | Added `/api/plans` and `/api/records`, donor pages, Payments and Audit Logs. Donations nav now opens Approved Plans. Rewrote the Financial Assessments page (old `finance/components` removed) and restyled Donate and home. M1-6 is waiting on M2-3 and M2-4 | Everyone |
 | 8 Nov | Member 3 | Login/profile provisioning and role-based authorization are complete on `main` (`4e93e02`). API roles come from the verified Supabase user and linked `User` profile; protected routes enforce authentication, role, and ownership checks. M3-2 remains open until a real Sandbox capture is confirmed | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |

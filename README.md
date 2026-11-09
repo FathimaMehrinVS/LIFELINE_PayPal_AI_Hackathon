@@ -17,7 +17,7 @@ Two deployment/live-verification items remain:
 - PayPal Sandbox buyer approval for EUR currently fails with `UNSUPPORTED_PAYEE_CURRENCY`, even though OAuth and EUR order creation succeed and the configured German Sandbox seller has EUR as its primary currency. No successful capture has been established for that failing checkout.
 - Live webhook delivery requires a deployed public HTTPS endpoint, webhook registration in the PayPal Sandbox app, `PAYPAL_WEBHOOK_ID`, and a delivery test.
 
-Supabase email/password authentication, linked LIFELINE profiles, and server-side role/ownership authorization are implemented. Supported application roles are NGO, DONOR, and PARTNER; users without an assigned role remain pending, and beneficiaries do not need login accounts. The simulated disbursement is not a real PayPal transfer or proof of aid delivery. See the [authentication guide](docs/authentication.md) and [complete project overview](docs/LIFELINE_PROJECT_OVERVIEW.md) for implementation details and limitations.
+Supabase email/password authentication, linked LIFELINE profiles, and server-side role/ownership authorization are implemented. Supported application roles are NGO, DONOR, and PARTNER; users without an assigned role remain pending, and beneficiaries do not need login accounts. The simulated disbursement is not a real PayPal transfer or proof of aid delivery. See the [authentication guide](docs/authentication.md) and [complete project overview](docs/project-overview.md) for implementation details and limitations.
 
 ## Member divisions
 
@@ -188,7 +188,7 @@ Tests mock external services and do not perform live PayPal, Channel3, LLM, or p
 
 ## Further documentation
 
-- [Complete project overview and developer reference](docs/LIFELINE_PROJECT_OVERVIEW.md)
+- [Complete project overview and developer reference](docs/project-overview.md)
 - [Authentication foundation and role model](docs/authentication.md)
 - [Architecture](docs/architecture.md)
 - [AI design](docs/ai-design.md)
