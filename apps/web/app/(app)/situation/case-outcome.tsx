@@ -401,7 +401,7 @@ function NoRoute({ role, result, onAnswer, busy }: { role: ReporterRole; result:
         </div>
         <p className="mt-1 text-sm text-slate-600">
           With what we know now, none of the ways to send money would safely reach the family. The case is saved
-          {role === "ngo" ? ", so you can look at other options from the dashboard." : ", and an NGO worker can look at other options."}
+          {role === "ngo" ? ", so the team can come back to it when a new option is available." : ", and an NGO worker will review it."}
         </p>
         {finance && finance.routes.length > 0 && (
           <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200">
