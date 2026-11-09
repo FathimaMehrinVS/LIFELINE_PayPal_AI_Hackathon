@@ -1,6 +1,8 @@
 import type { ApproveAllocationRequest, AllocationResult } from "@lifeline/contracts";
 import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
+import { getDemoRouteCatalogue } from "./route-catalogue";
+import { assessFees } from "../../rules/fees";
 import { HttpError } from "../../utils/http-error";
 
 type Database = ReturnType<typeof getPrisma>;
@@ -46,7 +48,7 @@ export async function approveAllocation(
     return await db.$transaction(async (tx) => {
       const assistance = await tx.assistanceRequest.findUnique({
         where: { id: input.case_id },
-        include: { situation: true, basket: true, allocation: true },
+        include: { situation: true, financial: true, basket: true, allocation: true },
       });
       if (!assistance) throw new HttpError("NOT_FOUND", "Assistance case not found");
       const existing = assistance.allocation;
@@ -55,21 +57,23 @@ export async function approveAllocation(
       if ((assistance.status !== "AWAITING_APPROVAL" && !alreadyApproved) || !assistance.situation || !assistance.basket) {
         throw new HttpError("VALIDATION_ERROR", "Assistance case is not ready for NGO approval");
       }
-      if (assistance.situation.budget === null || !assistance.situation.currency ||
-          input.currency !== assistance.situation.currency ||
-          new Prisma.Decimal(input.amount).gt(assistance.situation.budget)) {
-        throw new HttpError("VALIDATION_ERROR", "Allocation amount and currency must fit the assistance case budget");
-      }
+      const routeId = assistance.financial?.recommendedRouteId;
+      if (!assistance.basket || !routeId) throw new HttpError("VALIDATION_ERROR", "A costed basket and recommended route are required");
+      const route = getDemoRouteCatalogue(true).find((candidate) => candidate.id === routeId);
+      if (!route) throw new HttpError("VALIDATION_ERROR", "The recommended route is no longer available");
+      const fee = new Prisma.Decimal(assessFees(assistance.basket.total.toNumber(), route).estimated_fee);
+      const amount = assistance.basket.total.plus(fee).toDecimalPlaces(2);
+      const currency = assistance.basket.currency;
 
       const campaign = await tx.campaign.findUnique({ where: { id: input.campaign_id } });
       if (!campaign?.active) throw new HttpError("NOT_FOUND", "Active campaign not found");
-      if (campaign.currency !== input.currency) {
-        throw new HttpError("VALIDATION_ERROR", "Allocation currency must match the campaign currency");
+      if (campaign.currency !== currency) {
+        throw new HttpError("VALIDATION_ERROR", "Plan currency must match the campaign currency");
       }
 
       if (existing?.status === "APPROVED" || existing?.status === "DISBURSED") {
-        if (existing.campaignId !== campaign.id || existing.currency !== input.currency ||
-            !new Prisma.Decimal(existing.amount).equals(input.amount)) {
+        if (existing.campaignId !== campaign.id || existing.currency !== currency ||
+            !new Prisma.Decimal(existing.amount).equals(amount)) {
           throw new HttpError("VALIDATION_ERROR", "This case already has an allocation with different details");
         }
         if (assistance.status !== "APPROVED") {
@@ -83,20 +87,20 @@ export async function approveAllocation(
 
       // Approval records the NGO's decision for this case. Funding is collected against this approved allocation;
       // any future payout must separately verify that captured donations cover it.
-      const requested = new Prisma.Decimal(input.amount);
+      const requested = amount;
 
       const approvedAt = new Date();
       const allocation = existing
         ? await tx.aidAllocation.update({
             where: { id: existing.id },
-            data: { campaignId: campaign.id, amount: requested, currency: input.currency, status: "APPROVED", approvedAt },
+            data: { campaignId: campaign.id, amount: requested, currency, status: "APPROVED", approvedAt },
           })
         : await tx.aidAllocation.create({
             data: {
               requestId: assistance.id,
               campaignId: campaign.id,
               amount: requested,
-              currency: input.currency,
+              currency,
               status: "APPROVED",
               approvedAt,
             },
@@ -114,7 +118,7 @@ export async function approveAllocation(
             case_id: assistance.id,
             campaign_id: campaign.id,
             amount: requested.toString(),
-            currency: input.currency,
+            currency,
           },
         },
       });
@@ -124,11 +128,6 @@ export async function approveAllocation(
   } catch (error) {
     if (error instanceof HttpError) throw error;
     if (isUniqueConflict(error)) {
-      const existing = await db.aidAllocation.findUnique({ where: { requestId: input.case_id } });
-      if (existing?.status === "APPROVED" && existing.campaignId === input.campaign_id &&
-          existing.currency === input.currency && new Prisma.Decimal(existing.amount).equals(input.amount)) {
-        return toResult(existing);
-      }
       throw new HttpError("VALIDATION_ERROR", "An allocation already exists for this case");
     }
     if (isSerializationConflict(error)) {
