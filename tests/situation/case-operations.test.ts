@@ -19,12 +19,12 @@ describe("attachOperations", () => {
 
   it("reports the approval and only captured donations", async () => {
     const [result] = await attachOperations(db([allocation]), [item("case_a")]);
-    expect(result!.operations).toMatchObject({ allocation: { allocation_id: "alloc_1", status: "approved", amount: 100 }, funding: { captured: 30.3, donations: 2 }, payout: null });
+    expect(result!.operations).toMatchObject({ allocation: { allocation_id: "alloc_1", status: "approved", amount: 100 }, funding: { captured: 30.3, donations: 2 }, payout: null, delivery: null });
   });
 
   it("shows nothing for a case with no records", async () => {
     const [result] = await attachOperations(db([]), [item("case_b")]);
-    expect(result!.operations).toEqual({ allocation: null, funding: { captured: 0, donations: 0 }, payout: null });
+    expect(result!.operations).toEqual({ allocation: null, funding: { captured: 0, donations: 0 }, payout: null, delivery: null });
   });
 
   it("keeps a donation and a supplier payment as separate facts", async () => {

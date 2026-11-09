@@ -18,6 +18,8 @@ const TOOLS: Tool[] = [
   { href: "/suppliers", title: "Suppliers", text: "Register, review and approve suppliers.", Icon: StoreIcon, roles: ["NGO"] },
   { href: "/payments", title: "Payments", text: "Follow donations in and supplier payments out.", Icon: RouteIcon, roles: ["NGO"] },
   { href: "/audit", title: "Audit logs", text: "Check who did what, and when.", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/deliveries", title: "Delivery verification", text: "Assign funded assistance, review handovers and verify completion.", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/deliveries", title: "My assigned deliveries", text: "Record preparation, dispatch and handover for your assigned assistance.", Icon: StoreIcon, roles: ["PARTNER"] },
   { href: "/plans", title: "Approved plans", text: "Fund a plan an NGO has approved.", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/contributions", title: "My contributions", text: "Follow what happened after you gave.", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/profile", title: "Profile", text: "View your account and assigned role.", Icon: ShieldCheckIcon },

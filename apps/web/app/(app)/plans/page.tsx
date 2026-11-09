@@ -112,7 +112,7 @@ export default function ApprovedPlansPage() {
 
           {completed.length > 0 && (
             <section className="mt-10">
-              <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-lg font-bold text-navy">Recently completed</h2><p className="text-[13px] text-slate-600">Closed only after recipient confirmation</p></div>
+              <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-lg font-bold text-navy">Recently completed</h2><p className="text-[13px] text-slate-600">Closed after NGO verification of handover</p></div>
               <div className="mt-3 grid gap-4 md:grid-cols-3">
                 {completed.slice(0, 3).map((plan) => (
                   <Link key={plan.plan_id} href={`/plans/${encodeURIComponent(plan.plan_id)}`}>

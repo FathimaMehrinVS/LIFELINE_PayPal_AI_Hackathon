@@ -45,15 +45,16 @@ function CaseView({ item, timeline }: { item: CaseResult; timeline: CaseTimeline
   const route = recommendedRoute(item);
   const allocation = item.operations?.allocation;
   const payout = item.operations?.payout;
+  const delivery = item.operations?.delivery;
   const funding = fundingState(item);
   const pipeline: { label: string; value: string; tone: BadgeTone }[] = [
     { label: "Financial assessment", value: route ? routeName(route.route_id) : finance ? "No route yet" : "Not started", tone: route ? "success" : finance ? "warning" : "neutral" },
     { label: "Product basket", value: commerce ? `${commerce.items.length} items` : "Not started", tone: commerce ? "success" : "neutral" },
     { label: "NGO approval", value: allocation ? "Approved" : status === "complete" ? "Awaiting review" : "Not ready", tone: allocation ? "success" : status === "complete" ? "warning" : "neutral" },
-    { label: "Supplier assignment", value: "Not started", tone: "neutral" },
+    { label: "Supplier assignment", value: delivery?.partner_name ?? (delivery ? delivery.merchant_name : "Not started"), tone: delivery ? "success" : "neutral" },
     { label: "Funding", value: funding?.label ?? "Not started", tone: funding?.tone ?? "neutral" },
     { label: "Supplier payment", value: payout ? (payout.mode === "simulated" ? "Simulated" : "Paid") : "Not started", tone: payout ? (payout.mode === "simulated" ? "simulated" : "success") : "neutral" },
-    { label: "Delivery", value: "Not started", tone: "neutral" },
+    { label: "Delivery", value: delivery?.fulfilment_status === "verified" ? "NGO verified" : delivery?.fulfilment_status?.replaceAll("_", " ") ?? "Not started", tone: delivery?.fulfilment_status === "verified" ? "success" : delivery ? "info" : "neutral" },
   ];
 
   return (

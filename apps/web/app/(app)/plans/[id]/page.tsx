@@ -16,14 +16,16 @@ const STAGES = [
   { key: "funding", label: "Funding" },
   { key: "order", label: "Procurement" },
   { key: "supplier_payment", label: "Supplier payment" },
-  { key: "recipient_confirmed", label: "Delivery confirmed" },
+  { key: "handed_over", label: "Handover" },
+  { key: "verified", label: "NGO verification" },
+  { key: "completed", label: "Completed" },
 ];
 
 const STAGE_TEXT = { complete: "Done", in_progress: "In progress", not_recorded: "Not yet recorded", issue: "Problem reported" };
 const TRACKED = [
   { dot: "bg-success", name: "Donation captured", text: "PayPal confirmed your payment" },
   { dot: "bg-navy", name: "Supplier paid", text: "the NGO paid for the goods" },
-  { dot: "bg-accent", name: "Delivery confirmed", text: "the family received them" },
+  { dot: "bg-accent", name: "Delivery verified", text: "the NGO reviewed the recorded handover" },
 ];
 
 export default function PlanDetailPage() {
@@ -72,7 +74,7 @@ export default function PlanDetailPage() {
 
           <Card className="p-5">
             <h2 className="font-bold text-navy">How this plan will progress</h2>
-            <ol className="mt-3 grid gap-3 sm:grid-cols-5">
+            <ol className="mt-3 grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
               {STAGES.map(({ key, label }) => {
                 const step = plan.steps.find((item) => item.key === key);
                 const state = step?.state ?? "not_recorded";
@@ -96,7 +98,7 @@ export default function PlanDetailPage() {
           </Card>
           <section className="rounded-2xl border border-teal/30 bg-teal-tint/50 p-5">
             <h2 className="font-bold text-navy">Transparency</h2>
-            <p className="mt-2 text-sm text-navy">Three things are tracked separately and you'll see each one:</p>
+            <p className="mt-2 text-sm text-navy">Funding, supplier payment, and NGO-verified handover are tracked separately:</p>
             <ul className="mt-2 space-y-1.5 text-sm text-slate-700">{TRACKED.map(({ dot, name, text }) => <li key={name} className="flex gap-2"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot}`} /><span><strong className="text-navy">{name}</strong>: {text}</span></li>)}</ul>
           </section>
           <p className="text-[13px] text-slate-600">{PRIVACY_NOTE}</p>

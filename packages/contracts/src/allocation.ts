@@ -4,7 +4,7 @@ import { AmountSchema, CurrencySchema } from "./common";
 // Owner: Member 2 (feature/financial-intelligence).
 // An allocation is an NGO decision recorded in the internal ledger, never a PayPal balance.
 
-export const AllocationStatusSchema = z.enum(["proposed", "approved", "rejected", "disbursed"]);
+export const AllocationStatusSchema = z.enum(["proposed", "approved", "rejected", "disbursed", "completed"]);
 export type AllocationStatus = z.infer<typeof AllocationStatusSchema>;
 
 /** POST /api/allocations/approve — records an NGO-approved amount for an eligible assistance case. */

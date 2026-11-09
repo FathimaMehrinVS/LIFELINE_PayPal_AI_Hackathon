@@ -13,7 +13,11 @@ export async function attachOperations(db: Database, cases: CaseResult[]): Promi
   if (cases.length === 0) return cases;
   const allocations = await db.aidAllocation.findMany({
     where: { requestId: { in: cases.map((item) => item.case_id) } },
-    include: { donations: { where: { status: "CAPTURED" }, select: { amount: true } }, payouts: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: {
+      donations: { where: { status: "CAPTURED" }, select: { amount: true } },
+      payouts: { orderBy: { createdAt: "desc" }, take: 1 },
+      purchaseOrder: { select: { fulfilmentStatus: true, merchant: { select: { name: true } }, partnerUser: { select: { name: true } } } },
+    },
   });
   const byCase = new Map<string, CaseOperations>(allocations.map((allocation) => {
     const payout = allocation.payouts[0];
@@ -35,15 +39,25 @@ export async function attachOperations(db: Database, cases: CaseResult[]): Promi
         currency: payout.currency,
         mode: payout.mode.toLowerCase() as NonNullable<CaseOperations["payout"]>["mode"],
       } : null,
+      delivery: allocation.purchaseOrder ? {
+        fulfilment_status: allocation.purchaseOrder.fulfilmentStatus.toLowerCase() as NonNullable<CaseOperations["delivery"]>["fulfilment_status"],
+        merchant_name: allocation.purchaseOrder.merchant.name,
+        partner_name: allocation.purchaseOrder.partnerUser?.name ?? null,
+      } : null,
     }];
   }));
-  return cases.map((item) => ({ ...item, operations: byCase.get(item.case_id) ?? { allocation: null, funding: { captured: 0, donations: 0 }, payout: null } }));
+  return cases.map((item) => ({ ...item, operations: byCase.get(item.case_id) ?? { allocation: null, funding: { captured: 0, donations: 0 }, payout: null, delivery: null } }));
 }
 
 const ACTIVITY_TITLES: Record<string, { title: string; kind: CaseTimelineEntry["kind"] }> = {
   [CASE_AUDIT_ACTION]: { title: "Case recorded", kind: "case" },
   "allocation.approved": { title: "Plan approved by NGO", kind: "approval" },
   "allocation.disbursement_simulated": { title: "Simulated disbursement recorded", kind: "payment" },
+  "delivery.assigned": { title: "Partner assigned to delivery", kind: "supplier" },
+  "delivery.status_changed": { title: "Delivery preparation updated", kind: "supplier" },
+  "delivery.handover_recorded": { title: "Handover recorded by partner", kind: "supplier" },
+  "delivery.verified": { title: "Delivery verified by NGO", kind: "supplier" },
+  "allocation.completed": { title: "Assistance completed", kind: "approval" },
   "supplier.registered": { title: "Supplier registered", kind: "supplier" },
   "supplier.status_changed": { title: "Supplier status changed", kind: "supplier" },
 };
@@ -55,7 +69,9 @@ export async function getRecentActivity(db: Database, limit = 6): Promise<CaseTi
     const { title, kind } = ACTIVITY_TITLES[log.action]!;
     const reference = log.entityId.startsWith("case_") ? `LL-${log.entityId.slice(5, 13).toUpperCase()}` : null;
     const to = (log.details as { to?: unknown } | null)?.to;
-    return { kind, title: log.action === "supplier.status_changed" && typeof to === "string" ? `Supplier ${to}` : title, detail: reference, at: log.createdAt.toISOString() };
+    const caseId = (log.details as { case_id?: unknown } | null)?.case_id;
+    const caseReference = reference ?? (typeof caseId === "string" ? `LL-${caseId.replace(/^case_/, "").slice(0, 8).toUpperCase()}` : null);
+    return { kind, title: log.action === "supplier.status_changed" && typeof to === "string" ? `Supplier ${to}` : title, detail: caseReference, at: log.createdAt.toISOString() };
   });
 }
 
@@ -86,6 +102,16 @@ export async function getCaseTimeline(db: Database, caseId: string): Promise<Cas
   }
   for (const payout of allocation?.payouts ?? []) {
     entries.push({ kind: "payment", title: payout.mode === "SIMULATED" ? "Simulated disbursement recorded" : "Payment recorded", detail: payout.mode === "SIMULATED" ? "No money was transferred" : money(payout.amount, payout.currency), at: payout.createdAt.toISOString() });
+  }
+  if (allocation) {
+    const deliveryLogs = await db.auditLog.findMany({
+      where: { entityType: "AidAllocation", entityId: allocation.id, action: { in: ["delivery.assigned", "delivery.status_changed", "delivery.handover_recorded", "delivery.verified", "allocation.completed"] } },
+      orderBy: { createdAt: "asc" },
+    });
+    for (const log of deliveryLogs) {
+      const entry = ACTIVITY_TITLES[log.action];
+      if (entry) entries.push({ kind: entry.kind, title: entry.title, detail: null, at: log.createdAt.toISOString() });
+    }
   }
   return entries.sort((a, b) => a.at.localeCompare(b.at));
 }

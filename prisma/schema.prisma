@@ -37,6 +37,7 @@ model User {
   allocations AidAllocation[] @relation("ApprovedBy")
   auditLogs   AuditLog[]
   fulfilmentEvents FulfilmentEvent[]
+  partnerPurchaseOrders PurchaseOrder[] @relation("DeliveryPartner")
   requests    AssistanceRequest[] @relation("RequestCreator")
 }
 
@@ -246,6 +247,7 @@ enum AllocationStatus {
   APPROVED
   REJECTED
   DISBURSED
+  COMPLETED
 }
 
 /// NGO decision to direct funds to a request. Nothing is paid out without an APPROVED allocation.
@@ -315,6 +317,7 @@ enum FulfilmentStatus {
   READY
   DISPATCHED
   HANDED_OVER
+  VERIFIED
   RECIPIENT_CONFIRMED
   ISSUE_REPORTED
 }
@@ -342,6 +345,7 @@ model PurchaseOrder {
   id               String           @id @default(cuid())
   allocationId     String           @unique
   merchantId       String
+  partnerUserId    String?
   amount           Decimal          @db.Decimal(12, 2)
   currency         String           @db.Char(3)
   /// Current state; FulfilmentEvent holds the full history.
@@ -355,11 +359,13 @@ model PurchaseOrder {
 
   allocation AidAllocation      @relation(fields: [allocationId], references: [id], onDelete: Restrict)
   merchant   Merchant           @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  partnerUser User?             @relation("DeliveryPartner", fields: [partnerUserId], references: [id], onDelete: SetNull)
   events     FulfilmentEvent[]
   payouts    Payout[]
   incidents  SupplierIncident[]
 
   @@index([merchantId])
+  @@index([partnerUserId])
 }
 
 /// Add-only history of a purchase order. Events are never edited or deleted.
@@ -370,6 +376,7 @@ model FulfilmentEvent {
   actorId         String?
   evidenceType    EvidenceType?
   note            String?
+  deliveredItems  Json?
   createdAt       DateTime         @default(now())
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)

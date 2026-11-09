@@ -4,6 +4,7 @@ import { AmountSchema } from "./common";
 import { CommerceResultSchema } from "./commerce";
 import { FinanceResultSchema } from "./finance";
 import { PayoutResultSchema } from "./payment";
+import { DeliveryFulfilmentStatusSchema } from "./delivery";
 import { SituationResultSchema } from "./situation";
 
 // Owner: Member 1 (feature/situation-agent). The Orchestrator chains the three modules.
@@ -25,6 +26,11 @@ export const CaseOperationsSchema = z.object({
   allocation: AllocationResultSchema.nullable(),
   funding: z.object({ captured: AmountSchema, donations: z.number().int().nonnegative() }),
   payout: PayoutResultSchema.nullable(),
+  delivery: z.object({
+    fulfilment_status: DeliveryFulfilmentStatusSchema,
+    merchant_name: z.string(),
+    partner_name: z.string().nullable(),
+  }).nullable(),
 });
 export type CaseOperations = z.infer<typeof CaseOperationsSchema>;
 

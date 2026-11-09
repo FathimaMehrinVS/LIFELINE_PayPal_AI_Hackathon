@@ -35,7 +35,7 @@ type PlanRow = Prisma.AidAllocationGetPayload<{ select: typeof planSelect }>;
 
 const visiblePlans = {
   id: { not: { startsWith: DEMO_HISTORY_PREFIX } },
-  status: { in: ["APPROVED", "DISBURSED"] },
+  status: { in: ["APPROVED", "DISBURSED", "COMPLETED"] },
   approvedAt: { not: null },
 } satisfies Prisma.AidAllocationWhereInput;
 
@@ -60,11 +60,11 @@ const FULFILMENT_STEPS = [
   ["READY", "Goods ready"],
   ["DISPATCHED", "Goods dispatched"],
   ["HANDED_OVER", "Handover recorded"],
-  ["RECIPIENT_CONFIRMED", "Delivery confirmed"],
+  ["VERIFIED", "NGO verified delivery"],
 ] as const;
 
 /** Each step comes from a saved record. A step with no record stays "not_recorded"; nothing is inferred. */
-export function planSteps(plan: Pick<PlanRow, "amount" | "currency" | "approvedAt" | "payouts" | "purchaseOrder">, captured: number): PlanStep[] {
+export function planSteps(plan: Pick<PlanRow, "status" | "amount" | "currency" | "approvedAt" | "payouts" | "purchaseOrder">, captured: number): PlanStep[] {
   const goal = plan.amount.toNumber();
   const lastOf = (status: string) => plan.purchaseOrder?.events.filter((event) => event.status === status).at(-1);
   const payout = plan.payouts[0];
@@ -95,9 +95,17 @@ export function planSteps(plan: Pick<PlanRow, "amount" | "currency" | "approvedA
       at: payout?.createdAt.toISOString() ?? null,
     },
     ...FULFILMENT_STEPS.map(([status, title]): PlanStep => {
-      const event = lastOf(status);
+      const event = lastOf(status) ?? (status === "VERIFIED" ? lastOf("RECIPIENT_CONFIRMED") : undefined);
       return { key: status.toLowerCase(), title, state: event ? "complete" : "not_recorded", simulated: Boolean(event), detail: null, at: event?.createdAt.toISOString() ?? null };
     }),
+    {
+      key: "completed",
+      title: "Assistance completed",
+      state: plan.status === "COMPLETED" ? "complete" : "not_recorded",
+      simulated: false,
+      detail: null,
+      at: plan.purchaseOrder?.events.filter((event) => event.status === "VERIFIED").at(-1)?.createdAt.toISOString() ?? null,
+    },
   ];
   const issue = lastOf("ISSUE_REPORTED");
   if (issue) steps.push({ key: "issue_reported", title: "A problem was reported", state: "issue", simulated: false, detail: "The NGO is reviewing this order", at: issue.createdAt.toISOString() });
@@ -120,7 +128,7 @@ function toPlan(row: PlanRow): DonorPlan {
     currency: row.currency,
     approved_at: row.approvedAt?.toISOString() ?? null,
     can_fund: row.status === "APPROVED" && row.request.status === "APPROVED" && row.campaign.active && remaining > 0,
-    delivery_confirmed_at: row.purchaseOrder?.events.filter((event) => event.status === "RECIPIENT_CONFIRMED").at(-1)?.createdAt.toISOString() ?? null,
+    delivery_confirmed_at: row.purchaseOrder?.events.filter((event) => event.status === "VERIFIED" || event.status === "RECIPIENT_CONFIRMED").at(-1)?.createdAt.toISOString() ?? null,
     funding: { goal, captured, remaining, percent: goal > 0 ? Math.min(Math.round((captured / goal) * 100), 100) : 0, donations: row.donations.length },
   };
 }

@@ -8,3 +8,4 @@ export * from "./allocation";
 export * from "./supplier";
 export * from "./plan";
 export * from "./records";
+export * from "./delivery";

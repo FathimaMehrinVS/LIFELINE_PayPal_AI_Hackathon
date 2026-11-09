@@ -14,6 +14,11 @@ import type {
   DonorPlan,
   DonorPlanDetail,
   DonationResult,
+  AssignDeliveryRequest,
+  DeliveryPartner,
+  DeliveryRecord,
+  SubmitDeliveryEventRequest,
+  VerifyDeliveryRequest,
   FinanceRequest,
   FinanceResult,
   Ledger,
@@ -76,6 +81,11 @@ export const api = {
   cancelDonation: (donationId: string) =>
     post<DonationResult>(`/api/payments/donations/${encodeURIComponent(donationId)}/cancel`),
   createPayout: (body: CreatePayoutRequest) => post<PayoutResult>("/api/payments/payouts", body),
+  listDeliveries: () => get<DeliveryRecord[]>("/api/deliveries"),
+  listDeliveryPartners: () => get<DeliveryPartner[]>("/api/deliveries/partners"),
+  assignDelivery: (body: AssignDeliveryRequest) => post<DeliveryRecord>("/api/deliveries", body),
+  submitDeliveryEvent: (allocationId: string, body: SubmitDeliveryEventRequest) => post<DeliveryRecord>(`/api/deliveries/${encodeURIComponent(allocationId)}/events`, body),
+  verifyDelivery: (allocationId: string, body: VerifyDeliveryRequest) => post<DeliveryRecord>(`/api/deliveries/${encodeURIComponent(allocationId)}/verify`, body),
   /** With `replaces`, re-runs a case that needed information, keeping its id. */
   createCase: (body: SituationRequest, replaces?: string) =>
     post<CaseResult>(replaces ? `/api/cases?replaces=${encodeURIComponent(replaces)}` : "/api/cases", body),
