@@ -70,5 +70,28 @@ export const DeliveryRecordSchema = z.object({
 });
 export type DeliveryRecord = z.infer<typeof DeliveryRecordSchema>;
 
+export const PurchaseOrderItemSchema = z.object({
+  basket_item_id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  quantity: z.number().int().positive(),
+  unit_price: AmountSchema,
+  subtotal: AmountSchema,
+});
+
+export const PurchaseOrderSchema = z.object({
+  purchase_order_id: z.string(),
+  allocation_id: z.string(),
+  merchant_id: z.string(),
+  supplier_name: z.string(),
+  amount: AmountSchema,
+  currency: CurrencySchema,
+  status: DeliveryFulfilmentStatusSchema,
+  expected_ready_at: z.iso.datetime().nullable(),
+  items: z.array(PurchaseOrderItemSchema),
+  events: z.array(DeliveryEventSchema),
+});
+export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
+
 export const DeliveryPartnerSchema = z.object({ user_id: z.string(), name: z.string(), email: z.string() });
 export type DeliveryPartner = z.infer<typeof DeliveryPartnerSchema>;
