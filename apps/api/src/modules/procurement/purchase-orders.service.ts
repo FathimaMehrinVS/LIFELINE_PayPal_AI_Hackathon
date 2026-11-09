@@ -2,6 +2,7 @@ import type { AuthSession } from "../../auth/session";
 import type { PurchaseOrder } from "@lifeline/contracts";
 import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
+import { HttpError } from "../../utils/http-error";
 
 type Database = ReturnType<typeof getPrisma>;
 
@@ -59,3 +60,13 @@ export async function listPurchaseOrders(db: Database, session: AuthSession): Pr
   return rows.map(mapOrder);
 }
 
+export async function getPurchaseOrderAllocationId(db: Database, orderId: string, session: AuthSession): Promise<string> {
+  const order = await db.purchaseOrder.findUnique({
+    where: { id: orderId },
+    select: { allocationId: true, partnerUserId: true },
+  });
+  if (!order || (session.role !== "NGO" && order.partnerUserId !== session.id)) {
+    throw new HttpError("NOT_FOUND", "Purchase order not found");
+  }
+  return order.allocationId;
+}
