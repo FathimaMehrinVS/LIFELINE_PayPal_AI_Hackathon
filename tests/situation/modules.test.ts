@@ -32,8 +32,8 @@ describe("caseModules", () => {
     expect(basket.unmet_needs).toContain("food");
   });
 
-  it("uses Member 2's route catalogue", () => {
-    const ids = caseModules.routesFor("EUR").map((route) => route.id);
+  it("uses Member 2's route catalogue", async () => {
+    const ids = (await caseModules.routesFor("EUR", "Demo region")).map((route) => route.id);
     expect(ids).toEqual(expect.arrayContaining(["route_bank", "route_paypal"]));
   });
 

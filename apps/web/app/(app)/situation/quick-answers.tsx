@@ -2,20 +2,34 @@
 
 import { useState } from "react";
 import { RouteIcon } from "@/components/icons";
-import { ACCESS_ANSWERS, type Choice, NEED_OPTIONS, accessSentence, needLabel } from "./answers";
+import { ACCESS_ANSWERS, type Choice, NEED_OPTIONS, type ReporterRole, accessSentence, needLabel } from "./answers";
 import { VoiceInput } from "./voice";
 
 // Owner: Member 1. "Tap to answer": the same facts as a written message, gathered with taps, for someone in a hurry.
 // The answers become plain sentences that the Situation Agent reads like any message, so nothing is filled in by
 // guessing, and fewer follow-up questions are needed.
 
-const WHO = [
-  { value: "parents", label: "My parents", sentence: "My parents need help." },
-  { value: "family", label: "My family", sentence: "My family needs help." },
-  { value: "children", label: "Children", sentence: "Children in my family need help." },
-  { value: "elderly", label: "An elderly relative", sentence: "An elderly relative needs help." },
-  { value: "other", label: "Someone else", sentence: "Someone I know needs help." },
-];
+const WHO: Record<ReporterRole, { value: string; label: string; sentence: string }[]> = {
+  self: [
+    { value: "self", label: "Me", sentence: "I need help." },
+    { value: "family", label: "My family", sentence: "My family needs help." },
+    { value: "children", label: "My children", sentence: "My children need help." },
+    { value: "elderly", label: "An elderly relative", sentence: "An elderly relative needs help." },
+  ],
+  ngo: [
+    { value: "family", label: "A family", sentence: "A family needs help." },
+    { value: "children", label: "Children", sentence: "Children need help." },
+    { value: "elderly", label: "An elderly person", sentence: "An elderly person needs help." },
+    { value: "other", label: "Someone else", sentence: "A person needs help." },
+  ],
+  family: [
+    { value: "parents", label: "My parents", sentence: "My parents need help." },
+    { value: "family", label: "My family", sentence: "My family needs help." },
+    { value: "children", label: "Children", sentence: "Children in my family need help." },
+    { value: "elderly", label: "An elderly relative", sentence: "An elderly relative needs help." },
+    { value: "other", label: "Someone else", sentence: "Someone I know needs help." },
+  ],
+};
 
 const URGENCY = [
   { value: "danger", label: "Someone's life is in danger", sentence: "Someone's life is in danger right now." },
@@ -29,14 +43,16 @@ export interface QuickRequest {
   message: string;
   location?: string;
   currency?: string;
+  assistance_amount?: number;
 }
 
 interface QuickAnswersProps {
+  role: ReporterRole;
   onSubmit: (request: QuickRequest) => void;
   busy: boolean;
 }
 
-export function QuickAnswers({ onSubmit, busy }: QuickAnswersProps) {
+export function QuickAnswers({ role, onSubmit, busy }: QuickAnswersProps) {
   const [who, setWho] = useState<string | null>(null);
   const [place, setPlace] = useState("");
   const [needs, setNeeds] = useState<string[]>([]);
@@ -47,10 +63,11 @@ export function QuickAnswers({ onSubmit, busy }: QuickAnswersProps) {
   const [extra, setExtra] = useState("");
 
   const sentences = [
-    WHO.find((w) => w.value === who)?.sentence,
+    WHO[role].find((w) => w.value === who)?.sentence,
     place.trim() && `They are in ${place.trim()}.`,
     needs.length > 0 && `They need ${needs.map(needLabel).join(", ")}.`,
-    amount && `I can send ${amount} ${currency}.`,
+    // The NGO's amount is a decision, sent separately; it isn't part of what the family reported.
+    role !== "ngo" && amount && `I can send ${amount} ${currency}.`,
     URGENCY.find((u) => u.value === urgency)?.sentence,
     ...Object.keys(ACCESS_ANSWERS).map((key) => accessSentence(key, access[key])),
     extra.trim(),
@@ -64,11 +81,13 @@ export function QuickAnswers({ onSubmit, busy }: QuickAnswersProps) {
       className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        if (message) onSubmit({ message, location: place.trim() || undefined, currency: amount ? currency : undefined });
+        if (!message) return;
+        const ngoAmount = role === "ngo" && Number(amount) > 0 ? Math.round(Number(amount) * 100) / 100 : undefined;
+        onSubmit({ message, location: place.trim() || undefined, currency: amount ? currency : undefined, assistance_amount: ngoAmount });
       }}
     >
       <Question n={1} title="Who needs help?">
-        <Chips options={WHO} value={who} onChange={setWho} />
+        <Chips options={WHO[role]} value={who} onChange={setWho} />
       </Question>
 
       <Question n={2} title="Where are they?">
@@ -101,7 +120,11 @@ export function QuickAnswers({ onSubmit, busy }: QuickAnswersProps) {
         </div>
       </Question>
 
-      <Question n={4} title="How much can you send?">
+      <Question
+        n={4}
+        title={role === "ngo" ? "How much will the NGO spend?" : "How much can you send?"}
+        hint={role === "ngo" ? "If left blank, urgent cases use a standard package" : undefined}
+      >
         <div className="flex max-w-sm gap-2">
           <input
             inputMode="decimal"
@@ -185,6 +208,11 @@ export function QuickAnswers({ onSubmit, busy }: QuickAnswersProps) {
       <section className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/60 p-4">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-700">What we&apos;ll send to LIFELINE</h3>
         <p className="mt-1 text-sm text-slate-800">{message || <span className="text-slate-500">Your answers appear here as you tap.</span>}</p>
+        {role === "ngo" && Number(amount) > 0 && (
+          <p className="mt-2 text-xs font-medium text-indigo-800">
+            NGO amount: {amount} {currency}
+          </p>
+        )}
       </section>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5">

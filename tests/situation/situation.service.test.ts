@@ -47,4 +47,11 @@ describe("analyzeSituation", () => {
     };
     await expect(analyzeSituation({ message: "help" }, client)).rejects.toThrow("rate limited");
   });
+
+  it("doesn't show the NGO's amount to the AI", async () => {
+    const { client, generateJson } = fakeLlm(sample("situation-result.json"));
+    await analyzeSituation({ message: "We need food", assistance_amount: 120 }, client);
+    expect(JSON.parse(generateJson.mock.calls[0]![0].user)).toEqual({ message: "We need food" });
+  });
 });
+

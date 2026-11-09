@@ -36,6 +36,8 @@ model User {
   donations   Donation[]
   allocations AidAllocation[] @relation("ApprovedBy")
   auditLogs   AuditLog[]
+  fulfilmentEvents FulfilmentEvent[]
+  partnerPurchaseOrders PurchaseOrder[] @relation("DeliveryPartner")
   requests    AssistanceRequest[] @relation("RequestCreator")
 }
 
@@ -130,6 +132,13 @@ model FinancialAssessment {
 
 // ─── Member 3: Commerce Intelligence ────────────────────────────────────
 
+enum SupplierStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+/// A supplier. A merchant found through product search stays PENDING until the NGO has checked it.
 model Merchant {
   id        String   @id @default(cuid())
   name      String
@@ -138,8 +147,16 @@ model Merchant {
   /// Payment methods the merchant accepts, e.g. ["paypal", "cash"]
   accepts   String[]
   createdAt DateTime @default(now())
+  /// NGO decision on this supplier. Only APPROVED suppliers can receive a purchase order.
+  status       SupplierStatus @default(PENDING)
+  serviceAreas String[]       @default([])
+  /// Need categories this supplier can provide, e.g. ["food", "medicine"]
+  categories   String[]       @default([])
+  contact      String?
 
-  products Product[]
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+  incidents      SupplierIncident[]
 }
 
 model Product {
@@ -230,6 +247,7 @@ enum AllocationStatus {
   APPROVED
   REJECTED
   DISBURSED
+  COMPLETED
 }
 
 /// NGO decision to direct funds to a request. Nothing is paid out without an APPROVED allocation.
@@ -249,6 +267,7 @@ model AidAllocation {
   approvedBy User?             @relation("ApprovedBy", fields: [approvedById], references: [id])
   payouts    Payout[]
   donations  Donation[]
+  purchaseOrder PurchaseOrder?
 }
 
 enum PayoutStatus {
@@ -274,12 +293,112 @@ model Payout {
   mode           PayoutMode
   paypalBatchId  String?
   paypalItemId   String?
+  /// Set when this payout is the NGO's payment to a supplier. It is a separate event from the donor's payment.
+  purchaseOrderId String?
+  /// Payment reference or evidence note, e.g. an invoice number.
+  reference       String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  allocation AidAllocation @relation(fields: [allocationId], references: [id])
+  allocation    AidAllocation  @relation(fields: [allocationId], references: [id])
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
 
   @@index([allocationId])
+  @@index([purchaseOrderId])
+}
+
+// ─── Procurement and delivery ───────────────────────────────────────────
+// A purchase order links the approved plan to the supplier. Line items come from BasketItem and are not stored twice.
+
+enum FulfilmentStatus {
+  AWAITING_ACCEPTANCE
+  ACCEPTED
+  PREPARING
+  READY
+  DISPATCHED
+  HANDED_OVER
+  VERIFIED
+  RECIPIENT_CONFIRMED
+  ISSUE_REPORTED
+}
+
+enum EvidenceType {
+  NGO_CONFIRMATION
+  SUPPLIER_CONFIRMATION
+  PICKUP_CODE
+  RECIPIENT_ACKNOWLEDGEMENT
+  RECEIPT
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum IncidentStatus {
+  OPEN
+  RESOLVED
+}
+
+model PurchaseOrder {
+  id               String           @id @default(cuid())
+  allocationId     String           @unique
+  merchantId       String
+  partnerUserId    String?
+  amount           Decimal          @db.Decimal(12, 2)
+  currency         String           @db.Char(3)
+  /// Current state; FulfilmentEvent holds the full history.
+  fulfilmentStatus FulfilmentStatus @default(AWAITING_ACCEPTANCE)
+  /// Only a hash is stored; the code itself is shown once.
+  pickupCodeHash   String?
+  pickupAttempts   Int              @default(0)
+  expectedReadyAt  DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  allocation AidAllocation      @relation(fields: [allocationId], references: [id], onDelete: Restrict)
+  merchant   Merchant           @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  partnerUser User?             @relation("DeliveryPartner", fields: [partnerUserId], references: [id], onDelete: SetNull)
+  events     FulfilmentEvent[]
+  payouts    Payout[]
+  incidents  SupplierIncident[]
+
+  @@index([merchantId])
+  @@index([partnerUserId])
+}
+
+/// Add-only history of a purchase order. Events are never edited or deleted.
+model FulfilmentEvent {
+  id              String           @id @default(cuid())
+  purchaseOrderId String
+  status          FulfilmentStatus
+  actorId         String?
+  evidenceType    EvidenceType?
+  note            String?
+  deliveredItems  Json?
+  createdAt       DateTime         @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  actor         User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseOrderId, createdAt])
+}
+
+model SupplierIncident {
+  id              String           @id @default(cuid())
+  merchantId      String
+  purchaseOrderId String?
+  severity        IncidentSeverity
+  description     String
+  status          IncidentStatus   @default(OPEN)
+  createdAt       DateTime         @default(now())
+  resolvedAt      DateTime?
+
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId, status])
 }
 
 /// Every PayPal webhook received. The unique eventId stops duplicate events from being processed twice.

@@ -1,117 +1,132 @@
 @import "tailwindcss";
 
 /*
- * LIFELINE colour theme: trustworthy blue on a light background, red kept for what is truly critical.
- * The pages use Tailwind's built-in colour names (slate, indigo, emerald, amber, red, …). Redefining those
- * palettes here themes every page at once, without editing each page. So in this app "indigo" means blue.
- * Navy #0F2547 · Blue #1C4FA8 · Green #22A06B · Amber #E8A33D · Coral #D64545 · Background #F4F7FB
+ * LIFELINE design system, from "LIFELINE Screen Designs" (page 1).
+ * Navy #142D4E · Teal #159B91, text #0E7A72 · Amber #F2B65D · Background #F7F9FC
+ * Success #1E6B40 / #E6F4EC · Warning #8A5A10 / #FDF1DC · Critical #A61E2B / #FBE9EA · Simulated #4B3FA6 / #EFEDFB
+ * Older pages use Tailwind colour names, remapped here until each is rebuilt from its design. New screens use the
+ * named colours below (bg-navy, text-teal-text, ...).
  */
 @theme {
-  /* Cool neutrals: 50 is the light blue-grey background, 900 the navy text */
-  --color-slate-50: #F4F7FB;
-  --color-slate-100: #EAF0F7;
-  --color-slate-200: #DCE4EE;
-  --color-slate-300: #C3CEDC;
-  --color-slate-400: #94A3B8;
-  --color-slate-500: #66778C;
-  --color-slate-600: #4A5A6F;
-  --color-slate-700: #354559;
-  --color-slate-800: #22324A;
-  --color-slate-900: #0F2547;
-  --color-slate-950: #0A1A33;
-  /* Primary: trust blue (buttons, links, selection) */
-  --color-indigo-50: #EEF4FC;
-  --color-indigo-100: #D9E6F8;
-  --color-indigo-200: #B5CDF1;
-  --color-indigo-300: #85ABE6;
-  --color-indigo-400: #5585D6;
-  --color-indigo-500: #2F66C4;
-  --color-indigo-600: #1C4FA8;
-  --color-indigo-700: #173F88;
-  --color-indigo-800: #15346E;
-  --color-indigo-900: #132C5A;
-  --color-indigo-950: #0B1A38;
-  /* Success: fresh green (ready, approved, passed) */
-  --color-emerald-50: #ECF8F2;
-  --color-emerald-100: #D2EFE0;
-  --color-emerald-200: #A6DFC2;
-  --color-emerald-300: #6FC79D;
-  --color-emerald-400: #3FAE7B;
-  --color-emerald-500: #22A06B;
-  --color-emerald-600: #1B8457;
-  --color-emerald-700: #186A47;
-  --color-emerald-800: #16553A;
-  --color-emerald-900: #134631;
-  --color-emerald-950: #09281B;
-  /* Attention: signal amber (needs information, review) */
-  --color-amber-50: #FDF7EC;
-  --color-amber-100: #FBEACB;
-  --color-amber-200: #F6D394;
-  --color-amber-300: #F0BB61;
-  --color-amber-400: #E8A33D;
-  --color-amber-500: #DB8E22;
-  --color-amber-600: #C0721A;
-  --color-amber-700: #9C5718;
-  --color-amber-800: #7F4619;
-  --color-amber-900: #693A18;
-  --color-amber-950: #3C1E09;
-  /* Critical: coral red (critical urgency, blocked routes only) */
-  --color-red-50: #FDF1F0;
-  --color-red-100: #FADFDD;
-  --color-red-200: #F5C1BD;
-  --color-red-300: #EC9790;
-  --color-red-400: #E26A62;
-  --color-red-500: #D64545;
-  --color-red-600: #C0353A;
-  --color-red-700: #A02A30;
-  --color-red-800: #84262C;
-  --color-red-900: #6E242A;
-  --color-red-950: #3C0F13;
-  /* Information: light blue (notes, chips, sample-data banners) */
-  --color-sky-50: #F0F6FD;
-  --color-sky-100: #DDEBFA;
-  --color-sky-200: #BCD7F4;
-  --color-sky-300: #8FBBEB;
-  --color-sky-400: #5E9ADF;
-  --color-sky-500: #3A7CCB;
-  --color-sky-600: #2A63AD;
-  --color-sky-700: #234F8A;
-  --color-sky-800: #1F4370;
-  --color-sky-900: #1C385C;
-  --color-sky-950: #12233B;
-  /* Same coral as red */
-  --color-rose-50: #FDF1F0;
-  --color-rose-100: #FADFDD;
-  --color-rose-200: #F5C1BD;
-  --color-rose-300: #EC9790;
-  --color-rose-400: #E26A62;
-  --color-rose-500: #D64545;
-  --color-rose-600: #C0353A;
-  --color-rose-700: #A02A30;
-  --color-rose-800: #84262C;
-  --color-rose-900: #6E242A;
-  --color-rose-950: #3C0F13;
-  /* Same as sky */
-  --color-blue-50: #F0F6FD;
-  --color-blue-100: #DDEBFA;
-  --color-blue-200: #BCD7F4;
-  --color-blue-300: #8FBBEB;
-  --color-blue-400: #5E9ADF;
-  --color-blue-500: #3A7CCB;
-  --color-blue-600: #2A63AD;
-  --color-blue-700: #234F8A;
-  --color-blue-800: #1F4370;
-  --color-blue-900: #1C385C;
-  --color-blue-950: #12233B;
+  --color-navy: #142D4E;
+  --color-teal: #159B91;
+  --color-teal-text: #0E7A72;
+  --color-teal-tint: #E3F2F0;
+  --color-accent: #F2B65D;
+  --color-success: #1E6B40;
+  --color-success-tint: #E6F4EC;
+  --color-warning: #8A5A10;
+  --color-warning-tint: #FDF1DC;
+  --color-critical: #A61E2B;
+  --color-critical-tint: #FBE9EA;
+  --color-simulated: #4B3FA6;
+  --color-simulated-tint: #EFEDFB;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Neutrals: 50 is the page background, 900 the navy text */
+  --color-slate-50: #F7F9FC;
+  --color-slate-100: #EEF2F7;
+  --color-slate-200: #E1E7EF;
+  --color-slate-300: #C9D2DE;
+  --color-slate-400: #98A5B5;
+  --color-slate-500: #6B7A8D;
+  --color-slate-600: #4F5F73;
+  --color-slate-700: #3A4A5F;
+  --color-slate-800: #24384F;
+  --color-slate-900: #142D4E;
+  --color-slate-950: #0E2240;
+  /* Primary: teal tints, navy solid buttons at 600, teal links at 700 */
+  --color-indigo-50: #EEF7F6;
+  --color-indigo-100: #E0F1EE;
+  --color-indigo-200: #BFE3DE;
+  --color-indigo-300: #8FD0C8;
+  --color-indigo-400: #4FB5AA;
+  --color-indigo-500: #159B91;
+  --color-indigo-600: #142D4E;
+  --color-indigo-700: #0E7A72;
+  --color-indigo-800: #0B5F59;
+  --color-indigo-900: #0A4C47;
+  --color-indigo-950: #06302D;
+  /* Success */
+  --color-emerald-50: #E6F4EC;
+  --color-emerald-100: #D3EBDD;
+  --color-emerald-200: #A9D7BC;
+  --color-emerald-300: #76BE95;
+  --color-emerald-400: #3F9C68;
+  --color-emerald-500: #1E6B40;
+  --color-emerald-600: #1A5C37;
+  --color-emerald-700: #164D2E;
+  --color-emerald-800: #123E25;
+  --color-emerald-900: #0E311D;
+  --color-emerald-950: #081C11;
+  /* Warning and accent */
+  --color-amber-50: #FDF1DC;
+  --color-amber-100: #FBE6C3;
+  --color-amber-200: #F8D69B;
+  --color-amber-300: #F5C67C;
+  --color-amber-400: #F2B65D;
+  --color-amber-500: #C98F2E;
+  --color-amber-600: #A8741C;
+  --color-amber-700: #8A5A10;
+  --color-amber-800: #6F480D;
+  --color-amber-900: #5A3A0B;
+  --color-amber-950: #332106;
+  /* Critical */
+  --color-red-50: #FBE9EA;
+  --color-red-100: #F7D5D8;
+  --color-red-200: #EFACB2;
+  --color-red-300: #E17F88;
+  --color-red-400: #C94A56;
+  --color-red-500: #A61E2B;
+  --color-red-600: #8F1925;
+  --color-red-700: #76141E;
+  --color-red-800: #5F1018;
+  --color-red-900: #4C0D13;
+  --color-red-950: #2B070B;
+  /* Information: pale teal-grey */
+  --color-sky-50: #EEF7F6;
+  --color-sky-100: #E0F1EE;
+  --color-sky-200: #BFE3DE;
+  --color-sky-300: #8FD0C8;
+  --color-sky-400: #4FB5AA;
+  --color-sky-500: #159B91;
+  --color-sky-600: #0E7A72;
+  --color-sky-700: #0E7A72;
+  --color-sky-800: #0B5F59;
+  --color-sky-900: #0A4C47;
+  --color-sky-950: #06302D;
+  /* Same as red */
+  --color-rose-50: #FBE9EA;
+  --color-rose-100: #F7D5D8;
+  --color-rose-200: #EFACB2;
+  --color-rose-300: #E17F88;
+  --color-rose-400: #C94A56;
+  --color-rose-500: #A61E2B;
+  --color-rose-600: #8F1925;
+  --color-rose-700: #76141E;
+  --color-rose-800: #5F1018;
+  --color-rose-900: #4C0D13;
+  --color-rose-950: #2B070B;
+  /* Same as sky */
+  --color-blue-50: #EEF7F6;
+  --color-blue-100: #E0F1EE;
+  --color-blue-200: #BFE3DE;
+  --color-blue-300: #8FD0C8;
+  --color-blue-400: #4FB5AA;
+  --color-blue-500: #159B91;
+  --color-blue-600: #0E7A72;
+  --color-blue-700: #0E7A72;
+  --color-blue-800: #0B5F59;
+  --color-blue-900: #0A4C47;
+  --color-blue-950: #06302D;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 @layer base {
   body {
-    font-feature-settings: "cv11", "ss01";
+    font-size: 15px;
+    line-height: 1.6;
   }
-  /* Money and counts line up in columns. */
   table, .tabular {
     font-variant-numeric: tabular-nums;
   }

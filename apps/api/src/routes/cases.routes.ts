@@ -2,10 +2,12 @@ import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { SituationRequestSchema } from "@lifeline/contracts";
 import { validateBody } from "../middleware/validate";
+import { env } from "../config/env";
+import { getPrisma } from "../database/prisma";
+import { attachOperations, getCaseTimeline, getRecentActivity } from "../orchestration/case-operations";
 import { caseStore } from "../orchestration/case-store";
 import { caseModules } from "../orchestration/modules";
 import { runCase } from "../orchestration/run-case";
-import { sampleCases } from "../orchestration/sample-cases";
 import { HttpError } from "../utils/http-error";
 import { getRequestSession } from "../auth/role-guard";
 
@@ -35,7 +37,7 @@ casesRouter.post("/", validateBody(SituationRequestSchema), async (req, res) => 
     caseId = replaces;
   }
   const result = await runCase(caseId, req.body, caseModules);
-  await caseStore.save(result, req.body, replaces ? undefined : session.id);
+  await caseStore.save(result, req.body, replaces ? undefined : session.id, session.id);
   res.status(replaces ? 200 : 201).json(result);
 });
 
@@ -46,11 +48,16 @@ casesRouter.get("/mine", async (_req, res) => {
 
 casesRouter.get("/", async (_req, res) => {
   if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view all assistance cases");
-  res.json(await caseStore.list());
+  const cases = await caseStore.list();
+  res.json(env.DATABASE_URL ? await attachOperations(getPrisma(), cases) : cases);
 });
 
-/** Sample cases for previewing the dashboard; never mixed into the real list. */
-casesRouter.get("/samples", (_req, res) => {
-  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view sample cases");
-  res.json(sampleCases());
+casesRouter.get("/activity", async (_req, res) => {
+  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view activity");
+  res.json(await getRecentActivity(getPrisma()));
+});
+
+casesRouter.get("/:id/timeline", async (req, res) => {
+  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view a case timeline");
+  res.json(await getCaseTimeline(getPrisma(), String(req.params.id)));
 });

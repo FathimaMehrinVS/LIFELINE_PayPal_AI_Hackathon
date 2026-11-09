@@ -1,8 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowRightIcon } from "@/components/icons";
+import { Badge, Card, Choice, button, fieldClass } from "@/components/ui";
 import { api } from "@/services/api";
+import { caseRef } from "../dashboard/case-row";
 import { parseDonationTarget, type DonationTarget } from "./donation-target";
+
+const NEXT_STEPS = [
+  "You approve the payment on PayPal's Sandbox page.",
+  "Our server confirms the payment with PayPal before anything is recorded as received.",
+  "The NGO pays the supplier as a separate, recorded step.",
+];
 
 export default function DonatePage() {
   const [target, setTarget] = useState<DonationTarget | null>(null);
@@ -33,7 +43,7 @@ export default function DonatePage() {
     const parsedTarget = parseDonationTarget(window.location.search);
     if (!parsedTarget) {
       setTarget(null);
-      setTargetMessage("Choose an NGO-approved assistance allocation from the dashboard before donating.");
+      setTargetMessage("Choose an NGO-approved plan before donating.");
       return;
     }
 
@@ -53,14 +63,65 @@ export default function DonatePage() {
     } catch (err) { setMessage(err instanceof Error ? err.message : "Could not start PayPal checkout"); setBusy(false); }
   }
 
-  return <section className="mx-auto max-w-xl space-y-5">
-    <div><h1 className="text-2xl font-bold">Support approved assistance</h1><p className="text-slate-600">Payment is processed through PayPal Sandbox. No assistance payment is made by creating this donation.</p></div>
-    {targetMessage && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{targetMessage}</p>}
-    {target && <p className="rounded-xl border bg-white p-4 text-sm text-slate-700">Approved case {target.caseId} · allocation limit {target.amount.toFixed(2)} {target.currency}</p>}
-    <form onSubmit={submit} className="space-y-4 rounded-xl border bg-white p-5">
-      <label className="grid gap-1 text-sm">Donation amount ({target?.currency ?? "currency"})<input className="rounded border p-2" type="number" min="0.01" max={target?.amount} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
-      <button disabled={busy || !target} className="w-full rounded-lg bg-blue-700 px-4 py-2 font-medium text-white disabled:opacity-50">{busy ? "Connecting to PayPal…" : "Continue to PayPal Sandbox"}</button>
-      {message && <p role="status" className="text-sm text-slate-700">{message}</p>}
-    </form>
-  </section>;
+  const entered = Number(amount);
+  const presets = target ? [...[25, 50, 100].filter((value) => value < target.amount), target.amount] : [];
+  const money = (value: number) => (target ? new Intl.NumberFormat(undefined, { style: "currency", currency: target.currency }).format(value) : "");
+
+  return (
+    <div className="mx-auto max-w-[1130px]">
+      <Link href="/plans" className="text-sm font-semibold text-teal-text hover:underline">← All approved plans</Link>
+      <h1 className="mt-2 text-[28px] font-bold text-navy">Support this assistance plan</h1>
+      {message && <p role="status" className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-navy">{message}</p>}
+
+      <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <form onSubmit={submit} className="space-y-5">
+          <Card className="p-6">
+            <p className="font-bold text-navy">Donation amount</p>
+            {targetMessage && (
+              <div role="status" className="mt-3 rounded-xl border border-accent/50 bg-warning-tint p-4 text-sm text-warning">
+                <p>{targetMessage}</p>
+                {!target && <Link href="/plans" className="mt-2 inline-flex items-center gap-1 font-semibold hover:underline">See approved plans <ArrowRightIcon className="h-4 w-4" /></Link>}
+              </div>
+            )}
+            {target && (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Donation amount">
+                {presets.map((value) => (
+                  <Choice key={value} selected={entered === value} onClick={() => setAmount(value.toFixed(2))} className="justify-center rounded-xl px-3 py-4 text-base font-bold">
+                    {value === target.amount ? `Full · ${money(value)}` : money(value)}
+                  </Choice>
+                ))}
+              </div>
+            )}
+            <label className="mt-4 block text-sm font-bold text-navy">
+              <span className="mb-1.5 block">Other amount ({target?.currency ?? "currency"})</span>
+              <input className={fieldClass} type="number" min="0.01" max={target?.amount} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required />
+            </label>
+          </Card>
+
+          <Card className="p-6">
+            <p className="font-bold text-navy">Payment</p>
+            <p className="mt-2 rounded-xl border border-dashed border-simulated bg-simulated-tint p-4 text-center text-sm text-simulated">You'll approve this on PayPal's Sandbox page, so no real money moves. LIFELINE never collects card or account details.</p>
+            <button disabled={busy || !target} className={`${button.primary} mt-4 w-full py-3.5 text-base`}>{busy ? "Connecting to PayPal…" : "Continue with PayPal"}</button>
+            <p className="mt-3 text-center text-[13px] text-slate-600">Processed by PayPal Sandbox · No assistance payment is made by creating this donation.</p>
+          </Card>
+        </form>
+
+        <aside className="space-y-4">
+          <Card className="p-5">
+            <div className="flex flex-wrap gap-2"><Badge tone="human">NGO approved</Badge>{target && <Badge tone="neutral"><span className="font-mono">{caseRef(target.caseId)}</span></Badge>}</div>
+            <h2 className="mt-3 text-lg font-bold text-navy">The plan you are funding</h2>
+            {target ? <dl className="mt-3 flex justify-between text-sm font-bold text-navy"><dt>Approved amount</dt><dd className="tabular">{money(target.amount)}</dd></dl> : <p className="mt-2 text-sm text-slate-600">Choose an approved plan first.</p>}
+            {target && <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 p-4"><span className="font-semibold text-navy">You pay today</span><span className="tabular text-2xl font-extrabold text-navy">{entered > 0 ? money(entered) : "—"}</span></div>}
+          </Card>
+          <Card className="p-5">
+            <h2 className="font-bold text-navy">What happens next</h2>
+            <ol className="mt-3 space-y-2.5 text-sm text-slate-600">
+              {NEXT_STEPS.map((step, index) => <li key={step} className="flex gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">{index + 1}</span>{step}</li>)}
+            </ol>
+          </Card>
+          <p className="rounded-xl border border-teal/30 bg-teal-tint p-4 text-sm text-navy">Your contribution supports the NGO-approved plan shown above.</p>
+        </aside>
+      </div>
+    </div>
+  );
 }

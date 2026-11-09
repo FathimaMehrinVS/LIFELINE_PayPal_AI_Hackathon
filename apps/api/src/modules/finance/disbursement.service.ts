@@ -32,6 +32,7 @@ function toResult(payout: {
  */
 export async function simulateAllocationDisbursement(
   input: CreatePayoutRequest,
+  actorId: string,
   getDatabase: typeof getPrisma = getPrisma,
 ): Promise<{ result: PayoutResult; duplicate: boolean }> {
   const db = getDatabase();
@@ -116,6 +117,7 @@ export async function simulateAllocationDisbursement(
     });
     await tx.auditLog.create({
       data: {
+        actorId,
         action: "allocation.disbursement_simulated",
         entityType: "AidAllocation",
         entityId: allocation.id,

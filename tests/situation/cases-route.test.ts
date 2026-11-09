@@ -1,9 +1,11 @@
 import type { AddressInfo } from "node:net";
 import type { CaseResult } from "@lifeline/contracts";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { caseStore } from "../../apps/api/src/orchestration/case-store";
 
 // The route with the real in-memory store and a fake Orchestrator (no network, no database).
 const runCase = vi.fn();
+const saveSpy = vi.spyOn(caseStore, "save");
 vi.mock("../../apps/api/src/orchestration/run-case", () => ({ runCase: (...args: unknown[]) => runCase(...args) }));
 
 const { createApp } = await import("../../apps/api/src/app");
@@ -13,7 +15,7 @@ const caseFor = (id: string, status: CaseResult["status"]): CaseResult =>
 
 let base = "";
 let server: ReturnType<ReturnType<typeof createApp>["listen"]>;
-let activeSession = { id: "test-user", email: "test@example.test", role: "NGO" as const };
+let activeSession: { id: string; email: string; role: "NGO" | "DONOR" | "PARTNER" } = { id: "test-user", email: "test@example.test", role: "NGO" };
 beforeAll(async () => {
   server = createApp({ resolveSession: async () => activeSession }).listen(0);
   await new Promise((r) => server.once("listening", r));
@@ -22,6 +24,7 @@ beforeAll(async () => {
 afterAll(() => server.close());
 beforeEach(() => {
   runCase.mockReset();
+  saveSpy.mockClear();
   activeSession = { id: "test-user", email: "test@example.test", role: "NGO" };
 });
 
@@ -36,6 +39,7 @@ describe("POST /api/cases?replaces=", () => {
   it("re-runs a case that needs information under the same id", async () => {
     runCase.mockImplementation(async (id: string) => caseFor(id, "needs_information"));
     const first = (await (await post()).json()) as CaseResult;
+    expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ case_id: first.case_id }), expect.any(Object), "test-user", "test-user");
 
     runCase.mockImplementation(async (id: string) => caseFor(id, "complete"));
     const res = await post(`?replaces=${first.case_id}`);

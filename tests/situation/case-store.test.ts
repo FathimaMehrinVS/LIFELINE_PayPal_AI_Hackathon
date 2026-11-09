@@ -99,7 +99,7 @@ describe("database case store", () => {
   it("saves the request with case_id as its id, so an approval can point at it", async () => {
     const { prisma, calls } = createPrismaStub();
     const sample = completeCase();
-    await createPrismaCaseStore(() => prisma).save(sample, { message: "Original message" });
+    await createPrismaCaseStore(() => prisma).save(sample, { message: "Original message" }, "profile-owner", "verified-actor");
 
     expect(calls["request.create"]![0]).toMatchObject({
       data: {
@@ -114,7 +114,7 @@ describe("database case store", () => {
       data: { requestId: sample.case_id, total: sample.commerce!.total },
     });
     expect(calls["audit.create"]![0]).toMatchObject({
-      data: { action: CASE_AUDIT_ACTION, entityId: sample.case_id },
+      data: { actorId: "verified-actor", action: CASE_AUDIT_ACTION, entityId: sample.case_id },
     });
   });
 

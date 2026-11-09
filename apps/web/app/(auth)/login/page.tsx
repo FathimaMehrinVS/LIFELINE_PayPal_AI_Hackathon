@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ArrowRightIcon, BasketIcon, HeartHandIcon, ShieldCheckIcon } from "@/components/icons";
-import { LifelineMark } from "@/components/site-header";
+import { LifelineMark } from "@/components/app-shell";
 import { ApiRequestError, api, type AuthProfile } from "@/services/api";
 import { signInWithPassword, signOutLocally, signUpWithPassword } from "@/lib/auth-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -24,7 +24,7 @@ function profileStateForError(error: unknown): ProfileState {
 
 function destinationFor(profile: AuthProfile): string {
   const requested = new URLSearchParams(window.location.search).get("next");
-  if (requested === "/donate" && (profile.role === "DONOR" || profile.role === "NGO")) return requested;
+  if ((requested === "/donate" || requested === "/plans" || requested === "/contributions") && (profile.role === "DONOR" || profile.role === "NGO")) return requested;
   if (requested === "/situation") return requested;
   return profile.role === "NGO" ? "/dashboard" : "/workspace";
 }
@@ -34,6 +34,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
@@ -215,7 +216,19 @@ export default function LoginPage() {
 
               <form className="mt-6 space-y-5" onSubmit={submit} noValidate>
                 <div><label htmlFor="email" className="mb-2 block text-sm font-bold text-[#142D4E]">Email address</label><input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-[#142D4E] outline-none transition placeholder:text-slate-400 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="name@organisation.org" /></div>
-                <div><label htmlFor="password" className="mb-2 block text-sm font-bold text-[#142D4E]">Password</label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-[#142D4E] outline-none transition placeholder:text-slate-400 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="Enter your password" /></div>
+                <div>
+                  <label htmlFor="password" className="mb-2 block text-sm font-bold text-[#142D4E]">Password</label>
+                  <div className="relative">
+                    <input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-[#142D4E] outline-none transition placeholder:text-slate-400 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="Enter your password" />
+                    <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center rounded-r-xl text-slate-500 transition hover:text-[#117F78] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#159B91]">
+                      {showPassword ? (
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8" /><path strokeLinecap="round" strokeLinejoin="round" d="M9.9 5.2A10.8 10.8 0 0112 5c5 0 8.3 4.2 9 7-.3 1.2-1.2 2.6-2.5 3.8M6.2 6.2C3.8 7.5 2.4 9.7 2 12c.7 2.8 4 7 10 7 1.1 0 2.1-.2 3-.5" /></svg>
+                      ) : (
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
                 {formError && <p className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm leading-6 text-rose-900" role="alert">{formError}</p>}
                 {notice && <p className="rounded-xl border border-[#BFE6E2] bg-[#EAF7F5] p-3.5 text-sm text-[#105D58]" role="status">{notice}</p>}
                 <button type="submit" disabled={busy} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#142D4E] px-4 py-3 font-bold text-white shadow-sm transition hover:bg-[#203F67] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#159B91] disabled:cursor-not-allowed disabled:opacity-60">{busy ? (mode === "sign-in" ? "Signing in…" : "Creating account…") : (mode === "sign-in" ? "Sign in" : "Create account")} {!busy && <ArrowRightIcon className="h-5 w-5" />}</button>

@@ -9,9 +9,11 @@ import { SITUATION_SYSTEM_PROMPT } from "./prompts";
  * The client is passed in so tests can use a fake one without network.
  */
 export async function analyzeSituation(input: SituationRequest, llm: LlmClient): Promise<SituationResult> {
+  // The NGO's amount is a decision, not something the message said, so the AI never sees it.
+  const { assistance_amount: _ngoAmount, ...report } = input;
   const raw = await llm.generateJson({
     system: SITUATION_SYSTEM_PROMPT,
-    user: JSON.stringify(input),
+    user: JSON.stringify(report),
     schema: SituationResultSchema,
     // Extraction, not writing: keep the output as repeatable as possible.
     temperature: 0,

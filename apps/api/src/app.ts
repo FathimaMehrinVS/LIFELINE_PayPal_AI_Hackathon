@@ -8,10 +8,14 @@ import { authRouter } from "./routes/auth.routes";
 import { casesRouter } from "./routes/cases.routes";
 import { commerceRouter } from "./routes/commerce.routes";
 import { donationRouter } from "./routes/donation.routes";
+import { deliveriesRouter } from "./routes/deliveries.routes";
 import { financeRouter } from "./routes/finance.routes";
 import { payoutRouter } from "./routes/payout.routes";
 import { mountPaypalWebhookRoute } from "./routes/paypal-webhook.routes";
+import { plansRouter } from "./routes/plans.routes";
+import { recordsRouter } from "./routes/records.routes";
 import { situationRouter } from "./routes/situation.routes";
+import { suppliersRouter } from "./routes/suppliers.routes";
 
 export function createApp(dependencies: { resolveSession?: SessionResolver } = {}) {
   const app = express();
@@ -30,7 +34,11 @@ export function createApp(dependencies: { resolveSession?: SessionResolver } = {
   app.use("/api/finance", requireRoles("NGO", "DONOR", "PARTNER"), financeRouter);
   app.use("/api/commerce", requireRoles("NGO", "DONOR", "PARTNER"), commerceRouter);
   app.use("/api/cases", requireRoles("NGO", "DONOR", "PARTNER"), casesRouter);
+  app.use("/api/suppliers", requireRoles("NGO"), suppliersRouter);
   app.use("/api/allocations", requireRoles("NGO"), allocationRouter);
+  app.use("/api/deliveries", requireRoles("NGO", "PARTNER"), deliveriesRouter);
+  app.use("/api/plans", requireRoles("DONOR", "NGO"), plansRouter);
+  app.use("/api/records", requireRoles("NGO"), recordsRouter);
   // Both mounted at /api/payments; each router owns different paths.
   app.use("/api/payments", requireRoles("DONOR", "NGO"), donationRouter);
   app.use("/api/payments", requireRoles("NGO"), payoutRouter);

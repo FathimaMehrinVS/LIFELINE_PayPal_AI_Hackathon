@@ -37,6 +37,7 @@ function toResult(allocation: {
  */
 export async function approveAllocation(
   input: ApproveAllocationRequest,
+  actorId: string,
   getDatabase: typeof getPrisma = getPrisma,
 ): Promise<AllocationResult> {
   const db = getDatabase();
@@ -105,6 +106,7 @@ export async function approveAllocation(
 
       await tx.auditLog.create({
         data: {
+          actorId,
           action: "allocation.approved",
           entityType: "AidAllocation",
           entityId: allocation.id,

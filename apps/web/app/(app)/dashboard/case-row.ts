@@ -1,4 +1,5 @@
 import type { AllocationResult, CaseResult, PayoutResult, Urgency } from "@lifeline/contracts";
+import { api } from "@/services/api";
 
 // Owner: Member 1. One dashboard row: a case plus what happened when the NGO pressed Approve.
 
@@ -16,6 +17,25 @@ export interface CaseRow {
   case: CaseResult;
   approval?: Approval;
   disbursement?: Disbursement;
+}
+
+/** The saved approval, so a refresh loses nothing. A status the browser has just set takes priority. */
+export function savedApproval(item: CaseResult): Approval | undefined {
+  const allocation = item.operations?.allocation;
+  return allocation && (allocation.status === "approved" || allocation.status === "disbursed") ? { state: "approved", result: allocation } : undefined;
+}
+
+export function savedDisbursement(item: CaseResult): Disbursement | undefined {
+  return item.operations?.payout ? { state: "complete", result: item.operations.payout } : undefined;
+}
+
+/** How much of the approved amount has been captured. Null before approval. */
+export function fundingState(item: CaseResult): { label: string; tone: "neutral" | "warning" | "success"; captured: number } | null {
+  const operations = item.operations;
+  if (!operations?.allocation) return null;
+  const { captured } = operations.funding;
+  if (captured <= 0) return { label: "Not funded", tone: "neutral", captured };
+  return captured >= operations.allocation.amount ? { label: "Funded", tone: "success", captured } : { label: "Partly funded", tone: "warning", captured };
 }
 
 export const URGENCY_RANK: Record<Urgency, number> = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -42,6 +62,16 @@ export function routeName(routeId: string) {
   if (ROUTE_NAMES[routeId]) return ROUTE_NAMES[routeId];
   const name = routeId.replace(/^route_/, "").replace(/_/g, " ");
   return (name.charAt(0).toUpperCase() + name.slice(1)).replace(/paypal/i, "PayPal");
+}
+
+/** Where a basket item came from, stated plainly so demo data is never mistaken for real stock. */
+export function sourceLabel(source: "channel3" | "local_registry") {
+  return source === "channel3" ? "Online listing (Channel3), price estimate" : "Synthetic demo catalogue";
+}
+
+/** A short reference people can read aloud, e.g. "LL-C63F40D4". The full id stays in the data. */
+export function caseRef(caseId: string) {
+  return `LL-${caseId.replace(/^case_/, "").slice(0, 8).toUpperCase()}`;
 }
 
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined) {

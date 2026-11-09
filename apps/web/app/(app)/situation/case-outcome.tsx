@@ -1,10 +1,10 @@
 "use client";
 
-import type { CaseResult } from "@lifeline/contracts";
+import { type CaseResult, PLANNING_DAYS_OF_COVER, PLANNING_HOUSEHOLD_SIZE } from "@lifeline/contracts";
 import Link from "next/link";
 import { useState } from "react";
-import { formatMoney, recommendedRoute, routeName } from "../dashboard/case-row";
-import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, accessSentence } from "./answers";
+import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
+import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, type ReporterRole, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
 import { ListenButton } from "./voice";
 
@@ -12,24 +12,30 @@ import { ListenButton } from "./voice";
 
 
 interface CaseOutcomeProps {
+  role: ReporterRole;
   result: CaseResult;
+  /** The full analysis is hidden when the page has already shown it. */
+  showDetails?: boolean;
   /** Re-runs the case with the person's answers added to the message. */
   onAnswer: (answers: CaseAnswers) => void;
   busy: boolean;
 }
 
-export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
+export function CaseOutcome({ role, result, onAnswer, busy, showDetails: detailsAllowed = true }: CaseOutcomeProps) {
   const [showDetails, setShowDetails] = useState(result.status !== "complete");
+
+  // Costs are the NGO's job: a family is never asked how much money there is.
+  const familyQuestions = role === "ngo" ? result.missing_information : result.missing_information.filter((q) => q !== "budget" && q !== "currency");
 
   return (
     <div className="space-y-6">
-      {result.status === "complete" && <Ready result={result} />}
-      {result.status === "needs_information" && (
-        <NeedsAnswers questions={result.missing_information} onAnswer={onAnswer} busy={busy} />
+      {result.status === "complete" && <Ready role={role} result={result} />}
+      {result.status === "needs_information" && familyQuestions.length > 0 && (
+        <NeedsAnswers questions={familyQuestions} onAnswer={onAnswer} busy={busy} />
       )}
-      {result.status === "no_usable_route" && <NoRoute result={result} onAnswer={onAnswer} busy={busy} />}
+      {result.status === "no_usable_route" && <NoRoute role={role} result={result} onAnswer={onAnswer} busy={busy} />}
 
-      <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      {detailsAllowed && <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
           onClick={() => setShowDetails((v) => !v)}
@@ -46,20 +52,20 @@ export function CaseOutcome({ result, onAnswer, busy }: CaseOutcomeProps) {
             <SituationResultView result={result.situation} showMissing={false} />
           </div>
         )}
-      </section>
+      </section>}
 
-      <p className="text-xs text-slate-500">
+      {detailsAllowed && <p className="text-xs text-slate-500">
         Case reference <span className="font-mono">{result.case_id}</span>. Every case is listed on the{" "}
         <Link href="/dashboard" className="underline">
           NGO dashboard
         </Link>
         .
-      </p>
+      </p>}
     </div>
   );
 }
 
-function Ready({ result }: { result: CaseResult }) {
+function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
   const route = recommendedRoute(result);
   const { finance, commerce, situation } = result;
   if (!route || !finance) return null;
@@ -71,8 +77,10 @@ function Ready({ result }: { result: CaseResult }) {
           ✓
         </span>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-emerald-900">We found a way to help</h2>
-          <p className="text-sm text-emerald-800">An NGO reviews it next. Nothing is paid until they approve.</p>
+          <h2 className="text-lg font-semibold text-emerald-900">{role === "ngo" ? "A plan is ready for your review" : "We found a way to help"}</h2>
+          <p className="text-sm text-emerald-800">
+            {role === "ngo" ? "Check it and approve it on the NGO dashboard. Nothing is paid until you do." : "An NGO reviews it next. Nothing is paid until they approve."}
+          </p>
         </div>
         <ListenButton
           text={`We found a way to help. ${formatMoney(route.usable_value, finance.currency)} can reach the family through ${routeName(route.route_id)}, after ${formatMoney(route.estimated_fee, finance.currency)} in fees.${commerce && commerce.items.length > 0 ? ` Suggested essentials: ${commerce.items.map((i) => i.name).join(", ")}.` : ""} An NGO reviews it next. Nothing is paid until they approve.`}
@@ -80,7 +88,7 @@ function Ready({ result }: { result: CaseResult }) {
       </div>
 
       <div className="grid gap-4 p-5 sm:grid-cols-3">
-        <Figure label="You send" value={formatMoney(situation.budget, situation.currency)} />
+        <Figure label={fundingLabel(result.budget_source ?? "stated", role)} value={formatMoney(situation.budget, situation.currency)} />
         <Figure label={`Fees (${route.fee_label})`} value={formatMoney(route.estimated_fee, finance.currency)} />
         <Figure label="Arrives for the family" value={formatMoney(route.usable_value, finance.currency)} highlight />
       </div>
@@ -104,6 +112,7 @@ function Ready({ result }: { result: CaseResult }) {
                         {item.quantity} × {item.name}
                       </span>
                       <span className="text-slate-500"> · {item.merchant_name}</span>
+                      <span className="block text-xs text-slate-500">{sourceLabel(item.source)}</span>
                     </span>
                     <span className="tabular font-medium">{formatMoney(item.subtotal, commerce.currency)}</span>
                   </li>
@@ -119,12 +128,17 @@ function Ready({ result }: { result: CaseResult }) {
               {commerce.unmet_needs.length > 0 &&
                 ` Not covered yet: ${commerce.unmet_needs.map((n) => NEED_LABELS[n] ?? n).join(", ")}.`}
             </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {situation.household_size
+                ? `Planned for ${situation.household_size} ${situation.household_size === 1 ? "person" : "people"} for ${PLANNING_DAYS_OF_COVER} days.`
+                : `The report didn't say how many people, so this is planned for ${PLANNING_HOUSEHOLD_SIZE} people for ${PLANNING_DAYS_OF_COVER} days. The NGO should check this before approving.`}
+            </p>
           </div>
         )}
 
         <div className="flex flex-wrap gap-3 pt-1">
           <Link href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-            Open in NGO dashboard
+            {role === "ngo" ? "Review and approve" : "Open in NGO dashboard"}
           </Link>
           <Link href="/dashboard" className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
             NGO approval is required before donation
@@ -133,6 +147,12 @@ function Ready({ result }: { result: CaseResult }) {
       </div>
     </section>
   );
+}
+
+function fundingLabel(source: NonNullable<CaseResult["budget_source"]>, role: ReporterRole) {
+  if (source === "ngo") return "NGO assistance amount";
+  if (source === "emergency_package") return "Standard emergency package";
+  return role === "ngo" ? "Amount in the report" : "Amount you stated";
 }
 
 function Figure({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
@@ -349,7 +369,7 @@ const ACCESS_NAMES: Record<string, string> = {
 type RouteAssessmentItem = NonNullable<CaseResult["finance"]>["routes"][number];
 
 /** Why a route can't be used, in words a family member understands (from Member 2's flags). */
-function plainReason(route: RouteAssessmentItem, currency: string): string {
+export function plainReason(route: RouteAssessmentItem, currency: string): string {
   const unavailable = route.flags.find((f) => f.code === "REQUIRED_ACCESS_UNAVAILABLE");
   if (unavailable) {
     const factor = (unavailable.evidence as { factor?: string } | undefined)?.factor;
@@ -362,7 +382,7 @@ function plainReason(route: RouteAssessmentItem, currency: string): string {
   return "isn't confirmed yet, so a person must check it first";
 }
 
-function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (answers: CaseAnswers) => void; busy: boolean }) {
+function NoRoute({ role, result, onAnswer, busy }: { role: ReporterRole; result: CaseResult; onAnswer: (answers: CaseAnswers) => void; busy: boolean }) {
   const { finance, situation } = result;
   const unknown = Object.entries(situation.access)
     .filter(([key, value]) => value === "unknown" && ACCESS_ANSWERS[key])
@@ -380,8 +400,8 @@ function NoRoute({ result, onAnswer, busy }: { result: CaseResult; onAnswer: (an
           )}
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          With what we know now, none of the ways to send money would safely reach the family. The case is saved, and an NGO
-          worker can look at other options.
+          With what we know now, none of the ways to send money would safely reach the family. The case is saved
+          {role === "ngo" ? ", so you can look at other options from the dashboard." : ", and an NGO worker can look at other options."}
         </p>
         {finance && finance.routes.length > 0 && (
           <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200">

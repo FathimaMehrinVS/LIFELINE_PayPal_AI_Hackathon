@@ -10,6 +10,9 @@ export const CommerceRequestSchema = z.object({
   location: z.string().min(1),
   /** Share of the budget to keep as an emergency reserve, 0 to 0.5. */
   reserve_ratio: z.number().min(0).max(0.5).default(0.2),
+  /** With a household size, quantities are planned for these people; without one, each item is quantity 1. */
+  household_size: z.number().int().positive().optional(),
+  days_of_cover: z.number().int().positive().max(90).optional(),
 });
 export type CommerceRequest = z.infer<typeof CommerceRequestSchema>;
 /** What a client sends (reserve_ratio may be omitted). */

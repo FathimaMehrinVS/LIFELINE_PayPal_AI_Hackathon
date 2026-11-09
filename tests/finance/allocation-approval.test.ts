@@ -5,6 +5,7 @@ import { Prisma } from "../../apps/api/src/generated/prisma/client";
 import { errorHandler } from "../../apps/api/src/middleware/error-handler";
 import { createAllocationRouter } from "../../apps/api/src/routes/allocation.routes";
 import { getPrisma } from "../../apps/api/src/database/prisma";
+import { createRoleGuard } from "../../apps/api/src/auth/role-guard";
 
 function setup(options: {
   caseStatus?: string;
@@ -54,6 +55,7 @@ function setup(options: {
   const getDatabase = vi.fn(() => prisma as ReturnType<typeof getPrisma>);
   const app = express();
   app.use(express.json());
+  app.use(createRoleGuard(async () => ({ id: "verified-ngo-profile", email: "ngo@example.test", role: "NGO" }))("NGO"));
   app.use("/api/allocations", createAllocationRouter(getDatabase));
   app.use(errorHandler);
   return { app, assistance, tx, prisma, getDatabase };
@@ -64,7 +66,7 @@ const validRequest = { case_id: "case_1", campaign_id: "camp_demo", amount: 80, 
 describe("NGO allocation approval", () => {
   it("approves an eligible case within captured campaign funds and persists an audit entry", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
+    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, actor_id: "spoofed-profile" });
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -76,7 +78,7 @@ describe("NGO allocation approval", () => {
       requestId: "case_1", campaignId: "camp_demo", amount: new Prisma.Decimal(80), currency: "EUR", status: "APPROVED",
     }) });
     expect(h.tx.auditLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({
-      action: "allocation.approved", entityType: "AidAllocation", entityId: "allocation_1",
+      actorId: "verified-ngo-profile", action: "allocation.approved", entityType: "AidAllocation", entityId: "allocation_1",
     }) });
     expect(h.prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,

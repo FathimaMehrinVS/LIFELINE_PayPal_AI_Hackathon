@@ -1,80 +1,168 @@
-import Link from "next/link";
-import { ArrowRightIcon, BasketIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, UsersIcon } from "../../components/icons";
+"use client";
 
-const steps = [
-  { number: "01", title: "Share what is needed", description: "A family or local NGO describes the situation and the essentials required. No payment account is needed to ask for help." },
-  { number: "02", title: "Review and verify", description: "The NGO reviews the case. Financial and product information can support the review, while people make every approval decision." },
-  { number: "03", title: "Fund an approved plan", description: "Donors can support an approved assistance allocation through the existing secure checkout flow." },
-  { number: "04", title: "Coordinate assistance", description: "The NGO coordinates the approved support and records progress separately from the donor payment." },
+import type { CaseResult } from "@lifeline/contracts";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { ArrowRightIcon, BasketIcon, BrainIcon, CheckIcon, CoinsIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, UsersIcon } from "@/components/icons";
+import { Badge, Overline, button } from "@/components/ui";
+import { api } from "@/services/api";
+
+// Owner: Member 1. Public home, styled from "LIFELINE Screen Designs" pages 2-3. Any figures are real.
+
+const JOURNEY = [
+  { title: "Family report", text: "Needs described by text, voice or taps", who: "Family or NGO", Icon: UsersIcon },
+  { title: "AI assessment", text: "Needs, urgency and missing details", who: "AI", Icon: BrainIcon },
+  { title: "NGO approval", text: "A person checks and approves the plan", who: "NGO", Icon: ShieldCheckIcon },
+  { title: "Funding", text: "Donors fund the approved plan", who: "Donor", Icon: HeartHandIcon },
+  { title: "Delivery", text: "Recorded step by step until received", who: "Partner", Icon: BasketIcon },
 ];
 
-export default function PublicLandingPage() {
+const DIFFERENT = [
+  { title: "AI-powered needs assessment", text: "People describe their situation in their own words. LIFELINE structures the needs, flags urgency and asks only what's missing, and never guesses.", Icon: BrainIcon },
+  { title: "Rules before money", text: "Fees, budgets and approvals are decided by plain rules, not by AI. An AI can explain a result but can never change it.", Icon: RouteIcon },
+  { title: "Transparent payments", text: "Donations, supplier payments and delivery are recorded separately, so nobody mistakes money received for aid delivered.", Icon: CoinsIcon },
+];
+
+const STEPS = [
+  { title: "Report a need", text: "A family, a volunteer or an NGO worker describes the situation by text, taps or voice, in their language." },
+  { title: "Assess & approve", text: "AI structures the request, rules check how money can reach the family, and NGO staff approve the plan." },
+  { title: "Plan & fund", text: "An itemised basket becomes an approved aid plan that donors can fund through PayPal Sandbox." },
+  { title: "Deliver & confirm", text: "The supplier is paid as a separate step, and goods are recorded until the family has received them." },
+];
+
+const TRUST = [
+  { title: "Donation ≠ supplier payment", text: "A captured donation never marks a supplier as paid. Each is its own record." },
+  { title: "No early ticks", text: "A later stage is shown as pending until someone has actually recorded it." },
+  { title: "Privacy by default", text: "Donors see anonymised summaries. Names and addresses stay with the NGO." },
+  { title: "AI never decides who gets aid", text: "AI organises information and flags urgency. A person approves every allocation." },
+];
+
+export default function HomePage() {
+  const [cases, setCases] = useState<CaseResult[] | null>(null);
+  useEffect(() => {
+    api.listCases().then(setCases).catch(() => setCases(null));
+  }, []);
+
   return (
-    <main className="overflow-hidden bg-[#F7F9FC] text-[#142D4E]">
-      <section className="relative isolate bg-[#142D4E] text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-40 h-[34rem] w-[34rem] rounded-full border border-white/10" />
-        <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-20 h-[25rem] w-[25rem] rounded-full border border-white/10" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28 lg:pt-24">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-teal-100"><HeartHandIcon className="h-5 w-5" /> Accountable humanitarian support</p>
-            <h1 className="mt-7 text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.65rem]">From emergency report to <span className="text-[#65D2C6]">verified aid delivery.</span></h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-blue-100">LIFELINE helps humanitarian teams review urgent needs, plan practical assistance and keep each step visible to the people supporting it.</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/login?mode=sign-up" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#159B91] px-6 py-3 font-bold text-white shadow-lg shadow-black/10 transition hover:bg-[#117F78] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Get started <ArrowRightIcon className="h-5 w-5" /></Link>
-              <a href="#how-it-works" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/35 bg-white/5 px-6 py-3 font-semibold text-white transition hover:bg-white/10">See how it works</a>
+    <div>
+      <section className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-100">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:py-20">
+          <div>
+            <Badge tone="info">Humanitarian operations platform</Badge>
+            <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-navy sm:text-[48px]">From emergency report to verified aid delivery.</h1>
+            <p className="mt-5 max-w-lg text-lg text-slate-600">LIFELINE turns a report of need into a checked, costed plan that an NGO approves and donors can fund.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/situation" className={button.primary}>Request Assistance <ArrowRightIcon className="h-4 w-4" /></Link>
+              <Link href="/plans" className={button.secondary}>Explore Approved Aid Plans</Link>
             </div>
-            <ul className="mt-8 flex flex-col gap-3 text-sm text-blue-100 sm:flex-row sm:flex-wrap sm:gap-x-6">
-              <li className="flex items-center gap-2"><ShieldCheckIcon className="h-5 w-5 text-[#65D2C6]" /> Every case reviewed by an NGO</li>
-              <li className="flex items-center gap-2"><ShieldCheckIcon className="h-5 w-5 text-[#65D2C6]" /> No payment needed to request help</li>
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-slate-600">
+              {["No payment needed to request help", "An NGO approves every plan", "AI never decides who gets aid"].map((point) => (
+                <li key={point} className="flex items-center gap-1.5"><CheckIcon className="h-3.5 w-3.5 text-teal-text" /> {point}</li>
+              ))}
             </ul>
           </div>
-
-          <div className="relative mx-auto w-full max-w-xl rounded-[1.75rem] border border-white/15 bg-white/[0.07] p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div><p className="text-sm font-semibold text-teal-200">A clear, human-reviewed journey</p><h2 className="mt-1 text-xl font-bold sm:text-2xl">One need. Accountable steps.</h2></div>
-              <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-blue-100">How LIFELINE works</span>
-            </div>
-            <div className="mt-7 space-y-3">
-              {[
-                { name: "Request received", detail: "Situation shared with an NGO", state: "01", color: "bg-[#159B91]" },
-                { name: "Needs reviewed", detail: "Details assessed by a person", state: "02", color: "bg-[#159B91]" },
-                { name: "Plan approved", detail: "Assistance authorized by an NGO", state: "03", color: "bg-[#F2B65D]" },
-                { name: "Support coordinated", detail: "Progress recorded separately", state: "04", color: "bg-white/35" },
-              ].map((item, index) => (
-                <div key={item.state} className="relative flex items-center gap-4 rounded-2xl border border-white/10 bg-[#1B3A60]/80 p-4">
-                  {index < 3 && <span aria-hidden="true" className="absolute -bottom-4 left-[2.15rem] z-10 h-5 w-px bg-white/20" />}
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${item.color} text-sm font-extrabold text-[#142D4E]`}>{item.state}</span>
-                  <span className="min-w-0 flex-1"><span className="block font-bold">{item.name}</span><span className="mt-0.5 block text-sm text-blue-100">{item.detail}</span></span>
-                  {index === 2 && <span className="hidden rounded-full bg-[#F2B65D]/15 px-2.5 py-1 text-xs font-bold text-[#FFD58F] sm:inline">NGO decision</span>}
-                </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60">
+            <p className="text-[13px] font-semibold text-navy">Assistance journey</p>
+            <ol className="mt-4">
+              {JOURNEY.map(({ title, text, who, Icon }, index) => (
+                <li key={title} className="relative flex items-start gap-3 pb-4 last:pb-0">
+                  {index < JOURNEY.length - 1 && <span className="absolute left-[17px] top-9 h-[calc(100%-36px)] w-px bg-teal/50" aria-hidden="true" />}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-tint text-teal-text"><Icon className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-navy">{title}</p>
+                    <p className="text-xs text-slate-500">{text}</p>
+                  </div>
+                  <Badge tone="neutral">{who}</Badge>
+                </li>
               ))}
-            </div>
-            <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-relaxed text-blue-200">AI can help organize information. It does not decide eligibility, approve aid or confirm delivery.</p>
+            </ol>
           </div>
         </div>
       </section>
 
-      <section id="about" className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-        <div><p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[#117F78]">Built around dignity and trust</p><h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Assistance should be clear at every step.</h2><p className="mt-5 leading-7 text-slate-600">LIFELINE connects case review, financial access analysis and essential-goods planning in one workflow. NGO teams remain responsible for verification and approval.</p></div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#E4F4F2] text-[#117F78]"><RouteIcon className="h-6 w-6" /></span><h3 className="mt-4 font-bold">Clear options</h3><p className="mt-2 text-sm leading-6 text-slate-600">Financial access information helps teams compare practical routes.</p></article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#E4F4F2] text-[#117F78]"><BasketIcon className="h-6 w-6" /></span><h3 className="mt-4 font-bold">Useful essentials</h3><p className="mt-2 text-sm leading-6 text-slate-600">Product options can be planned around needs, budget and availability.</p></article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#E4F4F2] text-[#117F78]"><UsersIcon className="h-6 w-6" /></span><h3 className="mt-4 font-bold">People decide</h3><p className="mt-2 text-sm leading-6 text-slate-600">NGO review—not an AI score—controls eligibility and approval.</p></article>
+      <div className="mx-auto max-w-[1200px] space-y-16 px-4 py-16 sm:px-6">
+        <section>
+          <Overline>What makes it different</Overline>
+          <h2 className="mt-1 text-[28px] font-bold text-navy">Built for accountability at every step</h2>
+          <div className="mt-7 grid gap-5 md:grid-cols-3">
+            {DIFFERENT.map(({ title, text, Icon }) => (
+              <article key={title} className="rounded-2xl border border-slate-200 bg-white p-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-tint text-teal-text"><Icon className="h-5 w-5" /></span>
+                <h3 className="mt-4 text-lg font-semibold text-navy">{title}</h3>
+                <p className="mt-2 text-sm text-slate-600">{text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="how">
+          <Overline>How LIFELINE works</Overline>
+          <h2 className="mt-1 text-[28px] font-bold text-navy">Four steps, each one recorded</h2>
+          <ol className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map(({ title, text }, index) => (
+              <li key={title} className="border-t-2 border-navy pt-4">
+                <p className="text-xs font-bold text-teal-text">{String(index + 1).padStart(2, "0")}</p>
+                <h3 className="mt-1 font-semibold text-navy">{title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {cases && cases.length > 0 && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-7">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[28px] font-bold text-navy">So far</h2>
+              <Badge tone="warning">Live from this demo</Badge>
+            </div>
+            <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+              {[
+                { label: "Cases recorded", value: cases.length },
+                { label: "Plans ready for NGO approval", value: cases.filter((c) => c.status === "complete").length },
+                { label: "Urgent cases", value: cases.filter((c) => c.situation.urgency === "high" || c.situation.urgency === "critical").length },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-xl bg-slate-50 p-5">
+                  <dd className="tabular text-3xl font-extrabold text-navy">{value}</dd>
+                  <dt className="text-sm text-slate-600">{label}</dt>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+      </div>
+
+      <section className="bg-navy text-white">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_1.15fr]">
+          <div>
+            <Overline className="text-accent">Trust &amp; accountability</Overline>
+            <h2 className="mt-2 text-3xl font-bold leading-tight">We record what actually happened, never what we hope happened.</h2>
+            <p className="mt-3 text-slate-300">Later stages are never marked complete automatically.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {TRUST.map(({ title, text }) => (
+              <article key={title} className="rounded-xl border border-white/15 bg-slate-800 p-5">
+                <h3 className="text-sm font-semibold">{title}</h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{text}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="border-y border-slate-200 bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8"><div className="max-w-2xl"><p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[#117F78]">How it works</p><h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">A thoughtful path from need to support.</h2></div><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map((step) => <article key={step.number} className="relative rounded-2xl border border-slate-200 bg-[#F7F9FC] p-5"><p className="text-sm font-extrabold text-[#117F78]">STEP {step.number}</p><h3 className="mt-3 text-lg font-bold">{step.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{step.description}</p></article>)}</div></div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-5 px-5 py-16 sm:px-8 sm:py-20 md:grid-cols-2">
-        <article id="for-ngos" className="rounded-3xl bg-[#142D4E] p-7 text-white sm:p-9"><p className="text-sm font-bold uppercase tracking-[0.14em] text-teal-200">For NGO teams</p><h2 className="mt-3 text-2xl font-extrabold">Review needs. Coordinate responsibly.</h2><p className="mt-3 leading-7 text-blue-100">Use the LIFELINE workspace to review cases, financial assessments and assistance plans. Your team stays in control of approvals.</p><Link href="/login" className="mt-6 inline-flex items-center gap-2 font-bold text-white hover:text-teal-200">Sign in to your workspace <ArrowRightIcon className="h-5 w-5" /></Link></article>
-        <article id="for-donors" className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9"><p className="text-sm font-bold uppercase tracking-[0.14em] text-[#117F78]">For donors</p><h2 className="mt-3 text-2xl font-extrabold">Fund an approved assistance need.</h2><p className="mt-3 leading-7 text-slate-600">Donations are linked to an NGO-approved allocation. A captured donation is not the same as supplier payment or delivered assistance.</p><Link href="/login?next=%2Fdonate" className="mt-6 inline-flex items-center gap-2 font-bold text-[#117F78] hover:text-[#0B655F]">Continue to Donations <ArrowRightIcon className="h-5 w-5" /></Link></article>
-      </section>
-
-      <section id="donate" className="bg-[#E4F4F2] px-5 py-12 sm:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between"><div><p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#117F78]">Need help?</p><h2 className="mt-2 text-2xl font-extrabold">You do not need a bank or PayPal account to ask for assistance.</h2><p className="mt-2 max-w-3xl leading-7 text-slate-700">Beneficiaries do not need a LIFELINE login for the MVP. An NGO partner manages and reviews assistance cases.</p></div><Link href="/login" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#142D4E] px-5 py-3 font-bold text-white transition hover:bg-[#203F67]">NGO / donor sign in</Link></div></section>
-
-      <footer className="bg-[#142D4E] px-5 py-8 text-sm text-blue-100 sm:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><span>© LIFELINE · Humanitarian support coordination</span><div className="flex gap-5"><a href="#about" className="hover:text-white">About</a><a href="#how-it-works" className="hover:text-white">How it works</a><Link href="/login" className="hover:text-white">Sign in</Link></div></div></footer>
-    </main>
+      <div className="mx-auto grid max-w-[1200px] gap-5 px-4 py-16 sm:px-6 md:grid-cols-2">
+        <article className="rounded-2xl border border-slate-200 bg-white p-7">
+          <Overline>For NGOs</Overline>
+          <h2 className="mt-1 text-2xl font-bold text-navy">Run assistance like an operations team</h2>
+          <p className="mt-2 text-sm text-slate-600">Triage cases, check routes and baskets, and approve aid in one workspace.</p>
+          <Link href="/dashboard" className={`${button.primary} mt-5`}>Open NGO workspace</Link>
+        </article>
+        <article className="rounded-2xl border border-teal/30 bg-teal-tint p-7">
+          <Overline>For donors</Overline>
+          <h2 className="mt-1 text-2xl font-bold text-navy">Fund assistance with a clear destination</h2>
+          <p className="mt-2 text-sm text-slate-600">Support a plan an NGO has already approved, and see what it buys.</p>
+          <Link href="/plans" className={`${button.confirm} mt-5`}>Explore approved aid plans</Link>
+        </article>
+      </div>
+    </div>
   );
 }

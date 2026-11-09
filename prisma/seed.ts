@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../apps/api/src/generated/prisma/client";
+import { seedSuppliers } from "./seed-suppliers";
 
 // Demo data every member relies on. Safe to run more than once (upserts with fixed IDs).
 // Owner: Member 3 adds merchants and products here on Day 4.
@@ -29,7 +30,9 @@ async function main() {
     },
   });
 
-  console.log("Seeded demo NGO user and campaign camp_demo");
+  await seedSuppliers(prisma, ngo.id);
+
+  console.log("Seeded demo NGO user, campaign camp_demo and synthetic suppliers");
 }
 
 main()

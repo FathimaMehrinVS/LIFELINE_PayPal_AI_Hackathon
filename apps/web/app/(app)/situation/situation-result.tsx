@@ -97,6 +97,18 @@ export function SituationResultView({ result, showMissing = true }: { result: Si
             <dt className="text-xs font-medium uppercase text-slate-500">Location</dt>
             <dd className="mt-1">{result.location ?? <span className="text-slate-500">Not stated</span>}</dd>
           </div>
+          {result.household_size != null && (
+            <div>
+              <dt className="text-xs font-medium uppercase text-slate-500">People</dt>
+              <dd className="mt-1">{result.household_size}</dd>
+            </div>
+          )}
+          {result.special_needs != null && result.special_needs.length > 0 && (
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium uppercase text-slate-500">Circumstances</dt>
+              <dd className="mt-1">{result.special_needs.join(", ")}</dd>
+            </div>
+          )}
         </dl>
       </section>
 
