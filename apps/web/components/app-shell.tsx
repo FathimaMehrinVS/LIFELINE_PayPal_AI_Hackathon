@@ -14,7 +14,7 @@ type Frame = "intake" | "donor" | "workspace";
 
 function frameFor(path: string): Frame {
   if (path.startsWith("/situation")) return "intake";
-  if (path.startsWith("/donate")) return "donor";
+  if (["/donate", "/plans", "/contributions"].some((prefix) => path.startsWith(prefix))) return "donor";
   return "workspace";
 }
 
@@ -26,7 +26,10 @@ const NAV: { href: string; label: string; Icon: (p: { className?: string }) => R
   { href: "/finance", label: "Financial Assessments", Icon: RouteIcon },
   { href: "/commerce", label: "Product Baskets", Icon: BasketIcon },
   { href: "/suppliers", label: "Suppliers", Icon: StoreIcon, roles: ["NGO"] },
-  { href: "/donate", label: "Donations", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
+  { href: "/payments", label: "Payments", Icon: RouteIcon, roles: ["NGO"] },
+  { href: "/audit", label: "Audit Logs", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/plans", label: "Approved Plans", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
+  { href: "/contributions", label: "My Contributions", Icon: HeartHandIcon, roles: ["DONOR"] },
   { href: "/profile", label: "Profile", Icon: ShieldCheckIcon },
 ];
 
@@ -111,6 +114,18 @@ function TopBarShell({ tag, right, children }: { tag?: string; right: ReactNode;
   );
 }
 
+const DONOR_NAV = [{ href: "/plans", label: "Approved plans" }, { href: "/contributions", label: "My contributions" }];
+
+function DonorNav({ path }: { path: string }) {
+  const profile = useAuthProfile();
+  const links = profile.role === "NGO" ? [...DONOR_NAV, { href: "/workspace", label: "NGO workspace" }] : DONOR_NAV;
+  return (
+    <nav aria-label="Donor" className="flex items-center gap-4">
+      {links.map(({ href, label }) => <Link key={href} href={href} className={path.startsWith(href) ? "font-bold text-navy" : "hover:text-navy"}>{label}</Link>)}
+    </nav>
+  );
+}
+
 function Account() {
   const profile = useAuthProfile();
   const { signOut, signingOut } = useSignOut();
@@ -178,6 +193,6 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const path = usePathname();
   const frame = frameFor(path);
   if (frame === "intake") return <TopBarShell right={<Account />}>{children}</TopBarShell>;
-  if (frame === "donor") return <TopBarShell tag="Donor" right={<><span className="hidden items-center gap-1.5 sm:inline-flex"><ShieldCheckIcon className="h-4 w-4 text-success" /> Secure checkout</span><Account /></>}>{children}</TopBarShell>;
+  if (frame === "donor") return <TopBarShell tag="Donor" right={<><DonorNav path={path} /><Account /></>}>{children}</TopBarShell>;
   return <WorkspaceFrame path={path}>{children}</WorkspaceFrame>;
 }
