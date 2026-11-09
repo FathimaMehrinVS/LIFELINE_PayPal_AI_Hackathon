@@ -28,7 +28,7 @@
   --color-slate-200: #E1E7EF;
   --color-slate-300: #C9D2DE;
   --color-slate-400: #98A5B5;
-  --color-slate-500: #6B7A8D;
+  --color-slate-500: #5C6B7E;
   --color-slate-600: #4F5F73;
   --color-slate-700: #3A4A5F;
   --color-slate-800: #24384F;
@@ -119,10 +119,25 @@
   --color-blue-900: #0A4C47;
   --color-blue-950: #06302D;
 
+  /* Heading in the design system is 28px */
+  --text-3xl: 1.75rem;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 @layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+  }
   body {
     font-size: 15px;
     line-height: 1.6;

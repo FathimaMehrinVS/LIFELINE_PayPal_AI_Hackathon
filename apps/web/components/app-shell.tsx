@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
 import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
@@ -21,8 +21,8 @@ function frameFor(path: string): Frame {
 const NAV: { href: string; label: string; Icon: (p: { className?: string }) => ReactNode; roles?: string[] }[] = [
   { href: "/overview", label: "Overview", Icon: HomeIcon, roles: ["NGO"] },
   { href: "/dashboard", label: "Assistance Cases", Icon: GridIcon, roles: ["NGO"] },
-  { href: "/finance", label: "Financial Assessments", Icon: RouteIcon },
-  { href: "/commerce", label: "Product Baskets", Icon: BasketIcon },
+  { href: "/finance", label: "Financial Assessments", Icon: RouteIcon, roles: ["NGO"] },
+  { href: "/commerce", label: "Product Baskets", Icon: BasketIcon, roles: ["NGO"] },
   { href: "/suppliers", label: "Suppliers", Icon: StoreIcon, roles: ["NGO"] },
   { href: "/payments", label: "Payments", Icon: CoinsIcon, roles: ["NGO"] },
   { href: "/deliveries", label: "Delivery Tracking", Icon: UsersIcon, roles: ["NGO", "PARTNER"] },
@@ -80,16 +80,16 @@ export function PublicFrame({ children }: { children: ReactNode }) {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Wordmark />
-          <nav className="flex items-center gap-5 text-sm font-medium text-slate-600" aria-label="Main">
-            <Link href="/" className="font-semibold text-navy">Home</Link>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 whitespace-nowrap text-sm font-medium text-slate-600" aria-label="Main">
+            <Link href="/" className="hidden font-semibold text-navy sm:inline">Home</Link>
             <Link href="/#how" className="hover:text-navy">How It Works</Link>
             <Link href="/login" className="hover:text-navy">Sign In</Link>
-            <Link href="/login?mode=sign-up" className="hover:text-navy">Create account</Link>
+            <Link href="/login?mode=sign-up" className="hidden hover:text-navy sm:inline">Create account</Link>
             <Link href="/situation" className="rounded-lg bg-navy px-4 py-2 font-semibold text-white hover:opacity-90">Request Assistance</Link>
           </nav>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main id="main" className="flex-1">{children}</main>
       <footer className="bg-slate-950 text-white">
         <div className="mx-auto max-w-[1200px] px-4 py-7 sm:px-6">
           <p className="font-bold tracking-[0.08em]">LIFELINE</p>
@@ -104,12 +104,12 @@ function TopBarShell({ tag, right, children }: { tag?: string; right: ReactNode;
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Wordmark tag={tag} />
-          <div className="flex items-center gap-4 text-sm text-slate-600">{right}</div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">{right}</div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6">{children}</main>
+      <main id="main" className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }
@@ -120,7 +120,7 @@ function DonorNav({ path }: { path: string }) {
   const profile = useAuthProfile();
   const links = [...DONOR_NAV, profile.role === "NGO" ? { href: "/overview", label: "NGO workspace" } : { href: "/profile", label: "Profile" }];
   return (
-    <nav aria-label="Donor" className="flex items-center gap-4">
+    <nav aria-label="Donor" className="flex flex-wrap items-center gap-x-4 gap-y-1">
       {links.map(({ href, label }) => <Link key={href} href={href} className={path.startsWith(href) ? "font-bold text-navy" : "hover:text-navy"}>{label}</Link>)}
     </nav>
   );
@@ -132,7 +132,7 @@ function Account() {
   return (
     <span className="flex items-center gap-3">
       <span className="hidden max-w-48 truncate sm:inline">{profile.email}</span>
-      <button type="button" onClick={() => void signOut()} disabled={signingOut} className="font-medium text-navy hover:underline disabled:opacity-60">{signingOut ? "Signing out…" : "Log out"}</button>
+      <button type="button" onClick={() => void signOut()} disabled={signingOut} className="font-medium text-navy hover:underline disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
     </span>
   );
 }
@@ -168,7 +168,7 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
         <div className="mx-3 mb-4 mt-auto hidden rounded-xl bg-slate-800 p-3.5 lg:block">
           <p className="truncate text-sm font-semibold">{profile.email}</p>
           <p className="mt-0.5 text-xs text-slate-300">{ROLE_LABEL[profile.role] ?? profile.role}</p>
-          <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-3 w-full rounded-lg border border-white/20 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{signingOut ? "Signing out…" : "Log out"}</button>
+          <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-3 w-full rounded-lg border border-white/20 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
         </div>
       </aside>
       <div>
@@ -180,19 +180,32 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
           <div className="flex items-center gap-3 text-sm">
             <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated">PayPal Sandbox</span>
             <Link href="/situation" className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 font-semibold text-white hover:opacity-90"><PlusCircleIcon className="h-4 w-4" /> New case</Link>
+            <button type="button" onClick={() => void signOut()} disabled={signingOut} className="font-medium text-navy hover:underline disabled:opacity-60 lg:hidden">{signingOut ? "Signing out…" : "Sign out"}</button>
           </div>
         </header>
-        <main className="mx-auto max-w-[1280px] px-4 py-7 sm:px-8">{children}</main>
+        <main id="main" className="max-w-[1680px] px-4 py-7 sm:px-8">{children}</main>
       </div>
     </div>
   );
 }
 
 /** The signed-in pages. Member 3's (app) layout has already checked the session and role. */
+const SKIP_LINK = "sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-navy";
+
+const OTHER_TITLES: [string, string][] = [["/situation", "Request assistance"], ["/donate", "Donate"]];
+
+function pageTitle(path: string): string {
+  return NAV.find((item) => path.startsWith(item.href))?.label ?? OTHER_TITLES.find(([prefix]) => path.startsWith(prefix))?.[1] ?? "Workspace";
+}
+
 export function AppFrame({ children }: { children: ReactNode }) {
   const path = usePathname();
   const frame = frameFor(path);
-  if (frame === "intake") return <TopBarShell right={<Account />}>{children}</TopBarShell>;
-  if (frame === "donor") return <TopBarShell tag="Donor" right={<><DonorNav path={path} /><Account /></>}>{children}</TopBarShell>;
-  return <WorkspaceFrame path={path}>{children}</WorkspaceFrame>;
+  useEffect(() => {
+    document.title = `${pageTitle(path)} · LIFELINE`;
+  }, [path]);
+  const skip = <a href="#main" className={SKIP_LINK}>Skip to main content</a>;
+  if (frame === "intake") return <>{skip}<TopBarShell right={<Account />}>{children}</TopBarShell></>;
+  if (frame === "donor") return <>{skip}<TopBarShell tag="Donor" right={<><DonorNav path={path} /><Account /></>}>{children}</TopBarShell></>;
+  return <>{skip}<WorkspaceFrame path={path}>{children}</WorkspaceFrame></>;
 }
