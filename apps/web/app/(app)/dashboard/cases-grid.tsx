@@ -12,6 +12,8 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useMemo } from "react";
 import { Badge, type BadgeTone } from "@/components/ui";
+import type { Supplier } from "@lifeline/contracts";
+import type { RiskLevel } from "@lifeline/contracts";
 import { type CaseRow, STATUS_LABELS, caseRef, fundingState, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
 
 // Owner: Member 1. NGO case grid (AG Grid Community).
@@ -56,6 +58,13 @@ function UrgencyCell({ value }: ICellRendererParams<CaseRow, Urgency>) {
   return value ? <Badge tone={URGENCY_TONE[value]} className="capitalize">{value}</Badge> : null;
 }
 
+function RiskCell({ value }: ICellRendererParams<CaseRow, RiskLevel>) {
+  const level = value ?? "NORMAL";
+  const tone: BadgeTone = level === "HIGH_RISK" ? "critical" : level === "URGENT" ? "warning" : "neutral";
+  const label = level === "HIGH_RISK" ? "High risk" : level === "URGENT" ? "Urgent" : "Normal";
+  return <Badge tone={tone}>{label}</Badge>;
+}
+
 function StatusCell({ data }: ICellRendererParams<CaseRow>) {
   if (!data) return null;
   const { status, missing_information } = data.case;
@@ -81,10 +90,13 @@ function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
 }
 
 interface ApprovalCellProps extends ICellRendererParams<CaseRow> {
-  onApprove: (row: CaseRow) => void;
+  suppliers: Supplier[];
+  supplierChoices: Record<string, string>;
+  onChooseSupplier: (caseId: string, supplierId: string) => void;
+  onApprove: (row: CaseRow, supplierId: string) => void;
 }
 
-function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
+function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onApprove }: ApprovalCellProps) {
   if (!data) return null;
   const { approval } = data;
   if (approval?.state === "approved") {
@@ -94,19 +106,33 @@ function ApprovalCell({ data, onApprove }: ApprovalCellProps) {
     return <Badge tone="success">✓ Approved</Badge>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-400">Not ready</span>;
+  const approvedSuppliers = suppliers.filter((supplier) => supplier.status === "approved");
+  const selectedSupplier = supplierChoices[data.case.case_id] ?? "";
   return (
-    <span className="flex h-full items-center gap-2">
+    <span className="flex h-full min-w-64 items-center gap-2">
+      <select
+        aria-label={`Supplier for ${caseRef(data.case.case_id)}`}
+        value={selectedSupplier}
+        disabled={approvedSuppliers.length === 0}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => onChooseSupplier(data.case.case_id, event.target.value)}
+        className="max-w-36 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-navy disabled:bg-slate-100"
+      >
+        <option value="">Choose supplier</option>
+        {approvedSuppliers.map((supplier) => <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>)}
+      </select>
       <button
         type="button"
-        disabled={approval?.state === "pending"}
+        disabled={approval?.state === "pending" || !selectedSupplier}
         onClick={(event) => {
           event.stopPropagation();
-          onApprove(data);
+          onApprove(data, selectedSupplier);
         }}
         className="rounded-lg bg-navy px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {approval?.state === "pending" ? "Approving…" : approval?.state === "error" ? "Retry" : "Approve"}
       </button>
+      {approvedSuppliers.length === 0 && <span className="text-xs text-slate-500">No approved suppliers</span>}
       {approval?.state === "error" && (
         <span className="truncate text-xs text-red-700" title={approval.message}>
           {approval.message}
@@ -120,11 +146,14 @@ interface CasesGridProps {
   rows: CaseRow[];
   quickFilter: string;
   statusFilter: StatusFilter;
-  onApprove: (row: CaseRow) => void;
+  suppliers: Supplier[];
+  supplierChoices: Record<string, string>;
+  onChooseSupplier: (caseId: string, supplierId: string) => void;
+  onApprove: (row: CaseRow, supplierId: string) => void;
   onSelect: (row: CaseRow) => void;
 }
 
-export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect }: CasesGridProps) {
+export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplierChoices, onChooseSupplier, onApprove, onSelect }: CasesGridProps) {
   const columnDefs = useMemo<ColDef<CaseRow>[]>(
     () => [
       {
@@ -143,6 +172,13 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         comparator: (a: Urgency, b: Urgency) => URGENCY_RANK[a] - URGENCY_RANK[b],
         sort: "desc",
         width: 128,
+      },
+      {
+        headerName: "Risk",
+        colId: "risk",
+        valueGetter: (p) => p.data?.case.risk_level ?? "NORMAL",
+        cellRenderer: RiskCell,
+        width: 112,
       },
       {
         headerName: "Situation",
@@ -228,13 +264,13 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
         headerTooltip: "NGO approval",
         colId: "approval",
         cellRenderer: ApprovalCell,
-        cellRendererParams: { onApprove },
+        cellRendererParams: { suppliers, supplierChoices, onChooseSupplier, onApprove },
         sortable: false,
         pinned: "right",
-        width: 125,
+        width: 280,
       },
     ],
-    [onApprove],
+    [suppliers, supplierChoices, onChooseSupplier, onApprove],
   );
 
   const isExternalFilterPresent = useCallback(() => statusFilter !== "all", [statusFilter]);

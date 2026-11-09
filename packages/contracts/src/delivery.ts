@@ -69,7 +69,7 @@ export const DeliveryRecordSchema = z.object({
   partner: z.object({ user_id: z.string(), name: z.string(), email: z.string() }).nullable(),
   expected_items: z.array(DeliveryBasketItemSchema),
   events: z.array(DeliveryEventSchema),
-  /** Returned only once, when READY is first recorded. */
+  /** Returned only once, when READY is first recorded. Never stored in the database. */
   pickup_code: z.string().optional(),
 });
 export type DeliveryRecord = z.infer<typeof DeliveryRecordSchema>;

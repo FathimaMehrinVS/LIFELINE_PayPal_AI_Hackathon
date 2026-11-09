@@ -14,7 +14,7 @@ const allocationInclude = {
   donations: { where: { status: "CAPTURED" }, select: { amount: true } },
   purchaseOrder: {
     include: {
-      merchant: { select: { id: true, name: true } },
+      merchant: { select: { id: true, name: true, status: true } },
       partnerUser: { select: { id: true, name: true, email: true } },
       events: { orderBy: { createdAt: "asc" as const } },
     },
@@ -121,15 +121,32 @@ export async function assignDelivery(
       tx.donation.aggregate({ where: { allocationId: allocation.id, status: "CAPTURED", currency: allocation.currency }, _sum: { amount: true } }),
     ]);
     if (!partner || partner.role !== "PARTNER") throw new HttpError("VALIDATION_ERROR", "Choose an existing PARTNER profile");
-    if (!merchant || merchant.status !== "APPROVED" || !merchant.verified) throw new HttpError("VALIDATION_ERROR", "Choose an approved, verified supplier");
+    if (!merchant || merchant.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", "Choose an approved supplier");
     ensureFunding(allocation, captured._sum.amount);
 
     const existing = await tx.purchaseOrder.findUnique({ where: { allocationId: allocation.id }, include: purchaseOrderInclude });
     if (existing) {
-      if (existing.merchantId === merchant.id && existing.partnerUserId === partner.id) {
+      if (existing.merchantId !== merchant.id) {
+        throw new HttpError("VALIDATION_ERROR", "This purchase order is already assigned to a different supplier");
+      }
+      if (existing.partnerUserId === partner.id) {
         return { record: toRecord({ ...allocation, purchaseOrder: existing }), duplicate: true };
       }
-      throw new HttpError("VALIDATION_ERROR", "A different delivery assignment already exists for this allocation");
+      if (existing.partnerUserId) throw new HttpError("VALIDATION_ERROR", "A different delivery partner is already assigned to this purchase order");
+      const assigned = await tx.purchaseOrder.updateMany({
+        where: { id: existing.id, partnerUserId: null },
+        data: { partnerUserId: partner.id },
+      });
+      if (assigned.count !== 1) throw new HttpError("VALIDATION_ERROR", "Purchase order assignment changed; reload and try again");
+      const purchaseOrder = { ...existing, partnerUserId: partner.id, partnerUser: partner };
+      await tx.auditLog.create({ data: {
+        actorId: actor.id,
+        action: "delivery.assigned",
+        entityType: "AidAllocation",
+        entityId: allocation.id,
+        details: { case_id: allocation.requestId, partner_user_id: partner.id, merchant_id: merchant.id, purchase_order_id: purchaseOrder.id },
+      } });
+      return { record: toRecord({ ...allocation, purchaseOrder }), duplicate: false };
     }
 
     const purchaseOrder = await tx.purchaseOrder.create({
@@ -154,17 +171,21 @@ export async function submitDeliveryEvent(
   actor: AuthSession,
   getDatabase: typeof getPrisma = getPrisma,
 ): Promise<DeliveryRecord> {
-  if (actor.role !== "PARTNER") throw new HttpError("FORBIDDEN", "Only the assigned partner can submit delivery updates");
+  if (actor.role !== "PARTNER" && actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only an NGO or assigned supplier can submit delivery updates");
   const db = getDatabase();
   return db.$transaction(async (tx) => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     const order = allocation.purchaseOrder;
-    if (!order || order.partnerUserId !== actor.id) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
+    if (!order || (actor.role === "PARTNER" && order.partnerUserId !== actor.id)) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
+    if (actor.role === "PARTNER" && order.merchant.status !== "APPROVED") {
+      throw new HttpError("VALIDATION_ERROR", "A suspended supplier cannot update this purchase order");
+    }
     if (allocation.status === "COMPLETED") throw new HttpError("VALIDATION_ERROR", "Completed assistance cannot receive more delivery updates");
 
     const requestedStatus = input.status.toUpperCase() as FulfilmentStatus;
-    if (!canTransitionFulfilment(order.fulfilmentStatus as FulfilmentStatus, requestedStatus, "SUPPLIER")) {
+    const actorKind = actor.role === "PARTNER" ? "SUPPLIER" : "NGO";
+    if (!canTransitionFulfilment(order.fulfilmentStatus as FulfilmentStatus, requestedStatus, actorKind)) {
       throw new HttpError("VALIDATION_ERROR", `Delivery cannot transition from ${order.fulfilmentStatus} to ${requestedStatus}`);
     }
     if (requestedStatus === "ISSUE_REPORTED" && !input.note?.trim()) {
@@ -237,7 +258,7 @@ export async function verifyDelivery(
     }
     const order = allocation.purchaseOrder;
     if (!order || allocation.request.status !== "APPROVED" || order.fulfilmentStatus !== "HANDED_OVER") {
-      throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be verified");
+      throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be confirmed");
     }
     if (!order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "No active pickup code is available for this order");
     if (order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
@@ -308,7 +329,7 @@ export async function verifyDelivery(
     return { record: toRecord(updated), duplicate: false };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   if ("failure" in outcome) {
-    const attempts = outcome.attempts;
+    const attempts = outcome.attempts ?? 0;
     if (outcome.failure === "locked") throw new HttpError("VALIDATION_ERROR", "Too many incorrect pickup codes. Ask an NGO worker to help.", { attempts });
     throw new HttpError("VALIDATION_ERROR", "Pickup code is incorrect", { attempts, remaining_attempts: Math.max(0, MAX_PICKUP_CODE_ATTEMPTS - attempts) });
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { CaseResult, Urgency } from "@lifeline/contracts";
+import type { CaseResult, Supplier, Urgency } from "@lifeline/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ApiRequestError, api } from "@/services/api";
@@ -21,7 +21,8 @@ function approvalError(err: unknown) {
   return "Can't reach the API";
 }
 
-function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
+function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow, reference: string) => void }) {
+  const [reference, setReference] = useState("");
   const { situation, finance, commerce, case_id, missing_information } = row.case;
   const route = recommendedRoute(row.case);
   const funding = fundingState(row.case);
@@ -68,8 +69,12 @@ function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => 
             <>
               <p className="mt-2">Records an internal demo state only. No money is sent through PayPal or to anyone.</p>
               {row.disbursement?.state === "error" && <p role="alert" className="mt-2 text-critical">{row.disbursement.message}</p>}
-              <button type="button" disabled={row.disbursement?.state === "pending"} onClick={() => onDisburse(row)} className={`${button.secondary} mt-3 w-full`}>
-                {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated disbursement"}
+              <label className="mt-3 block text-xs font-medium text-slate-700">
+                Payment reference
+                <input value={reference} onChange={(event) => setReference(event.target.value)} maxLength={120} placeholder="Invoice or payment reference" className={`${fieldClass} mt-1`} />
+              </label>
+              <button type="button" disabled={row.disbursement?.state === "pending" || !reference.trim() || !approved.purchase_order_id} onClick={() => onDisburse(row, reference.trim())} className={`${button.secondary} mt-3 w-full`}>
+                {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated supplier payment"}
               </button>
             </>
           ) : (
@@ -108,6 +113,8 @@ export default function DashboardPage() {
   const [cases, setCases] = useState<CaseResult[]>([]);
   const [approvals, setApprovals] = useState<Record<string, Approval>>({});
   const [disbursements, setDisbursements] = useState<Record<string, Disbursement>>({});
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierChoices, setSupplierChoices] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -127,22 +134,25 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    void api.listSuppliers().then(setSuppliers).catch(() => setSuppliers([]));
+  }, []);
+
+  useEffect(() => {
     void refresh();
   }, [refresh]);
 
   const rows = useMemo<CaseRow[]>(() => cases.map((c) => ({ case: c, approval: approvals[c.case_id] ?? savedApproval(c), disbursement: disbursements[c.case_id] ?? savedDisbursement(c) })), [cases, approvals, disbursements]);
   const selected = rows.find((r) => r.case.case_id === selectedId) ?? null;
 
-  const onApprove = useCallback(async (row: CaseRow) => {
-    const { case_id, situation } = row.case;
-    if (situation.budget === null || situation.currency === null) return;
+  const onApprove = useCallback(async (row: CaseRow, merchant_id: string) => {
+    const { case_id } = row.case;
+    if (!merchant_id) return;
     setApprovals((a) => ({ ...a, [case_id]: { state: "pending" } }));
     try {
       const result = await api.approveAllocation({
         case_id,
         campaign_id: CAMPAIGN_ID,
-        amount: situation.budget,
-        currency: situation.currency,
+        merchant_id,
       });
       setApprovals((a) => ({ ...a, [case_id]: { state: "approved", result } }));
     } catch (err) {
@@ -150,17 +160,19 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const onDisburse = useCallback(async (row: CaseRow) => {
+  const onChooseSupplier = useCallback((caseId: string, supplierId: string) => {
+    setSupplierChoices((current) => ({ ...current, [caseId]: supplierId }));
+  }, []);
+
+  const onDisburse = useCallback(async (row: CaseRow, reference: string) => {
     const approval = row.approval;
     if (approval?.state !== "approved" || approval.result.status !== "approved") return;
     const { case_id } = row.case;
     setDisbursements((current) => ({ ...current, [case_id]: { state: "pending" } }));
     try {
-      const result = await api.createPayout({
-        allocation_id: approval.result.allocation_id,
-        amount: approval.result.amount,
-        currency: approval.result.currency,
-      });
+      const purchase_order_id = approval.result.purchase_order_id ?? row.case.operations?.delivery?.purchase_order_id;
+      if (!purchase_order_id) throw new Error("This approved plan has no purchase order yet");
+      const result = await api.createPayout({ purchase_order_id, reference });
       setDisbursements((current) => ({ ...current, [case_id]: { state: "complete", result } }));
       setApprovals((current) => {
         const existing = current[case_id];
@@ -212,7 +224,7 @@ export default function DashboardPage() {
       {error && <p role="alert" className="mt-4 rounded-xl border border-critical/30 bg-critical-tint p-4 text-sm text-critical">{error}</p>}
 
       <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
-        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} onApprove={onApprove} onSelect={(row) => setSelectedId(row.case.case_id)} />
+        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} suppliers={suppliers} supplierChoices={supplierChoices} onChooseSupplier={onChooseSupplier} onApprove={onApprove} onSelect={(row) => setSelectedId(row.case.case_id)} />
         {selected && <CasePanel row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
       </div>
       <p className="mt-3 text-xs text-slate-500">Select a row to review a case. Disbursement is simulated and does not transfer money.</p>
