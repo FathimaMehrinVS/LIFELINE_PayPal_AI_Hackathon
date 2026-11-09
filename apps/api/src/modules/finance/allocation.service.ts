@@ -22,15 +22,40 @@ function toResult(allocation: {
   amount: Prisma.Decimal;
   currency: string;
   approvedAt: Date | null;
+  purchaseOrder?: { id: string } | null;
 }): AllocationResult {
   return {
     allocation_id: allocation.id,
+    ...(allocation.purchaseOrder ? { purchase_order_id: allocation.purchaseOrder.id } : {}),
     case_id: allocation.requestId,
     status: allocation.status.toLowerCase() as AllocationResult["status"],
     amount: allocation.amount.toNumber(),
     currency: allocation.currency,
     approved_at: allocation.approvedAt?.toISOString() ?? null,
   };
+}
+
+async function ensurePurchaseOrder(
+  tx: Prisma.TransactionClient,
+  allocation: { id: string; amount: Prisma.Decimal; currency: string; purchaseOrder: { id: string; merchantId: string } | null },
+  merchantId: string,
+) {
+  if (allocation.purchaseOrder) {
+    if (allocation.purchaseOrder.merchantId !== merchantId) {
+      throw new HttpError("VALIDATION_ERROR", "This plan already has a purchase order for a different supplier");
+    }
+    return allocation.purchaseOrder;
+  }
+  return tx.purchaseOrder.create({
+    data: {
+      allocationId: allocation.id,
+      merchantId,
+      amount: allocation.amount,
+      currency: allocation.currency,
+      fulfilmentStatus: "AWAITING_ACCEPTANCE",
+    },
+    select: { id: true, merchantId: true },
+  });
 }
 
 /**
@@ -48,7 +73,7 @@ export async function approveAllocation(
     return await db.$transaction(async (tx) => {
       const assistance = await tx.assistanceRequest.findUnique({
         where: { id: input.case_id },
-        include: { situation: true, financial: true, basket: true, allocation: true },
+        include: { situation: true, financial: true, basket: true, allocation: { include: { purchaseOrder: { select: { id: true, merchantId: true } } } } },
       });
       if (!assistance) throw new HttpError("NOT_FOUND", "Assistance case not found");
       const existing = assistance.allocation;
@@ -96,7 +121,8 @@ export async function approveAllocation(
         if (assistance.status !== "APPROVED") {
           await tx.assistanceRequest.update({ where: { id: assistance.id }, data: { status: "APPROVED" } });
         }
-        return toResult(existing);
+        const purchaseOrder = await ensurePurchaseOrder(tx, existing, merchant.id);
+        return toResult({ ...existing, purchaseOrder });
       }
       if (existing?.status === "REJECTED") {
         throw new HttpError("VALIDATION_ERROR", "A rejected allocation cannot be approved");
@@ -111,6 +137,7 @@ export async function approveAllocation(
         ? await tx.aidAllocation.update({
             where: { id: existing.id },
             data: { campaignId: campaign.id, amount: requested, currency, status: "APPROVED", approvedAt },
+            include: { purchaseOrder: { select: { id: true, merchantId: true } } },
           })
         : await tx.aidAllocation.create({
             data: {
@@ -121,9 +148,11 @@ export async function approveAllocation(
               status: "APPROVED",
               approvedAt,
             },
+            include: { purchaseOrder: { select: { id: true, merchantId: true } } },
           });
 
       await tx.assistanceRequest.update({ where: { id: assistance.id }, data: { status: "APPROVED" } });
+      const purchaseOrder = await ensurePurchaseOrder(tx, allocation, merchant.id);
 
       await tx.auditLog.create({
         data: {
@@ -140,7 +169,7 @@ export async function approveAllocation(
         },
       });
 
-      return toResult(allocation);
+      return toResult({ ...allocation, purchaseOrder });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
     if (error instanceof HttpError) throw error;
