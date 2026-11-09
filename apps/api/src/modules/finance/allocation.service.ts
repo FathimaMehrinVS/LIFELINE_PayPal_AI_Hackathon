@@ -39,6 +39,8 @@ async function ensurePurchaseOrder(
   tx: Prisma.TransactionClient,
   allocation: { id: string; amount: Prisma.Decimal; currency: string; purchaseOrder: { id: string; merchantId: string } | null },
   merchantId: string,
+  actorId: string,
+  caseId: string,
 ) {
   if (allocation.purchaseOrder) {
     if (allocation.purchaseOrder.merchantId !== merchantId) {
@@ -46,7 +48,7 @@ async function ensurePurchaseOrder(
     }
     return allocation.purchaseOrder;
   }
-  return tx.purchaseOrder.create({
+  const order = await tx.purchaseOrder.create({
     data: {
       allocationId: allocation.id,
       merchantId,
@@ -56,6 +58,19 @@ async function ensurePurchaseOrder(
     },
     select: { id: true, merchantId: true },
   });
+  await tx.fulfilmentEvent.create({
+    data: { purchaseOrderId: order.id, status: "AWAITING_ACCEPTANCE", actorId, note: "Created with NGO approval" },
+  });
+  await tx.auditLog.create({
+    data: {
+      actorId,
+      action: "purchase_order.created",
+      entityType: "PurchaseOrder",
+      entityId: order.id,
+      details: { case_id: caseId, allocation_id: allocation.id, merchant_id: merchantId, status: "AWAITING_ACCEPTANCE" },
+    },
+  });
+  return order;
 }
 
 /**
@@ -121,7 +136,7 @@ export async function approveAllocation(
         if (assistance.status !== "APPROVED") {
           await tx.assistanceRequest.update({ where: { id: assistance.id }, data: { status: "APPROVED" } });
         }
-        const purchaseOrder = await ensurePurchaseOrder(tx, existing, merchant.id);
+        const purchaseOrder = await ensurePurchaseOrder(tx, existing, merchant.id, actorId, assistance.id);
         return toResult({ ...existing, purchaseOrder });
       }
       if (existing?.status === "REJECTED") {
@@ -152,7 +167,7 @@ export async function approveAllocation(
           });
 
       await tx.assistanceRequest.update({ where: { id: assistance.id }, data: { status: "APPROVED" } });
-      const purchaseOrder = await ensurePurchaseOrder(tx, allocation, merchant.id);
+      const purchaseOrder = await ensurePurchaseOrder(tx, allocation, merchant.id, actorId, assistance.id);
 
       await tx.auditLog.create({
         data: {
