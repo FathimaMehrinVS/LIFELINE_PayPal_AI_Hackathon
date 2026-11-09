@@ -6,6 +6,9 @@ import { getDemoRouteCatalogue } from "../modules/finance/route-catalogue";
 import { rankProducts } from "../modules/commerce/service";
 import { analyzeSituation } from "../modules/situation/situation.service";
 import { buildBasket } from "../rules/basket";
+import { env } from "../config/env";
+import { getPrisma } from "../database/prisma";
+import { supplierCoversLocation } from "../modules/finance/route-catalogue";
 import type { CaseModules } from "./run-case";
 
 // Owner: Member 1. Connects the real modules (Members 1, 2 and 3) to the Orchestrator.
@@ -15,8 +18,18 @@ export const caseModules: CaseModules = {
   // Member 2: fees, scores and verdicts are deterministic; the LLM only writes the explanation.
   evaluateRoutes: (input) => evaluateRoutes(input, llm),
   // The demo catalogue is synthetic and currency-independent (fees are percentages), so currency isn't used yet.
-  // Receives (currency, location) and may be async, so a route can depend on the approved suppliers serving that area.
-  routesFor: () => getDemoRouteCatalogue(),
+  // A direct merchant route passes only when an approved supplier explicitly covers this location.
+  routesFor: async (_currency, location) => {
+    let partnerCoversLocation = false;
+    if (env.DATABASE_URL) {
+      const suppliers = await getPrisma().merchant.findMany({
+        where: { status: "APPROVED" },
+        select: { serviceAreas: true },
+      });
+      partnerCoversLocation = suppliers.some((supplier) => supplierCoversLocation(location, supplier.serviceAreas));
+    }
+    return getDemoRouteCatalogue(partnerCoversLocation);
+  },
   // Member 3's building blocks, without createCommerceBasket's own saving: the case store saves the basket with
   // the case, so it isn't stored twice as an unrelated request.
   buildBasket: async (input) => {
