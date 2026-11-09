@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDonationTarget } from "../../apps/web/app/donate/donation-target";
+import { parseDonationTarget } from "../../apps/web/app/(app)/donate/donation-target";
 
 describe("donation target URL parsing", () => {
   it("parses the existing dashboard currency parameter", () => {

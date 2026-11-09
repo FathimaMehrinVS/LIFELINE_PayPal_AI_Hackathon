@@ -11,8 +11,10 @@ export interface AuthSession {
   role: AuthRole;
 }
 
-interface SupabaseIdentity {
+export interface SupabaseIdentity {
   id: string;
+  email: string | null;
+  name: string | null;
 }
 
 interface UserProfile {
@@ -65,7 +67,17 @@ async function getSupabaseIdentity(accessToken: string): Promise<SupabaseIdentit
   if (!body || typeof body !== "object" || !("id" in body) || typeof body.id !== "string" || !body.id) {
     throw new HttpError("AUTHENTICATION_REQUIRED", "Supabase returned an invalid identity response");
   }
-  return { id: body.id };
+  const email = "email" in body && typeof body.email === "string" ? body.email : null;
+  const metadata = "user_metadata" in body && body.user_metadata && typeof body.user_metadata === "object"
+    ? body.user_metadata as Record<string, unknown>
+    : {};
+  const name = typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : null;
+  return { id: body.id, email, name };
+}
+
+export async function resolveSupabaseIdentity(authorization: string | undefined): Promise<SupabaseIdentity> {
+  const token = getBearerToken(authorization);
+  return getSupabaseIdentity(token);
 }
 
 const defaultDependencies: SessionResolverDependencies = {
@@ -81,15 +93,15 @@ const defaultDependencies: SessionResolverDependencies = {
 /** Validates a Supabase access token server-side, then loads the app-owned profile and role. */
 export function createSessionResolver(dependencies: SessionResolverDependencies) {
   return async (authorization: string | undefined): Promise<AuthSession> => {
-    const token = getBearerToken(authorization);
-    const identity = await dependencies.getSupabaseIdentity(token);
+    const identity = await dependencies.getSupabaseIdentity(getBearerToken(authorization));
     const profile = await dependencies.findProfile(identity.id);
     if (!profile) throw new HttpError("FORBIDDEN", "No LIFELINE profile is linked to this account");
 
+    if (!profile.role) throw new HttpError("FORBIDDEN", "The LIFELINE application role is pending assignment");
     if (!profile.email || !AUTH_ROLES.includes(profile.role as AuthRole)) {
       throw new HttpError("FORBIDDEN", "The LIFELINE profile has no valid application role");
     }
-    return { id: profile.id, email: profile.email, role: profile.role as AuthRole };
+    return { id: profile.id, email: identity.email ?? profile.email, role: profile.role as AuthRole };
   };
 }
 

@@ -8,6 +8,7 @@ const EnvSchema = z.object({
   DATABASE_URL: optional,
   SUPABASE_URL: optional,
   SUPABASE_ANON_KEY: optional,
+  SUPABASE_SERVICE_ROLE_KEY: optional,
 
   LLM_PROVIDER: z.enum(["groq", "gemini"]).default("groq"),
   GROQ_API_KEY: optional,

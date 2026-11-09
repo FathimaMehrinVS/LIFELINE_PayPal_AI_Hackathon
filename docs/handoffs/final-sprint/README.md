@@ -56,7 +56,7 @@ Status: `todo` · `doing` · `blocked` · `done`
 | M2-4 | Fulfilment events and pickup code | Member 2 | 10 Nov | M2-3 | todo |
 | M2-5 | Supplier payment record | Member 2 | 10 Nov | M2-3 | todo |
 | M2-6 | Risk levels and price check | Member 2 | 10 Nov | M2-3 | todo |
-| M3-1 | Login and roles (in progress) | Member 3 | 9 Nov | none | doing |
+| M3-1 | Login and roles | Member 3 | 9 Nov | none | done |
 | M3-2 | One successful PayPal Sandbox capture | Member 3 | 9 Nov | none | todo |
 
 ## Working on `main`
@@ -140,5 +140,5 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
-| 8 Nov | Member 3 | Supabase login is on `main`. Roles are in the `User` table; suppliers log in as `PARTNER`. `requireRole` is still to come | Everyone |
+| 8 Nov | Member 3 | Login/profile provisioning and role-based authorization are complete on `main` (`4e93e02`). API roles come from the verified Supabase user and linked `User` profile; protected routes enforce authentication, role, and ownership checks. M3-2 remains open until a real Sandbox capture is confirmed | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |

@@ -58,6 +58,7 @@ export const ErrorCodeSchema = z.enum([
   "VALIDATION_ERROR",
   "AUTHENTICATION_REQUIRED",
   "FORBIDDEN",
+  "CONFLICT",
   "NOT_FOUND",
   "NOT_IMPLEMENTED",
   "UPSTREAM_ERROR",

@@ -6,19 +6,25 @@ import { captureDonationOrder, createDonationOrder } from "../integrations/paypa
 import { validateBody } from "../middleware/validate";
 import { HttpError } from "../utils/http-error";
 import { Prisma } from "../generated/prisma/client";
+import { getRequestSession } from "../auth/role-guard";
+import type { AuthSession } from "../auth/session";
+import type { Response } from "express";
 
 // Owner: Member 3 (feature/commerce-payments). Mounted at /api/payments.
 export function createDonationRouter(deps: {
   getPrisma?: typeof getPrisma;
   createOrder?: typeof createDonationOrder;
   captureOrder?: typeof captureDonationOrder;
+  getSession?: (res: Response) => AuthSession;
 } = {}) {
   const router = Router();
   const db = deps.getPrisma ?? getPrisma;
   const createOrder = deps.createOrder ?? createDonationOrder;
   const captureOrder = deps.captureOrder ?? captureDonationOrder;
+  const getSession = deps.getSession ?? getRequestSession;
 
 router.post("/donations", validateBody(CreateDonationRequestSchema), async (req, res) => {
+  const session = getSession(res);
   const input = CreateDonationRequestSchema.parse(req.body);
   const prisma = db();
   const allocation = await prisma.aidAllocation.findUnique({
@@ -57,6 +63,7 @@ router.post("/donations", validateBody(CreateDonationRequestSchema), async (req,
     data: {
       id: donationId,
       campaignId: allocation.campaignId,
+      donorId: session.id,
       allocationId: allocation.id,
       amount: input.amount.toFixed(2),
       currency: input.currency,
@@ -76,9 +83,11 @@ router.post("/donations", validateBody(CreateDonationRequestSchema), async (req,
 });
 
 router.post("/donations/:id/cancel", async (req, res) => {
+  const session = getSession(res);
   const prisma = db();
   const donation = await prisma.donation.findUnique({ where: { id: req.params.id } });
   if (!donation) throw new HttpError("NOT_FOUND", "Donation not found");
+  if (session.role !== "NGO" && donation.donorId !== session.id) throw new HttpError("NOT_FOUND", "Donation not found");
 
   // A browser return is only an abandonment signal. A verified PayPal capture can
   // still move CANCELLED to CAPTURED if PayPal confirms that payment completed.
@@ -99,9 +108,11 @@ router.post("/donations/:id/cancel", async (req, res) => {
 });
 
 router.post("/donations/:id/capture", async (req, res) => {
+  const session = getSession(res);
   const prisma = db();
   const donation = await prisma.donation.findUnique({ where: { id: req.params.id } });
   if (!donation) throw new HttpError("NOT_FOUND", "Donation not found");
+  if (session.role !== "NGO" && donation.donorId !== session.id) throw new HttpError("NOT_FOUND", "Donation not found");
   if (donation.status === "CAPTURED") {
     res.json({ donation_id: donation.id, allocation_id: donation.allocationId ?? undefined, paypal_order_id: donation.paypalOrderId, paypal_capture_id: donation.paypalCaptureId ?? undefined, status: "captured", amount: Number(donation.amount), currency: donation.currency });
     return;
