@@ -51,9 +51,46 @@ export const SupplierHistoryEntrySchema = z.object({
 });
 export type SupplierHistoryEntry = z.infer<typeof SupplierHistoryEntrySchema>;
 
+/** What a reviewer must verify before a supplier can be approved. */
+export const SupplierCheckKeySchema = z.enum(["business_registration", "owner_identity", "business_address", "payment_account", "sanctions_screening", "ngo_reference"]);
+export type SupplierCheckKey = z.infer<typeof SupplierCheckKeySchema>;
+
+export const SUPPLIER_CHECK_LABELS: Record<SupplierCheckKey, string> = {
+  business_registration: "Business registration",
+  owner_identity: "Owner identity",
+  business_address: "Business address",
+  payment_account: "Payment account ownership",
+  sanctions_screening: "Sanctions & exclusion screening",
+  ngo_reference: "Reference from another NGO",
+};
+
+export const SupplierCheckStateSchema = z.enum(["not_checked", "in_review", "verified", "failed"]);
+export type SupplierCheckState = z.infer<typeof SupplierCheckStateSchema>;
+
+export const SupplierCheckSchema = z.object({
+  key: SupplierCheckKeySchema,
+  state: SupplierCheckStateSchema,
+  evidence: z.string().nullable(),
+  actor: z.string().nullable(),
+  at: z.string().nullable(),
+});
+export type SupplierCheck = z.infer<typeof SupplierCheckSchema>;
+
+export const RecordSupplierCheckRequestSchema = z.object({
+  key: SupplierCheckKeySchema,
+  state: z.enum(["in_review", "verified", "failed"]),
+  /** Where the proof is kept, or why the check failed. Required unless the check is still in review. */
+  evidence: z.string().trim().max(300).optional(),
+}).refine((value) => value.state === "in_review" || (value.evidence?.length ?? 0) >= 3, {
+  path: ["evidence"],
+  message: "Add an evidence reference of at least 3 characters",
+});
+export type RecordSupplierCheckRequest = z.infer<typeof RecordSupplierCheckRequestSchema>;
+
 export const SupplierDetailSchema = SupplierSchema.extend({
   incidents: z.array(SupplierIncidentSchema),
   history: z.array(SupplierHistoryEntrySchema),
+  checks: z.array(SupplierCheckSchema),
 });
 export type SupplierDetail = z.infer<typeof SupplierDetailSchema>;
 

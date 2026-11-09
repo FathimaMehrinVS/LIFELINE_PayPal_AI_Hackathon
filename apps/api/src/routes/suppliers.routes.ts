@@ -1,9 +1,9 @@
-import { CreateSupplierRequestSchema, UpdateSupplierStatusRequestSchema } from "@lifeline/contracts";
+import { CreateSupplierRequestSchema, RecordSupplierCheckRequestSchema, UpdateSupplierStatusRequestSchema } from "@lifeline/contracts";
 import { Router } from "express";
 import { getRequestSession } from "../auth/role-guard";
 import { getPrisma } from "../database/prisma";
 import { validateBody } from "../middleware/validate";
-import { getSupplier, listSuppliers, registerSupplier, updateSupplierStatus } from "../modules/suppliers/supplier.service";
+import { getSupplier, listSuppliers, recordSupplierCheck, registerSupplier, updateSupplierStatus } from "../modules/suppliers/supplier.service";
 
 // Owner: Member 1. NGO only (see app.ts).
 export function createSupplierRouter(getDatabase: typeof getPrisma = getPrisma) {
@@ -23,6 +23,10 @@ export function createSupplierRouter(getDatabase: typeof getPrisma = getPrisma) 
 
   router.post("/:id/status", validateBody(UpdateSupplierStatusRequestSchema), async (req, res) => {
     res.json(await updateSupplierStatus(getDatabase(), String(req.params.id), req.body, getRequestSession(res).id));
+  });
+
+  router.post("/:id/checks", validateBody(RecordSupplierCheckRequestSchema), async (req, res) => {
+    res.json(await recordSupplierCheck(getDatabase(), String(req.params.id), req.body, getRequestSession(res).id));
   });
 
   return router;

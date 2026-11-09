@@ -11,7 +11,12 @@ const row = (status = "PENDING") => ({
   createdAt: new Date("2026-11-01T00:00:00Z"), purchaseOrders: [{ fulfilmentStatus: "RECIPIENT_CONFIRMED" }, { fulfilmentStatus: "ACCEPTED" }], incidents: [],
 });
 
-function setup(status = "PENDING") {
+type CheckLog = { action: string; details: unknown; createdAt: Date; actor: null };
+const CHECK_KEYS = ["business_registration", "owner_identity", "business_address", "payment_account", "sanctions_screening", "ngo_reference"];
+const log = (check: string, to: string, reason: string): CheckLog => ({ action: "supplier.check_recorded", details: { check, to, reason }, createdAt: new Date("2026-11-02T00:00:00Z"), actor: null });
+const allVerified = () => CHECK_KEYS.map((key) => log(key, "verified", "Evidence reference"));
+
+function setup(status = "PENDING", checks: CheckLog[] = []) {
   const state = { status };
   const audit: { action: string; actorId: string; details: unknown }[] = [];
   const merchant = {
@@ -20,7 +25,7 @@ function setup(status = "PENDING") {
     create: vi.fn(async () => ({ id: "sup_1" })),
     update: vi.fn(async ({ data }: { data: { status: string } }) => { state.status = data.status; return {}; }),
   };
-  const auditLog = { create: vi.fn(async ({ data }: { data: (typeof audit)[number] }) => { audit.push(data); return {}; }), findMany: vi.fn(async () => []) };
+  const auditLog = { create: vi.fn(async ({ data }: { data: (typeof audit)[number] }) => { audit.push(data); return {}; }), findMany: vi.fn(async () => checks) };
   const db = { merchant, auditLog, $transaction: async (work: (tx: unknown) => Promise<unknown>) => work({ merchant, auditLog }) };
   const app = express();
   app.use(express.json());
@@ -50,11 +55,57 @@ describe("supplier API", () => {
   });
 
   it("records who changed a status, from what, to what and why", async () => {
-    const { app, audit, state } = setup();
+    const { app, audit, state } = setup("PENDING", allVerified());
     const res = await request(app).post("/sup_1/status").send({ status: "approved", reason: "Registration papers checked" });
     expect(res.status).toBe(200);
     expect(state.status).toBe("APPROVED");
     expect(audit[0]).toMatchObject({ action: "supplier.status_changed", actorId: "ngo_1", details: { from: "pending", to: "approved", reason: "Registration papers checked" } });
+  });
+
+  it("refuses approval until every check is verified", async () => {
+    const { app, state, audit } = setup("PENDING", allVerified().slice(1));
+    const res = await request(app).post("/sup_1/status").send({ status: "approved", reason: "Looks fine to me" });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("Business registration");
+    expect(state.status).toBe("PENDING");
+    expect(audit).toHaveLength(0);
+  });
+
+  it("uses the latest result, so a check that later fails blocks approval", async () => {
+    const { app, state } = setup("PENDING", [log("owner_identity", "failed", "Document did not match"), ...allVerified()]);
+    expect((await request(app).post("/sup_1/status").send({ status: "approved", reason: "Trying again" })).status).toBe(400);
+    expect(state.status).toBe("PENDING");
+  });
+
+  it("also blocks reinstating a suspended supplier without checks", async () => {
+    expect((await request(setup("SUSPENDED").app).post("/sup_1/status").send({ status: "approved", reason: "Problem resolved" })).status).toBe(400);
+  });
+
+  it("lets a reviewer suspend a supplier without any checks", async () => {
+    expect((await request(setup("PENDING").app).post("/sup_1/status").send({ status: "suspended", reason: "Complaint received" })).status).toBe(200);
+  });
+
+  it("records a check with who, what changed and the evidence", async () => {
+    const { app, audit } = setup();
+    const res = await request(app).post("/sup_1/checks").send({ key: "business_registration", state: "verified", evidence: "Registry extract EV-1" });
+    expect(res.status).toBe(200);
+    expect(audit[0]).toMatchObject({ action: "supplier.check_recorded", actorId: "ngo_1", details: { check: "business_registration", from: "not_checked", to: "verified", reason: "Registry extract EV-1" } });
+  });
+
+  it.each(["verified", "failed"])("needs evidence to mark a check %s", async (state) => {
+    expect((await request(setup().app).post("/sup_1/checks").send({ key: "owner_identity", state })).status).toBe(400);
+  });
+
+  it("allows a check to be in review without evidence", async () => {
+    expect((await request(setup().app).post("/sup_1/checks").send({ key: "owner_identity", state: "in_review" })).status).toBe(200);
+  });
+
+  it("shows every check, unchecked ones included, and keeps them out of the decision history", async () => {
+    const res = await request(setup("PENDING", [log("owner_identity", "verified", "Seen in person")]).app).get("/sup_1");
+    expect(res.body.checks).toHaveLength(6);
+    expect(res.body.checks.find((check: { key: string }) => check.key === "owner_identity")).toMatchObject({ state: "verified", evidence: "Seen in person" });
+    expect(res.body.checks.find((check: { key: string }) => check.key === "ngo_reference")).toMatchObject({ state: "not_checked" });
+    expect(res.body.history).toEqual([]);
   });
 
   it("rejects a change to the same status", async () => {

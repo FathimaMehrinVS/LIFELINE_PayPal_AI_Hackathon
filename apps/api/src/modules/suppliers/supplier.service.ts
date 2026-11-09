@@ -1,4 +1,5 @@
-import type { CreateSupplierRequest, Supplier, SupplierDetail, SupplierHistoryEntry, SupplierStatus, UpdateSupplierStatusRequest } from "@lifeline/contracts";
+import { SUPPLIER_CHECK_LABELS, SupplierCheckKeySchema } from "@lifeline/contracts";
+import type { CreateSupplierRequest, RecordSupplierCheckRequest, Supplier, SupplierCheck, SupplierCheckKey, SupplierCheckState, SupplierDetail, SupplierHistoryEntry, SupplierStatus, UpdateSupplierStatusRequest } from "@lifeline/contracts";
 import { getPrisma } from "../../database/prisma";
 import type { SupplierStatus as DbSupplierStatus } from "../../generated/prisma/client";
 import { canReceiveOrders, supplierScorecard } from "../../rules/supplier-score";
@@ -9,6 +10,7 @@ import { HttpError } from "../../utils/http-error";
 type Database = ReturnType<typeof getPrisma>;
 const ENTITY = "Merchant";
 const STATUS_CHANGED = "supplier.status_changed";
+const CHECK_RECORDED = "supplier.check_recorded";
 
 const toStatus = (status: DbSupplierStatus) => status.toLowerCase() as SupplierStatus;
 const toDbStatus = (status: SupplierStatus) => status.toUpperCase() as DbSupplierStatus;
@@ -45,6 +47,20 @@ function toSupplier(row: SupplierRow, statusChangedAt: Date | null): Supplier {
   };
 }
 
+type CheckLog = { action: string; details: unknown; createdAt: Date; actor?: { name: string } | null };
+
+/** The latest recorded result for each check. Expects logs newest first. */
+function currentChecks(logs: CheckLog[]): SupplierCheck[] {
+  return SupplierCheckKeySchema.options.map((key: SupplierCheckKey) => {
+    const log = logs.find((entry) => entry.action === CHECK_RECORDED && (entry.details as { check?: string } | null)?.check === key);
+    if (!log) return { key, state: "not_checked" as const, evidence: null, actor: null, at: null };
+    const details = log.details as { to: SupplierCheckState; reason?: string | null };
+    return { key, state: details.to, evidence: details.reason ?? null, actor: log.actor?.name ?? null, at: log.createdAt.toISOString() };
+  });
+}
+
+const isVerified = (check: SupplierCheck) => check.state === "verified" && Boolean(check.evidence);
+
 export async function listSuppliers(db: Database): Promise<Supplier[]> {
   const rows = await db.merchant.findMany({ include: SUPPLIER_INCLUDE, orderBy: { name: "asc" } });
   const changes = await db.auditLog.findMany({
@@ -68,7 +84,7 @@ export async function getSupplier(db: Database, id: string): Promise<SupplierDet
     orderBy: { createdAt: "desc" },
     include: { actor: { select: { name: true } } },
   });
-  const history: SupplierHistoryEntry[] = logs.map((log) => {
+  const history: SupplierHistoryEntry[] = logs.filter((log) => log.action !== CHECK_RECORDED).map((log) => {
     const details = (log.details ?? {}) as { from?: SupplierStatus; to?: SupplierStatus; reason?: string };
     return { action: log.action, from: details.from ?? null, to: details.to ?? null, reason: details.reason ?? null, actor: log.actor?.name ?? null, at: log.createdAt.toISOString() };
   });
@@ -83,6 +99,7 @@ export async function getSupplier(db: Database, id: string): Promise<SupplierDet
       created_at: incident.createdAt.toISOString(),
     })),
     history,
+    checks: currentChecks(logs),
   };
 }
 
@@ -104,8 +121,25 @@ export async function updateSupplierStatus(db: Database, id: string, input: Upda
     if (!merchant) throw new HttpError("NOT_FOUND", "Supplier not found");
     const from = toStatus(merchant.status);
     if (from === input.status) throw new HttpError("VALIDATION_ERROR", `This supplier is already ${input.status}`);
+    if (input.status === "approved") {
+      const logs = await tx.auditLog.findMany({ where: { entityType: ENTITY, entityId: id, action: CHECK_RECORDED }, orderBy: { createdAt: "desc" } });
+      const incomplete = currentChecks(logs).filter((check) => !isVerified(check));
+      if (incomplete.length > 0) throw new HttpError("VALIDATION_ERROR", `Every check must be verified before approval. Still open: ${incomplete.map((check) => SUPPLIER_CHECK_LABELS[check.key]).join(", ")}`);
+    }
     await tx.merchant.update({ where: { id }, data: { status: toDbStatus(input.status) } });
     await tx.auditLog.create({ data: { action: STATUS_CHANGED, entityType: ENTITY, entityId: id, actorId, details: { from, to: input.status, reason: input.reason } } });
+  });
+  return getSupplier(db, id);
+}
+
+/** Records one verification result. The latest record for a check is its current state. */
+export async function recordSupplierCheck(db: Database, id: string, input: RecordSupplierCheckRequest, actorId: string): Promise<SupplierDetail> {
+  await db.$transaction(async (tx) => {
+    const merchant = await tx.merchant.findUnique({ where: { id }, select: { status: true } });
+    if (!merchant) throw new HttpError("NOT_FOUND", "Supplier not found");
+    const logs = await tx.auditLog.findMany({ where: { entityType: ENTITY, entityId: id, action: CHECK_RECORDED }, orderBy: { createdAt: "desc" } });
+    const from = currentChecks(logs).find((check) => check.key === input.key)!.state;
+    await tx.auditLog.create({ data: { action: CHECK_RECORDED, entityType: ENTITY, entityId: id, actorId, details: { check: input.key, label: SUPPLIER_CHECK_LABELS[input.key], from, to: input.state, reason: input.evidence || null } } });
   });
   return getSupplier(db, id);
 }

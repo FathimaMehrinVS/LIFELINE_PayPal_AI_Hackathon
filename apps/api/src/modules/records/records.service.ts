@@ -64,6 +64,7 @@ const AUDIT_LABELS: Record<string, { title: string; category: AuditRecords["entr
   "allocation.disbursement_simulated": { title: "Simulated disbursement recorded", category: "payment" },
   "supplier.registered": { title: "Supplier registered", category: "supplier" },
   "supplier.status_changed": { title: "Supplier status changed", category: "supplier" },
+  "supplier.check_recorded": { title: "Supplier check recorded", category: "supplier" },
 };
 
 const asText = (value: unknown) => (typeof value === "string" && value ? value : null);
@@ -94,7 +95,7 @@ export async function getAuditRecords(db: Database, limit = 100): Promise<AuditR
         subject,
         from: asText(details.from),
         to: asText(details.to),
-        note: asText(details.reason) ?? (amount ? `${amount} ${asText(details.currency) ?? ""}`.trim() : null),
+        note: asText(details.label) ? [asText(details.label), asText(details.reason)].filter(Boolean).join(": ") : asText(details.reason) ?? (amount ? `${amount} ${asText(details.currency) ?? ""}`.trim() : null),
         at: log.createdAt.toISOString(),
       };
     }),

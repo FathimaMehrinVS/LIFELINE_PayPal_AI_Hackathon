@@ -5,7 +5,7 @@ import type { ColDef, ICellRendererParams, IRowNode } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Card, button, fieldClass } from "@/components/ui";
+import { Badge, Card, EmptyState, FieldError, Notice, button, fieldClass } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
 import { lifelineGridTheme } from "../dashboard/cases-grid";
 import { STATUS_LABEL, STATUS_TONE, needName, shortDate } from "./supplier-format";
@@ -23,6 +23,10 @@ function BusinessCell({ data }: ICellRendererParams<Supplier>) {
       <span className="text-xs text-slate-500">{data.location}</span>
     </span>
   );
+}
+
+function CategoriesCell({ value }: ICellRendererParams<Supplier>) {
+  return <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug">{value}</span></span>;
 }
 
 function StatusCell({ data }: ICellRendererParams<Supplier>) {
@@ -57,9 +61,14 @@ function RegisterForm({ onCreated, onCancel }: { onCreated: () => void; onCancel
   const [categories, setCategories] = useState<(typeof NEEDS)[number][]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [noCategory, setNoCategory] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (categories.length === 0) {
+      setNoCategory(true);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -88,13 +97,14 @@ function RegisterForm({ onCreated, onCancel }: { onCreated: () => void; onCancel
           <div className="flex flex-wrap gap-2">
             {NEEDS.map((need) => {
               const on = categories.includes(need);
-              return <button key={need} type="button" aria-pressed={on} onClick={() => setCategories((list) => (on ? list.filter((item) => item !== need) : [...list, need]))} className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${on ? "bg-navy text-white" : "border border-slate-300 bg-white text-navy hover:bg-slate-50"}`}>{needName(need)}</button>;
+              return <button key={need} type="button" aria-pressed={on} onClick={() => { setNoCategory(false); setCategories((list) => (on ? list.filter((item) => item !== need) : [...list, need])); }} className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${on ? "bg-navy text-white" : "border border-slate-300 bg-white text-navy hover:bg-slate-50"}`}>{needName(need)}</button>;
             })}
           </div>
+          {noCategory && <FieldError>Choose at least one category.</FieldError>}
         </fieldset>
         {error && <p role="alert" className="text-sm text-critical sm:col-span-2">{error}</p>}
         <div className="flex gap-3 sm:col-span-2">
-          <button disabled={busy || categories.length === 0} className={button.primary}>{busy ? "Registering…" : "Register supplier"}</button>
+          <button disabled={busy} className={button.primary}>{busy ? "Registering…" : "Register supplier"}</button>
           <button type="button" onClick={onCancel} className={button.secondary}>Cancel</button>
         </div>
       </form>
@@ -108,9 +118,10 @@ export default function SuppliersPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [registering, setRegistering] = useState(false);
+  const [visible, setVisible] = useState<number | null>(null);
 
   const load = useCallback(() => {
-    api.listSuppliers().then((rows) => { setSuppliers(rows); setError(""); }).catch(() => setError("Can't load suppliers. Is the API running?"));
+    api.listSuppliers().then((rows) => { setSuppliers(rows); setError(""); }).catch(() => setError("Can't load suppliers. Please check your connection and try again."));
   }, []);
   useEffect(load, [load]);
 
@@ -124,7 +135,7 @@ export default function SuppliersPage() {
 
   const columns = useMemo<ColDef<Supplier>[]>(() => [
     { headerName: "Business", valueGetter: (p) => `${p.data?.name} ${p.data?.location}`, cellRenderer: BusinessCell, flex: 2, minWidth: 260, tooltipValueGetter: (p) => p.data?.name },
-    { headerName: "Categories", valueGetter: (p) => p.data?.categories.map(needName).join(", "), minWidth: 110, flex: 1, tooltipValueGetter: (p) => p.value },
+    { headerName: "Categories", valueGetter: (p) => p.data?.categories.map(needName).join(", "), cellRenderer: CategoriesCell, minWidth: 110, flex: 1, tooltipValueGetter: (p) => p.value },
     { headerName: "Trust status", colId: "status", valueGetter: (p) => p.data?.status, cellRenderer: StatusCell, width: 112 },
     { headerName: "Orders", valueGetter: (p) => p.data?.scorecard.orders_completed, type: "rightAligned", width: 84, headerTooltip: "Completed orders: confirmed by the recipient" },
     { headerName: "Performance", colId: "score", valueGetter: (p) => p.data?.scorecard.score ?? -1, cellRenderer: PerformanceCell, width: 140, sort: "desc", headerTooltip: "Weighted by the number of finished orders, so one good order can't outrank a long record" },
@@ -148,18 +159,26 @@ export default function SuppliersPage() {
 
       {registering && <RegisterForm onCancel={() => setRegistering(false)} onCreated={() => { setRegistering(false); load(); }} />}
 
-      <p className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/60 p-4 text-sm text-navy">
+      <Notice tone="info" className="mt-4">
         <strong>Suppliers found through external product search are not automatically verified.</strong> They can only receive orders after an NGO reviewer approves them.
-      </p>
+      </Notice>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, location or category" className={`${fieldClass} min-w-64 flex-1`} />
-        {pills.map((pill) => <button key={pill.value} type="button" aria-pressed={filter === pill.value} onClick={() => setFilter(pill.value)} className={`rounded-full px-4 py-2 text-sm font-semibold ${filter === pill.value ? pill.on : pill.off}`}>{pill.label}</button>)}
+        {pills.map((pill) => <button key={pill.value} type="button" aria-pressed={filter === pill.value} onClick={() => setFilter(pill.value)} className={`inline-flex h-[46px] items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ${filter === pill.value ? pill.on : pill.off}`}>{pill.label}</button>)}
       </div>
 
       {error && <p role="alert" className="mt-4 rounded-xl border border-critical/30 bg-critical-tint p-4 text-sm text-critical">{error}</p>}
 
-      <div className="mt-4">
+      {suppliers !== null && visible === 0 && (
+        <div className="mt-4">
+          {suppliers.length === 0
+            ? <EmptyState title="No suppliers yet" text="Register a supplier to start reviewing it." action={<button type="button" onClick={() => setRegistering(true)} className={button.primary}>+ Register Supplier</button>} />
+            : <EmptyState title="No suppliers match" text="Try a different name, location, category or status." action={<button type="button" onClick={() => { setSearch(""); setFilter("all"); }} className={button.secondary}>Clear filters</button>} />}
+        </div>
+      )}
+
+      <div className={`mt-4 ${visible === 0 ? "hidden" : ""}`}>
         <AgGridReact<Supplier>
           theme={lifelineGridTheme}
           rowData={suppliers ?? []}
@@ -172,7 +191,8 @@ export default function SuppliersPage() {
           rowHeight={62}
           tooltipShowDelay={300}
           domLayout="autoHeight"
-          overlayNoRowsTemplate="No suppliers yet. Use Register Supplier to add one."
+          suppressNoRowsOverlay
+          onModelUpdated={(event) => setVisible(event.api.getDisplayedRowCount())}
         />
       </div>
       <p className="mt-3 text-xs text-slate-500">Sorted by performance to compare suppliers. Click any column to re-sort.</p>
