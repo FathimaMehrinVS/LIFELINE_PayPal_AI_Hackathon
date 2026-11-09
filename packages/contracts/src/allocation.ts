@@ -11,8 +11,7 @@ export type AllocationStatus = z.infer<typeof AllocationStatusSchema>;
 export const ApproveAllocationRequestSchema = z.object({
   case_id: z.string().min(1),
   campaign_id: z.string().min(1),
-  amount: AmountSchema.positive(),
-  currency: CurrencySchema,
+  merchant_id: z.string().min(1),
 });
 export type ApproveAllocationRequest = z.infer<typeof ApproveAllocationRequestSchema>;
 
