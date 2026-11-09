@@ -3,20 +3,27 @@ import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
 
-const SIMULATION_NOTICE = "Demo fallback: simulated disbursement only. No PayPal payout was sent and no money was transferred to the recipient.";
+const SIMULATION_NOTICE = "Simulated supplier payment only. No PayPal payout was sent; no money was transferred to the recipient.";
 
 function toResult(payout: {
   id: string;
   allocationId: string;
+  purchaseOrderId: string | null;
+  reference: string | null;
   status: string;
   amount: Prisma.Decimal;
   currency: string;
   mode: string;
   paypalBatchId: string | null;
 }): PayoutResult {
+  if (!payout.purchaseOrderId || !payout.reference) {
+    throw new HttpError("INTERNAL_ERROR", "Supplier payment is missing its purchase order or reference");
+  }
   return {
     payout_id: payout.id,
     allocation_id: payout.allocationId,
+    purchase_order_id: payout.purchaseOrderId,
+    reference: payout.reference,
     status: payout.status.toLowerCase() as PayoutResult["status"],
     amount: payout.amount.toNumber(),
     currency: payout.currency,
@@ -26,10 +33,7 @@ function toResult(payout: {
   };
 }
 
-/**
- * Records an internal demo disbursement after confirming captured campaign funds.
- * This deliberately makes no PayPal payout call and does not change Donation payment state.
- */
+/** Records a separate, unmistakably simulated supplier payment after checking captured campaign funds. */
 export async function simulateAllocationDisbursement(
   input: CreatePayoutRequest,
   actorId: string,
@@ -38,40 +42,37 @@ export async function simulateAllocationDisbursement(
   const db = getDatabase();
 
   return db.$transaction(async (tx) => {
-    const allocation = await tx.aidAllocation.findUnique({
-      where: { id: input.allocation_id },
-      include: { request: true, campaign: true },
+    const order = await tx.purchaseOrder.findUnique({
+      where: { id: input.purchase_order_id },
+      include: { allocation: { include: { request: true, campaign: true } }, merchant: { select: { status: true } } },
     });
-    if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
+    if (!order) throw new HttpError("NOT_FOUND", "Purchase order not found");
+    const allocation = order.allocation;
+    const existingPayout = await tx.payout.findFirst({ where: { purchaseOrderId: order.id }, orderBy: { createdAt: "asc" } });
 
-    const existingPayout = await tx.payout.findFirst({
-      where: { allocationId: allocation.id },
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (allocation.status === "DISBURSED") {
-      if (!existingPayout) throw new HttpError("VALIDATION_ERROR", "Allocation is disbursed but has no payout record");
-      if (existingPayout.amount.equals(input.amount) && existingPayout.currency === input.currency &&
-          existingPayout.status === "COMPLETED" && existingPayout.mode === "SIMULATED") {
+    if (existingPayout) {
+      if ((allocation.status === "DISBURSED" || allocation.status === "COMPLETED") &&
+          existingPayout.reference === input.reference && existingPayout.amount.equals(order.amount) &&
+          existingPayout.currency === order.currency && existingPayout.status === "COMPLETED" && existingPayout.mode === "SIMULATED") {
         return { result: toResult(existingPayout), duplicate: true };
       }
-      throw new HttpError("VALIDATION_ERROR", "This allocation already has a different disbursement record");
+      throw new HttpError("VALIDATION_ERROR", "A supplier payment already exists for this purchase order");
     }
-    if (allocation.status !== "APPROVED") {
-      throw new HttpError("VALIDATION_ERROR", "Only an approved assistance allocation can be disbursed");
+    if (!(["APPROVED", "DISBURSED"].includes(allocation.status))) {
+      throw new HttpError("VALIDATION_ERROR", "Only an approved allocation can receive a supplier payment");
     }
-    if (!allocation.request || allocation.request.status !== "APPROVED") {
+    if (allocation.request.status !== "APPROVED") {
       throw new HttpError("VALIDATION_ERROR", "The allocation does not have a valid approved assistance case");
     }
-    if (existingPayout) throw new HttpError("VALIDATION_ERROR", "A payout record already exists for this allocation");
-    if (!/^[A-Z]{3}$/.test(allocation.currency) || new Prisma.Decimal(allocation.amount).lessThanOrEqualTo(0)) {
-      throw new HttpError("VALIDATION_ERROR", "The approved allocation has an invalid amount or currency");
+    if (order.merchant.status !== "APPROVED") {
+      throw new HttpError("VALIDATION_ERROR", "Payment is on hold because the supplier is not approved");
     }
-    if (input.currency !== allocation.currency || allocation.campaign.currency !== allocation.currency) {
-      throw new HttpError("VALIDATION_ERROR", "Payout currency must match the approved allocation and campaign");
+    if (!/^[A-Z]{3}$/.test(order.currency) || new Prisma.Decimal(order.amount).lessThanOrEqualTo(0) ||
+        !order.amount.equals(allocation.amount) || order.currency !== allocation.currency || allocation.campaign.currency !== allocation.currency) {
+      throw new HttpError("VALIDATION_ERROR", "The purchase order has an invalid amount or currency");
     }
-    if (!new Prisma.Decimal(input.amount).equals(allocation.amount)) {
-      throw new HttpError("VALIDATION_ERROR", "Simulated disbursement amount must match the approved allocation amount");
+    if (allocation.status === "DISBURSED") {
+      throw new HttpError("VALIDATION_ERROR", "Allocation is disbursed but has no matching supplier payment record");
     }
 
     const [captured, committed] = await Promise.all([
@@ -91,9 +92,8 @@ export async function simulateAllocationDisbursement(
     const capturedAmount = captured._sum.amount ?? new Prisma.Decimal(0);
     const committedAmount = committed._sum.amount ?? new Prisma.Decimal(0);
     const available = capturedAmount.minus(committedAmount);
-    const requested = new Prisma.Decimal(input.amount);
-    if (available.lessThan(requested)) {
-      throw new HttpError("VALIDATION_ERROR", "Captured campaign donations are insufficient for this disbursement", {
+    if (available.lessThan(order.amount)) {
+      throw new HttpError("VALIDATION_ERROR", "Captured campaign donations are insufficient for this supplier payment", {
         available: Math.max(0, available.toNumber()), currency: allocation.currency,
       });
     }
@@ -103,14 +103,16 @@ export async function simulateAllocationDisbursement(
       data: { status: "DISBURSED" },
     });
     if (transition.count !== 1) {
-      throw new HttpError("VALIDATION_ERROR", "Allocation status changed during disbursement; review and try again");
+      throw new HttpError("VALIDATION_ERROR", "Allocation status changed during payment; review and try again");
     }
 
     const payout = await tx.payout.create({
       data: {
         allocationId: allocation.id,
-        amount: requested,
-        currency: allocation.currency,
+        purchaseOrderId: order.id,
+        reference: input.reference,
+        amount: order.amount,
+        currency: order.currency,
         status: "COMPLETED",
         mode: "SIMULATED",
       },
@@ -118,13 +120,15 @@ export async function simulateAllocationDisbursement(
     await tx.auditLog.create({
       data: {
         actorId,
-        action: "allocation.disbursement_simulated",
-        entityType: "AidAllocation",
-        entityId: allocation.id,
+        action: "supplier.payment_simulated",
+        entityType: "PurchaseOrder",
+        entityId: order.id,
         details: {
           payout_id: payout.id,
-          amount: requested.toString(),
-          currency: allocation.currency,
+          allocation_id: allocation.id,
+          amount: order.amount.toString(),
+          currency: order.currency,
+          reference: input.reference,
           mode: "SIMULATED",
           notice: SIMULATION_NOTICE,
         },
