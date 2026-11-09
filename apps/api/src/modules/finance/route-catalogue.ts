@@ -35,6 +35,17 @@ const DEMO_ROUTE_CATALOGUE: readonly FinancialRoute[] = [
     eligibility: "verified",
     estimated_minutes: 10,
   },
+  {
+    id: "route_partner",
+    name: "Local aid supplier",
+    type: "direct_merchant",
+    fee_fixed: 0,
+    fee_percent: 2,
+    fee_label: "illustrative",
+    requires: [],
+    eligibility: "unverified",
+    estimated_minutes: 1440,
+  },
 ];
 
 /** Return fresh objects so callers cannot mutate the shared demo catalogue. */
