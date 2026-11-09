@@ -4,6 +4,7 @@ import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
 import type { AuthSession } from "../../auth/session";
 import { canTransitionFulfilment, type FulfilmentStatus } from "../../rules/fulfilment";
+import { createPickupCode } from "../procurement/pickup-code";
 
 type Database = ReturnType<typeof getPrisma>;
 type Transaction = Prisma.TransactionClient;
@@ -189,7 +190,14 @@ export async function submitDeliveryEvent(
       throw new HttpError("VALIDATION_ERROR", "Delivered items can only be recorded with the handover");
     }
 
-    const changed = await tx.purchaseOrder.updateMany({ where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus }, data: { fulfilmentStatus: requestedStatus } });
+    const pickupCode = requestedStatus === "READY" ? createPickupCode() : null;
+    const changed = await tx.purchaseOrder.updateMany({
+      where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus },
+      data: {
+        fulfilmentStatus: requestedStatus,
+        ...(pickupCode ? { pickupCodeHash: pickupCode.hash, pickupAttempts: 0 } : {}),
+      },
+    });
     if (changed.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
     await tx.fulfilmentEvent.create({ data: {
       purchaseOrderId: order.id,
@@ -208,7 +216,7 @@ export async function submitDeliveryEvent(
     } });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
     if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
-    return toRecord(updated);
+    return { ...toRecord(updated), ...(pickupCode ? { pickup_code: pickupCode.code } : {}) };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
