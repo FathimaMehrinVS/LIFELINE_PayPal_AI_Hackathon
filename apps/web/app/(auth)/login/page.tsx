@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ArrowRightIcon, BasketIcon, HeartHandIcon, ShieldCheckIcon } from "@/components/icons";
 import { LifelineMark } from "@/components/app-shell";
 import { ApiRequestError, api, type AuthProfile } from "@/services/api";
+import { homeFor } from "@/lib/home";
 import { signInWithPassword, signOutLocally, signUpWithPassword } from "@/lib/auth-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -26,7 +27,7 @@ function destinationFor(profile: AuthProfile): string {
   const requested = new URLSearchParams(window.location.search).get("next");
   if ((requested === "/donate" || requested === "/plans" || requested === "/contributions") && (profile.role === "DONOR" || profile.role === "NGO")) return requested;
   if (requested === "/situation") return requested;
-  return profile.role === "NGO" ? "/dashboard" : "/workspace";
+  return homeFor(profile.role);
 }
 
 export default function LoginPage() {

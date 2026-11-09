@@ -141,6 +141,7 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
+| 9 Nov | Member 1 | Workspace page removed; `/workspace` now redirects. People land on Overview (NGO), Approved Plans (donor) or Delivery Tracking (partner). Use `homeFor` from `lib/home.ts` | Everyone |
 | 9 Nov | Member 1 | Added `/api/plans` and `/api/records`, donor pages, Payments and Audit Logs. Donations nav now opens Approved Plans. Rewrote the Financial Assessments page (old `finance/components` removed) and restyled Donate and home. M1-6 is waiting on M2-3 and M2-4 | Everyone |
 | 8 Nov | Member 3 | Login/profile provisioning and role-based authorization are complete on `main` (`4e93e02`). API roles come from the verified Supabase user and linked `User` profile; protected routes enforce authentication, role, and ownership checks. M3-2 remains open until a real Sandbox capture is confirmed | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |

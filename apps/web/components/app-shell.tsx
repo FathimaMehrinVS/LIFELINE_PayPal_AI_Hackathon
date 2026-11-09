@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
-import { BasketIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
+import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
 
 // The page frames from "LIFELINE Screen Designs": public site, intake, NGO workspace, donor area, sign-in.
 // Sign-in and roles are checked by the (app) layout; the menu shows only what a role can use.
@@ -19,16 +19,15 @@ function frameFor(path: string): Frame {
 }
 
 const NAV: { href: string; label: string; Icon: (p: { className?: string }) => ReactNode; roles?: string[] }[] = [
-  { href: "/workspace", label: "Workspace", Icon: HomeIcon },
+  { href: "/overview", label: "Overview", Icon: HomeIcon, roles: ["NGO"] },
   { href: "/dashboard", label: "Assistance Cases", Icon: GridIcon, roles: ["NGO"] },
-  { href: "/overview", label: "Overview", Icon: GridIcon, roles: ["NGO"] },
-  { href: "/requests", label: "My Requests", Icon: PlusCircleIcon },
   { href: "/finance", label: "Financial Assessments", Icon: RouteIcon },
   { href: "/commerce", label: "Product Baskets", Icon: BasketIcon },
   { href: "/suppliers", label: "Suppliers", Icon: StoreIcon, roles: ["NGO"] },
-  { href: "/payments", label: "Payments", Icon: RouteIcon, roles: ["NGO"] },
+  { href: "/payments", label: "Payments", Icon: CoinsIcon, roles: ["NGO"] },
   { href: "/deliveries", label: "Delivery Tracking", Icon: UsersIcon, roles: ["NGO", "PARTNER"] },
   { href: "/audit", label: "Audit Logs", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/requests", label: "My Requests", Icon: PlusCircleIcon },
   { href: "/plans", label: "Approved Plans", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/contributions", label: "My Contributions", Icon: HeartHandIcon, roles: ["DONOR"] },
   { href: "/profile", label: "Profile", Icon: ShieldCheckIcon },
@@ -119,7 +118,7 @@ const DONOR_NAV = [{ href: "/plans", label: "Approved plans" }, { href: "/contri
 
 function DonorNav({ path }: { path: string }) {
   const profile = useAuthProfile();
-  const links = profile.role === "NGO" ? [...DONOR_NAV, { href: "/workspace", label: "NGO workspace" }] : DONOR_NAV;
+  const links = [...DONOR_NAV, profile.role === "NGO" ? { href: "/overview", label: "NGO workspace" } : { href: "/profile", label: "Profile" }];
   return (
     <nav aria-label="Donor" className="flex items-center gap-4">
       {links.map(({ href, label }) => <Link key={href} href={href} className={path.startsWith(href) ? "font-bold text-navy" : "hover:text-navy"}>{label}</Link>)}
@@ -179,7 +178,7 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
             <p className="font-bold text-navy">{current?.label}</p>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated">Demo data</span>
+            <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated">PayPal Sandbox</span>
             <Link href="/situation" className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 font-semibold text-white hover:opacity-90"><PlusCircleIcon className="h-4 w-4" /> New case</Link>
           </div>
         </header>

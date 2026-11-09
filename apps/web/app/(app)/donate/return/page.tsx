@@ -30,7 +30,7 @@ export default function DonationReturnPage() {
         <h1 className="mt-4 text-2xl font-bold text-navy">{state === "capturing" ? "Confirming donation" : "Donation not confirmed"}</h1>
         <p role="status" className="mt-1 text-slate-700">{message}</p>
         {state === "failed" && <p className="mt-2 text-sm text-slate-600">This page only reports success after the backend confirms PayPal capture.</p>}
-        {state === "failed" && <Link href="/workspace" className={`${button.secondary} mt-4`}>Back to your workspace</Link>}
+        {state === "failed" && <Link href="/plans" className={`${button.secondary} mt-4`}>Back to approved plans</Link>}
       </section>
     );
   }
@@ -67,7 +67,7 @@ export default function DonationReturnPage() {
         </ol>
       </Card>
 
-      <div className="mt-6 text-center"><Link href="/workspace" className={button.primary}>Back to your workspace</Link></div>
+      <div className="mt-6 text-center"><Link href="/contributions" className={button.primary}>See my contributions</Link></div>
     </div>
   );
 }
