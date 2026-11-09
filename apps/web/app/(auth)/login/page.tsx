@@ -162,11 +162,11 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.02fr_0.98fr]">
-      <aside className="relative isolate flex min-h-[35vh] flex-col overflow-hidden bg-[#142D4E] px-6 py-6 text-white sm:px-10 sm:py-8 lg:min-h-screen lg:px-12 lg:py-10">
+      <aside className="relative isolate flex flex-col overflow-hidden bg-[#142D4E] px-6 py-6 text-white sm:px-10 sm:py-8 lg:min-h-screen lg:px-12 lg:py-10">
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -left-32 -z-10 h-[34rem] w-[34rem] rounded-full border border-white/10" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-16 -z-10 h-[24rem] w-[24rem] rounded-full border border-white/10" />
         <Link href="/" className="inline-flex w-fit items-center gap-3" aria-label="LIFELINE home"><LifelineMark className="h-10 w-10 rounded-xl bg-white" /><span className="text-lg font-extrabold tracking-[0.08em]">LIFELINE</span></Link>
-        <div className="my-auto max-w-xl py-10 lg:py-16">
+        <div className="my-auto hidden max-w-xl py-10 lg:block lg:py-16">
           <p className="text-sm font-bold uppercase tracking-[0.17em] text-[#65D2C6]">From need to verified assistance</p>
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">One platform. Three workspaces. Every step accountable.</h1>
           <div className="mt-8 rounded-3xl border border-white/10 bg-[#1B3A60] p-5 sm:p-6">
@@ -175,7 +175,7 @@ export default function LoginPage() {
               {[
                 { label: "Case reviewed", text: "Needs verified by an NGO", tone: "bg-[#65D2C6]" },
                 { label: "Plan approved", text: "Assistance authorized by people", tone: "bg-[#F2B65D]" },
-                { label: "Progress recorded", text: "Payment and delivery tracked separately", tone: "bg-white" },
+                { label: "Progress recorded", text: "Payment and delivery tracked separately", tone: "bg-[#142D4E]" },
               ].map((item) => <div key={item.label} className="relative flex items-center gap-4 rounded-2xl bg-white p-3.5 text-[#142D4E] shadow-sm"><span className={`z-10 h-4 w-4 shrink-0 rounded-full ring-4 ring-white ${item.tone}`} /><span><span className="block text-sm font-extrabold">{item.label}</span><span className="mt-0.5 block text-xs text-slate-600">{item.text}</span></span></div>)}
             </div>
           </div>
@@ -216,11 +216,11 @@ export default function LoginPage() {
               </div>
 
               <form className="mt-6 space-y-5" onSubmit={submit} noValidate>
-                <div><label htmlFor="email" className="mb-2 block text-sm font-bold text-[#142D4E]">Email address</label><input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-[#142D4E] outline-none transition placeholder:text-slate-400 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="name@organisation.org" /></div>
+                <div><label htmlFor="email" className="mb-2 block text-sm font-bold text-[#142D4E]">Email address</label><input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-[#142D4E] outline-none transition placeholder:text-slate-500 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="name@organisation.org" /></div>
                 <div>
                   <label htmlFor="password" className="mb-2 block text-sm font-bold text-[#142D4E]">Password</label>
                   <div className="relative">
-                    <input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-[#142D4E] outline-none transition placeholder:text-slate-400 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="Enter your password" />
+                    <input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 text-[#142D4E] outline-none transition placeholder:text-slate-500 focus:border-[#159B91] focus:ring-4 focus:ring-[#159B91]/10" placeholder="Enter your password" />
                     <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center rounded-r-xl text-slate-500 transition hover:text-[#117F78] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#159B91]">
                       {showPassword ? (
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8" /><path strokeLinecap="round" strokeLinejoin="round" d="M9.9 5.2A10.8 10.8 0 0112 5c5 0 8.3 4.2 9 7-.3 1.2-1.2 2.6-2.5 3.8M6.2 6.2C3.8 7.5 2.4 9.7 2 12c.7 2.8 4 7 10 7 1.1 0 2.1-.2 3-.5" /></svg>
