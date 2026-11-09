@@ -14,6 +14,7 @@ import {
   type SituationResult,
 } from "@lifeline/contracts";
 import { PACKAGE_CURRENCY, emergencyPackageAmount } from "../rules/emergency-package";
+import { determineRiskLevel } from "../rules/risk-level";
 
 // Owner: Member 1. Chains Situation → Finance → Commerce for one case.
 // Stops honestly instead of inventing a missing value. Never moves money: payments need NGO approval.
@@ -86,6 +87,7 @@ export async function runCase(caseId: string, input: SituationRequest, modules: 
     finance,
     commerce: null,
     missing_information: missing,
+    risk_level: determineRiskLevel({ urgency: situation.urgency.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL", missingInformation: situation.missing_information }),
     ...(budgetSource ? { budget_source: budgetSource } : {}),
   });
 
@@ -129,6 +131,7 @@ export async function runCase(caseId: string, input: SituationRequest, modules: 
     finance,
     commerce,
     missing_information: [],
+    risk_level: determineRiskLevel({ urgency: situation.urgency.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL", missingInformation: situation.missing_information }),
     ...(budgetSource ? { budget_source: budgetSource } : {}),
   };
 }
