@@ -238,6 +238,21 @@ export async function verifyDelivery(
     if (!handover || deliveredItems(handover.deliveredItems).length === 0) {
       throw new HttpError("VALIDATION_ERROR", "The partner handover has no delivered-item record to verify");
     }
+    const plannedItems = allocation.request.basket?.items ?? [];
+    const handedOverItems = deliveredItems(handover.deliveredItems);
+    const handedOverQuantities = new Map(handedOverItems.map((item) => [item.basket_item_id, item.quantity]));
+    const shortfalls = plannedItems.flatMap((item) => {
+      const delivered = handedOverQuantities.get(item.id) ?? 0;
+      return delivered < item.quantity
+        ? [{ basket_item_id: item.id, name: item.name, planned_quantity: item.quantity, delivered_quantity: delivered }]
+        : [];
+    });
+    if (shortfalls.length > 0 && !(input.accept_shortfall === true && input.shortfall_reason)) {
+      throw new HttpError("VALIDATION_ERROR", "Delivery quantities are incomplete; provide explicit NGO acceptance and a reason for the shortfall", { shortfalls });
+    }
+    if (shortfalls.length === 0 && (input.accept_shortfall || input.shortfall_reason)) {
+      throw new HttpError("VALIDATION_ERROR", "A shortfall can only be accepted when planned delivery quantities are missing");
+    }
     ensureFunding(allocation, allocation.donations.reduce((sum, donation) => sum.plus(donation.amount), new Prisma.Decimal(0)));
     if (!["APPROVED", "DISBURSED"].includes(allocation.status)) {
       throw new HttpError("VALIDATION_ERROR", "This allocation cannot be completed from its current status");
@@ -248,9 +263,12 @@ export async function verifyDelivery(
     const caseChanged = await tx.assistanceRequest.updateMany({ where: { id: allocation.requestId, status: "APPROVED" }, data: { status: "COMPLETED" } });
     if (caseChanged.count !== 1) throw new HttpError("VALIDATION_ERROR", "Assistance case state changed; reload and try again");
 
-    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "VERIFIED", actorId: actor.id, evidenceType: "NGO_CONFIRMATION", note: input.note || null } });
+    const verificationNote = shortfalls.length > 0
+      ? `Shortfall accepted by NGO: ${input.shortfall_reason}${input.note ? `; ${input.note}` : ""}`
+      : input.note || null;
+    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "VERIFIED", actorId: actor.id, evidenceType: "NGO_CONFIRMATION", note: verificationNote } });
     await tx.auditLog.createMany({ data: [
-      { actorId: actor.id, action: "delivery.verified", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, verified_by: actor.id } },
+      { actorId: actor.id, action: "delivery.verified", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, verified_by: actor.id, shortfall_accepted: shortfalls.length > 0, shortfall_reason: shortfalls.length > 0 ? input.shortfall_reason : null, shortfalls } },
       { actorId: actor.id, action: "allocation.completed", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id } },
     ] });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });

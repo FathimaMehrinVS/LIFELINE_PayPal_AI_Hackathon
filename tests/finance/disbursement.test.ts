@@ -5,6 +5,7 @@ import { Prisma } from "../../apps/api/src/generated/prisma/client";
 import { errorHandler } from "../../apps/api/src/middleware/error-handler";
 import { createPayoutRouter } from "../../apps/api/src/routes/payout.routes";
 import { getPrisma } from "../../apps/api/src/database/prisma";
+import { createRoleGuard } from "../../apps/api/src/auth/role-guard";
 
 function setup(options: { allocationExists?: boolean; allocationStatus?: string; captured?: string } = {}) {
   const allocation: any = {
@@ -49,6 +50,7 @@ function setup(options: { allocationExists?: boolean; allocationStatus?: string;
   const getDatabase = vi.fn(() => prisma as ReturnType<typeof getPrisma>);
   const app = express();
   app.use(express.json());
+  app.use(createRoleGuard(async () => ({ id: "verified-ngo-profile", email: "ngo@example.test", role: "NGO" }))("NGO"));
   app.use("/api/payments", createPayoutRouter(getDatabase));
   app.use(errorHandler);
   return { app, allocation, tx, prisma, getDatabase, getPayout: () => payoutRow };
@@ -103,7 +105,7 @@ describe("simulated assistance disbursement", () => {
 
   it("records an unmistakably simulated disbursement and audit entry without changing Donation state", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/payments/payouts").send(requestBody);
+    const response = await request(h.app).post("/api/payments/payouts").send({ ...requestBody, actor_id: "spoofed-profile" });
 
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({
@@ -115,7 +117,7 @@ describe("simulated assistance disbursement", () => {
     expect(h.getPayout()).toMatchObject({ allocationId: "allocation-1", status: "COMPLETED", mode: "SIMULATED" });
     expect(h.tx.auditLog.create).toHaveBeenCalledOnce();
     expect(h.tx.auditLog.create.mock.calls[0]?.[0].data).toMatchObject({
-      action: "allocation.disbursement_simulated", entityId: "allocation-1",
+      actorId: "verified-ngo-profile", action: "allocation.disbursement_simulated", entityId: "allocation-1",
       details: expect.objectContaining({ mode: "SIMULATED" }),
     });
     expect(h.tx.auditLog.create.mock.calls[0]?.[0].data.details.notice).toContain("no money was transferred");

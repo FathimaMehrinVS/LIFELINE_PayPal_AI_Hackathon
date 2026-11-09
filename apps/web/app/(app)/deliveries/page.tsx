@@ -32,6 +32,8 @@ export default function DeliveriesPage() {
   const [supplierChoices, setSupplierChoices] = useState<Record<string, string>>({});
   const [handoverQuantities, setHandoverQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [acceptedShortfalls, setAcceptedShortfalls] = useState<Record<string, boolean>>({});
+  const [shortfallReasons, setShortfallReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -84,6 +86,8 @@ export default function DeliveriesPage() {
         const key = record.allocation_id;
         const next = NEXT[record.fulfilment_status ?? ""];
         const handedOver = [...record.events].reverse().find((event) => event.status === "handed_over");
+        const handedOverQuantities = new Map(handedOver?.delivered_items.map((item) => [item.basket_item_id, item.quantity]) ?? []);
+        const shortfalls = record.expected_items.filter((item) => (handedOverQuantities.get(item.basket_item_id) ?? 0) < item.quantity);
         const assigned = Boolean(record.fulfilment_status);
         return (
           <Card key={key} className="p-5 sm:p-6">
@@ -110,7 +114,7 @@ export default function DeliveriesPage() {
                 }}>{busy === key ? "Saving…" : next.label}</button>
               </div>
             )}
-            {ngo && record.fulfilment_status === "handed_over" && <div className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4"><p className="font-semibold text-navy">Partner handover for review</p><ul className="mt-2 space-y-1 text-sm text-slate-700">{handedOver?.delivered_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul><label className="mt-3 block text-sm font-semibold text-navy">Verification note <input className={`${fieldClass} mt-1`} maxLength={500} value={notes[key] ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [key]: event.target.value }))} /></label><button className={`${button.primary} mt-3`} disabled={busy === key} onClick={() => void act(key, () => api.verifyDelivery(key, notes[key] ? { note: notes[key] } : {}), "Delivery verified and assistance case completed.")}>{busy === key ? "Verifying…" : "Verify delivery and complete case"}</button></div>}
+            {ngo && record.fulfilment_status === "handed_over" && <div className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4"><p className="font-semibold text-navy">Partner handover for review</p><ul className="mt-2 space-y-1 text-sm text-slate-700">{handedOver?.delivered_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul>{shortfalls.length > 0 && <div className="mt-3 rounded-lg border border-warning/30 bg-warning-tint p-3"><p className="text-sm font-semibold text-warning">Shortfall against approved basket</p><ul className="mt-1 text-sm text-warning">{shortfalls.map((item) => <li key={item.basket_item_id}>{item.name}: {handedOverQuantities.get(item.basket_item_id) ?? 0} of {item.quantity}</li>)}</ul><label className="mt-3 flex items-start gap-2 text-sm font-semibold text-navy"><input type="checkbox" checked={acceptedShortfalls[key] ?? false} onChange={(event) => setAcceptedShortfalls((current) => ({ ...current, [key]: event.target.checked }))} /><span>I approve completing this allocation with the recorded shortfall.</span></label>{acceptedShortfalls[key] && <label className="mt-3 block text-sm font-semibold text-navy">Reason for accepting the shortfall<input className={`${fieldClass} mt-1`} maxLength={500} value={shortfallReasons[key] ?? ""} onChange={(event) => setShortfallReasons((current) => ({ ...current, [key]: event.target.value }))} /></label>}</div>}<label className="mt-3 block text-sm font-semibold text-navy">Verification note <input className={`${fieldClass} mt-1`} maxLength={500} value={notes[key] ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [key]: event.target.value }))} /></label><button className={`${button.primary} mt-3`} disabled={busy === key || (shortfalls.length > 0 && (!acceptedShortfalls[key] || !shortfallReasons[key]?.trim()))} onClick={() => void act(key, () => api.verifyDelivery(key, { ...(notes[key] ? { note: notes[key] } : {}), ...(shortfalls.length > 0 ? { accept_shortfall: true, shortfall_reason: shortfallReasons[key] } : {}) }), "Delivery verified and assistance case completed.")}>{busy === key ? "Verifying…" : "Verify delivery and complete case"}</button></div>}
             {assigned && <><h3 className="mt-5 text-sm font-bold text-navy">Recorded history</h3><DeliveryHistory record={record} /></>}
           </Card>
         );

@@ -26,6 +26,15 @@ export type SubmitDeliveryEventRequest = z.infer<typeof SubmitDeliveryEventReque
 
 export const VerifyDeliveryRequestSchema = z.object({
   note: z.string().trim().max(500).optional(),
+  accept_shortfall: z.boolean().optional(),
+  shortfall_reason: z.string().trim().min(1).max(500).optional(),
+}).superRefine((value, context) => {
+  if (value.accept_shortfall && !value.shortfall_reason) {
+    context.addIssue({ code: "custom", path: ["shortfall_reason"], message: "A reason is required when accepting a delivery shortfall" });
+  }
+  if (!value.accept_shortfall && value.shortfall_reason) {
+    context.addIssue({ code: "custom", path: ["shortfall_reason"], message: "A shortfall reason requires explicit NGO acceptance" });
+  }
 });
 export type VerifyDeliveryRequest = z.infer<typeof VerifyDeliveryRequestSchema>;
 

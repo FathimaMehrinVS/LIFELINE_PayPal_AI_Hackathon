@@ -37,7 +37,7 @@ casesRouter.post("/", validateBody(SituationRequestSchema), async (req, res) => 
     caseId = replaces;
   }
   const result = await runCase(caseId, req.body, caseModules);
-  await caseStore.save(result, req.body, replaces ? undefined : session.id);
+  await caseStore.save(result, req.body, replaces ? undefined : session.id, session.id);
   res.status(replaces ? 200 : 201).json(result);
 });
 

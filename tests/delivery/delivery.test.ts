@@ -162,5 +162,49 @@ describe("assistance delivery verification", () => {
       expect.objectContaining({ actorId: "ngo-1", action: "delivery.verified", entityId: "alloc-1" }),
       expect.objectContaining({ actorId: "ngo-1", action: "allocation.completed", entityId: "alloc-1" }),
     ]) }));
+    expect(h.tx.auditLog.createMany.mock.calls[0]?.[0].data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: "delivery.verified", details: expect.objectContaining({ shortfall_accepted: false, shortfall_reason: null, shortfalls: [] }) }),
+    ]));
+  });
+
+  it("rejects a partial handover until the NGO explicitly accepts the shortfall with a reason", async () => {
+    const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: null, evidenceType: "SUPPLIER_CONFIRMATION", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 1 }], createdAt: new Date("2026-11-09T09:00:00Z") };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", merchant: { id: "merchant-1", name: "Approved Supplier" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const allocation = makeAllocation({ purchaseOrder: order });
+    const h = setup({ allocation });
+
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ note: "The recipient was present" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("Delivery quantities are incomplete");
+    expect(response.body.error.details.shortfalls).toEqual([{ basket_item_id: "basket-item-1", name: "Water container", planned_quantity: 2, delivered_quantity: 1 }]);
+    expect(h.tx.purchaseOrder.updateMany).not.toHaveBeenCalled();
+    expect(h.tx.aidAllocation.updateMany).not.toHaveBeenCalled();
+    expect(h.tx.auditLog.createMany).not.toHaveBeenCalled();
+  });
+
+  it("allows the NGO to accept and record a partial-delivery shortfall with a reason", async () => {
+    const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: null, evidenceType: "SUPPLIER_CONFIRMATION", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 1 }], createdAt: new Date("2026-11-09T09:00:00Z") };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", merchant: { id: "merchant-1", name: "Approved Supplier" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const allocation = makeAllocation({ purchaseOrder: order });
+    const h = setup({ allocation });
+    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "VERIFIED", events: [...order.events, { status: "VERIFIED", actorId: "ngo-1", note: "Shortfall accepted by NGO: supplier ran out of stock", evidenceType: "NGO_CONFIRMATION", deliveredItems: null, createdAt: new Date("2026-11-09T10:00:00Z") }] } }));
+
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ accept_shortfall: true, shortfall_reason: "Supplier ran out of stock" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "verified" });
+    expect(h.tx.fulfilmentEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ actorId: "ngo-1", note: "Shortfall accepted by NGO: Supplier ran out of stock" }) }));
+    expect(h.tx.auditLog.createMany.mock.calls[0]?.[0].data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ actorId: "ngo-1", action: "delivery.verified", details: expect.objectContaining({ shortfall_accepted: true, shortfall_reason: "Supplier ran out of stock", shortfalls: [{ basket_item_id: "basket-item-1", name: "Water container", planned_quantity: 2, delivered_quantity: 1 }] }) }),
+    ]));
+  });
+
+  it("requires a shortfall reason at request validation time", async () => {
+    const h = setup();
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ accept_shortfall: true });
+    expect(response.status).toBe(400);
+    expect(response.body.error.details).toEqual(expect.arrayContaining([expect.objectContaining({ path: "shortfall_reason" })]));
+    expect(h.tx.aidAllocation.findUnique).not.toHaveBeenCalled();
   });
 });

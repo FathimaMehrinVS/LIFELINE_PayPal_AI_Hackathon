@@ -9,7 +9,7 @@ import { saveFinancialAssessment } from "../modules/finance/finance.persistence"
 
 export interface CaseStore {
   /** `request` is the original form input; the database keeps its message. */
-  save(result: CaseResult, request?: SituationRequest, createdById?: string): Promise<void>;
+  save(result: CaseResult, request?: SituationRequest, createdById?: string, actorId?: string): Promise<void>;
   /** Newest first. */
   list(): Promise<CaseResult[]>;
   listByOwner(ownerId: string): Promise<CaseResult[]>;
@@ -65,7 +65,7 @@ function requestStatus(status: CaseResult["status"]) {
  */
 export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): CaseStore {
   return {
-    async save(result, request, createdById) {
+    async save(result, request, createdById, actorId) {
       const db = prisma();
       const { case_id: id, situation, finance, commerce } = result;
       const previous = await db.assistanceRequest.findUnique({ where: { id }, select: { createdById: true } });
@@ -128,7 +128,7 @@ export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): C
           });
         }
         await db.auditLog.create({
-          data: { action: CASE_AUDIT_ACTION, entityType: "AssistanceRequest", entityId: id, details: toJson(result) },
+          data: { actorId: actorId ?? createdById ?? null, action: CASE_AUDIT_ACTION, entityType: "AssistanceRequest", entityId: id, details: toJson(result) },
         });
       } catch (error) {
         // Don't leave half a case behind; the assessments and basket are deleted with it (cascade).
