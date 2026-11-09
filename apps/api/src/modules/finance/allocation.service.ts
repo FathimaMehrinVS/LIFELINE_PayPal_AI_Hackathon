@@ -77,11 +77,16 @@ export async function approveAllocation(
         throw new HttpError("VALIDATION_ERROR", "The basket cost and route fee do not fit the assistance case budget and currency");
       }
 
-      const campaign = await tx.campaign.findUnique({ where: { id: input.campaign_id } });
+      const [campaign, merchant] = await Promise.all([
+        tx.campaign.findUnique({ where: { id: input.campaign_id } }),
+        tx.merchant.findUnique({ where: { id: input.merchant_id }, select: { id: true, status: true } }),
+      ]);
       if (!campaign?.active) throw new HttpError("NOT_FOUND", "Active campaign not found");
       if (campaign.currency !== currency) {
         throw new HttpError("VALIDATION_ERROR", "Plan currency must match the campaign currency");
       }
+      if (!merchant) throw new HttpError("NOT_FOUND", "Supplier not found");
+      if (merchant.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", "Only an approved supplier can receive a purchase order");
 
       if (existing?.status === "APPROVED" || existing?.status === "DISBURSED") {
         if (existing.campaignId !== campaign.id || existing.currency !== currency ||
