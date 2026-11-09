@@ -79,7 +79,7 @@ export default function PaymentsPage() {
                         <td className={`${TD} tabular text-right font-bold text-navy`}>{formatMoney(row.amount, row.currency)}</td>
                         <td className={`${TD} font-mono text-[13px] text-slate-600`}>{row.paypal_capture_id ?? "—"}</td>
                         <td className={TD}><Badge tone={DONATION[row.status].tone}>{DONATION[row.status].label}</Badge></td>
-                        <td className={`${TD} text-slate-600`}>{CONFIRMATION[row.status]} · {formatDateTime(row.updated_at)}</td>
+                        <td className="min-w-[220px] px-4 py-3 leading-snug text-slate-600">{CONFIRMATION[row.status]} · {formatDateTime(row.updated_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -100,7 +100,7 @@ export default function PaymentsPage() {
                         <td className={`${TD} font-bold text-navy`}>{row.reference}</td><td className={`${TD} font-mono text-[13px] text-slate-600`}>{row.plan_reference}</td>
                         <td className={`${TD} text-slate-600`}>{row.supplier ?? "—"}</td>
                         <td className={`${TD} tabular text-right font-bold text-navy`}>{formatMoney(row.amount, row.currency)}</td>
-                        <td className={`${TD} font-mono text-[13px] text-slate-600`}>{row.payment_reference ?? "—"}</td>
+                        <td className="min-w-[180px] break-words px-4 py-3 font-mono text-[13px] leading-snug text-slate-600">{row.payment_reference ?? "—"}</td>
                         <td className={TD}>{row.mode === "simulated" ? <Badge tone="simulated">Simulated</Badge> : <Badge tone={PAYOUT[row.status].tone}>{PAYOUT[row.status].label}</Badge>}</td>
                       </tr>
                     ))}

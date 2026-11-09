@@ -80,7 +80,7 @@ function CaseBasket({ item }: { item: CaseResult }) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {products.map(({ product, inBasket }) => (
               <article key={`${product.product_id}-${inBasket}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex h-24 items-center justify-center rounded-xl bg-slate-100 text-slate-400"><BasketIcon className="h-9 w-9" /></div>
+                <div className="flex h-24 items-center justify-center rounded-xl bg-slate-100 text-slate-500"><BasketIcon className="h-9 w-9" /></div>
                 <div className="mt-3 flex items-start justify-between gap-2">
                   <h2 className="font-bold text-navy">{product.name}</h2>
                   <p className="tabular font-bold text-navy">{money(product.unit_price)}</p>

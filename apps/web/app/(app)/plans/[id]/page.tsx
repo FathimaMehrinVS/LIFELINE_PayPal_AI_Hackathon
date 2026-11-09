@@ -48,7 +48,7 @@ export default function PlanDetailPage() {
         <div className="space-y-5">
           <div>
             <div className="flex flex-wrap gap-2"><Badge tone="human">NGO approved</Badge><UrgencyBadge urgency={plan.urgency} /><Badge tone="neutral"><span className="font-mono">Plan {plan.reference}</span></Badge></div>
-            <h1 className="mt-3 text-[32px] font-extrabold leading-tight text-navy">{plan.title}</h1>
+            <h1 className="mt-3 text-[28px] font-extrabold leading-tight text-navy">{plan.title}</h1>
             <p className="mt-2 text-slate-600">{plan.description}</p>
             <div className="mt-3 flex flex-wrap gap-2">{plan.needs.map((need) => <span key={need} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-[13px] text-navy">{needLabel(need)}</span>)}</div>
           </div>

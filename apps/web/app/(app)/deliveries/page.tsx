@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthProfile } from "@/components/auth-session";
 import { Badge, Card, Overline, fieldClass, button } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
+import { caseRef } from "../dashboard/case-row";
 
 const NEXT: Record<string, { status: "accepted" | "preparing" | "ready" | "dispatched" | "handed_over"; label: string }> = {
   awaiting_acceptance: { status: "accepted", label: "Accept assignment" },
@@ -92,15 +93,15 @@ export default function DeliveriesPage() {
         return (
           <Card key={key} className="p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div><h2 className="font-bold text-navy">Case {record.case_id}</h2><p className="mt-1 text-sm text-slate-600">Allocation {money(record.amount, record.currency)} · captured {money(record.captured_amount, record.currency)}</p></div>
-              <Badge tone={record.allocation_status === "completed" ? "success" : assigned ? "human" : "neutral"}>{record.fulfilment_status?.replaceAll("_", " ") ?? record.allocation_status}</Badge>
+              <div><h2 className="font-bold text-navy">Case <span className="font-mono">{caseRef(record.case_id)}</span></h2><p className="mt-1 text-sm text-slate-600">Allocation {money(record.amount, record.currency)} · captured {money(record.captured_amount, record.currency)}</p></div>
+              <Badge tone={record.allocation_status === "completed" ? "success" : assigned ? "human" : "neutral"} className="capitalize">{record.fulfilment_status?.replaceAll("_", " ") ?? record.allocation_status}</Badge>
             </div>
             {record.expected_items.length > 0 && <div className="mt-4"><p className="text-sm font-semibold text-navy">Approved basket</p><ul className="mt-1 space-y-1 text-sm text-slate-600">{record.expected_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul></div>}
             {ngo && !assigned && (
               <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
                 <label className="text-sm font-semibold text-navy">Approved supplier<select className={`${fieldClass} mt-1`} value={supplierChoices[key] ?? ""} onChange={(event) => setSupplierChoices((current) => ({ ...current, [key]: event.target.value }))}><option value="">Choose supplier</option>{suppliers.map((supplier) => <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>)}</select></label>
                 <label className="text-sm font-semibold text-navy">Partner profile<select className={`${fieldClass} mt-1`} value={partnerChoices[key] ?? ""} onChange={(event) => setPartnerChoices((current) => ({ ...current, [key]: event.target.value }))}><option value="">Choose assigned partner</option>{partners.map((item) => <option key={item.user_id} value={item.user_id}>{item.name} · {item.email}</option>)}</select></label>
-                <div className="sm:col-span-2"><button className={button.primary} disabled={busy === key || record.captured_amount < record.amount || !supplierChoices[key] || !partnerChoices[key]} onClick={() => void act(key, () => api.assignDelivery({ allocation_id: key, merchant_id: supplierChoices[key]!, partner_user_id: partnerChoices[key]! }), "Partner assigned to funded allocation.")}>{busy === key ? "Assigning…" : "Assign partner"}</button>{record.captured_amount < record.amount && <p className="mt-2 text-xs text-warning">Captured donations must cover the approved amount before supplier assignment.</p>}</div>
+                <div className="sm:col-span-2">{record.captured_amount < record.amount && <p className="mb-2 text-[13px] text-slate-600">Assignment unlocks once the full approved amount has been captured.</p>}<button className={button.primary} disabled={busy === key || record.captured_amount < record.amount || !supplierChoices[key] || !partnerChoices[key]} onClick={() => void act(key, () => api.assignDelivery({ allocation_id: key, merchant_id: supplierChoices[key]!, partner_user_id: partnerChoices[key]! }), "Partner assigned to funded allocation.")}>{busy === key ? "Assigning…" : "Assign partner"}</button>{record.captured_amount < record.amount && <p className="mt-2 text-xs text-warning">Captured donations must cover the approved amount before supplier assignment.</p>}</div>
               </div>
             )}
             {assigned && <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600"><span>Supplier: <strong className="text-navy">{record.merchant?.name}</strong></span><span>· Partner: <strong className="text-navy">{record.partner?.name ?? "unassigned"}</strong></span></div>}

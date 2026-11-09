@@ -65,7 +65,7 @@ export default function ApprovedPlansPage() {
 
   const captured = contributions.filter((item) => item.status === "captured");
   const currencies = [...new Set(captured.map((item) => item.currency))];
-  const given = currencies.length === 1 ? formatMoney(captured.reduce((sum, item) => sum + item.amount, 0), currencies[0]!) : currencies.length === 0 ? "0" : "Multiple currencies";
+  const given = currencies.length === 1 ? formatMoney(captured.reduce((sum, item) => sum + item.amount, 0), currencies[0]!) : currencies.length === 0 ? "Nothing yet" : "Multiple currencies";
   const stats = [
     { value: given, label: "You've given" },
     { value: String(new Set(captured.map((item) => item.plan.plan_id)).size), label: "Plans supported" },
