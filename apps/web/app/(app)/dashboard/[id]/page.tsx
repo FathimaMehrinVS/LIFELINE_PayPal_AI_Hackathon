@@ -28,7 +28,7 @@ const AVAILABILITY: Record<Availability, { tone: BadgeTone; label: string }> = {
 const URGENCY_TONE = { critical: "critical", high: "warning", medium: "info", low: "neutral" } as const;
 const STATUS_TONE = { complete: "success", needs_information: "warning", no_usable_route: "critical" } as const;
 
-const TIMELINE_DOT: Record<CaseTimelineEntry["kind"], string> = { case: "bg-accent", approval: "bg-navy", donation: "bg-success", payment: "bg-simulated" };
+const TIMELINE_DOT: Record<CaseTimelineEntry["kind"], string> = { case: "bg-accent", approval: "bg-navy", donation: "bg-success", payment: "bg-simulated", supplier: "bg-teal" };
 
 function Tile({ label, value, known = true }: { label: string; value: string; known?: boolean }) {
   return (

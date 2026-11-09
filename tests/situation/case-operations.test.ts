@@ -2,7 +2,7 @@ import type { CaseResult } from "@lifeline/contracts";
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../../apps/api/src/app";
-import { attachOperations, getCaseTimeline } from "../../apps/api/src/orchestration/case-operations";
+import { attachOperations, getCaseTimeline, getRecentActivity } from "../../apps/api/src/orchestration/case-operations";
 
 const amount = (value: number) => ({ toNumber: () => value, toFixed: (places: number) => value.toFixed(places) });
 const item = (id: string) => ({ case_id: id }) as CaseResult;
@@ -69,5 +69,23 @@ describe("getCaseTimeline", () => {
   it.each(["DONOR", "PARTNER"] as const)("is closed to %s accounts", async (role) => {
     const app = createApp({ resolveSession: async () => ({ id: "x", email: "x@example.test", role }) });
     expect((await request(app).get("/api/cases/case_a/timeline")).status).toBe(403);
+  });
+});
+
+describe("getRecentActivity", () => {
+  it("describes recorded events in plain words, without personal details", async () => {
+    const findMany = vi.fn(async () => [
+      { action: "supplier.status_changed", entityId: "sup_1", details: { to: "suspended", reason: "secret note" }, createdAt: at(2) },
+      { action: "case.orchestrated", entityId: "case_abcdef12-0000", details: { situation: { summary: "private" } }, createdAt: at(1) },
+    ]);
+    const activity = await getRecentActivity({ auditLog: { findMany } } as never);
+    expect(activity.map((entry) => entry.title)).toEqual(["Supplier suspended", "Case recorded"]);
+    expect(activity[1]!.detail).toBe("LL-ABCDEF12");
+    expect(JSON.stringify(activity)).not.toMatch(/secret|private/);
+  });
+
+  it.each(["DONOR", "PARTNER"] as const)("is closed to %s accounts", async (role) => {
+    const app = createApp({ resolveSession: async () => ({ id: "x", email: "x@example.test", role }) });
+    expect((await request(app).get("/api/cases/activity")).status).toBe(403);
   });
 });

@@ -29,7 +29,7 @@ export const CaseOperationsSchema = z.object({
 export type CaseOperations = z.infer<typeof CaseOperationsSchema>;
 
 export const CaseTimelineEntrySchema = z.object({
-  kind: z.enum(["case", "approval", "donation", "payment"]),
+  kind: z.enum(["case", "approval", "donation", "payment", "supplier"]),
   title: z.string(),
   detail: z.string().nullable(),
   at: z.string(),

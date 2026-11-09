@@ -21,7 +21,7 @@ function frameFor(path: string): Frame {
 const NAV: { href: string; label: string; Icon: (p: { className?: string }) => ReactNode; roles?: string[] }[] = [
   { href: "/workspace", label: "Workspace", Icon: HomeIcon },
   { href: "/dashboard", label: "Assistance Cases", Icon: GridIcon, roles: ["NGO"] },
-  { href: "/overview", label: "Case Overview", Icon: GridIcon, roles: ["NGO"] },
+  { href: "/overview", label: "Overview", Icon: GridIcon, roles: ["NGO"] },
   { href: "/requests", label: "My Requests", Icon: PlusCircleIcon },
   { href: "/finance", label: "Financial Assessments", Icon: RouteIcon },
   { href: "/commerce", label: "Product Baskets", Icon: BasketIcon },

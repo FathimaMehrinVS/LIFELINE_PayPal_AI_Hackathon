@@ -79,6 +79,7 @@ export const api = {
   registerSupplier: (body: CreateSupplierRequestInput) => post<SupplierDetail>("/api/suppliers", body),
   updateSupplierStatus: (id: string, body: UpdateSupplierStatusRequest) => post<SupplierDetail>(`/api/suppliers/${encodeURIComponent(id)}/status`, body),
   listCases: () => get<CaseResult[]>("/api/cases"),
+  getRecentActivity: () => get<CaseTimelineEntry[]>("/api/cases/activity"),
   getCaseTimeline: (caseId: string) => get<CaseTimelineEntry[]>(`/api/cases/${encodeURIComponent(caseId)}/timeline`),
   listMyCases: () => get<CaseResult[]>("/api/cases/mine"),
   listSampleCases: () => get<CaseResult[]>("/api/cases/samples"),

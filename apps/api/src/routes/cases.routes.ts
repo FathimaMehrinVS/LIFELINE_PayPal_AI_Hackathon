@@ -4,7 +4,7 @@ import { SituationRequestSchema } from "@lifeline/contracts";
 import { validateBody } from "../middleware/validate";
 import { env } from "../config/env";
 import { getPrisma } from "../database/prisma";
-import { attachOperations, getCaseTimeline } from "../orchestration/case-operations";
+import { attachOperations, getCaseTimeline, getRecentActivity } from "../orchestration/case-operations";
 import { caseStore } from "../orchestration/case-store";
 import { caseModules } from "../orchestration/modules";
 import { runCase } from "../orchestration/run-case";
@@ -51,6 +51,11 @@ casesRouter.get("/", async (_req, res) => {
   if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view all assistance cases");
   const cases = await caseStore.list();
   res.json(env.DATABASE_URL ? await attachOperations(getPrisma(), cases) : cases);
+});
+
+casesRouter.get("/activity", async (_req, res) => {
+  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view activity");
+  res.json(await getRecentActivity(getPrisma()));
 });
 
 casesRouter.get("/:id/timeline", async (req, res) => {

@@ -40,6 +40,25 @@ export async function attachOperations(db: Database, cases: CaseResult[]): Promi
   return cases.map((item) => ({ ...item, operations: byCase.get(item.case_id) ?? { allocation: null, funding: { captured: 0, donations: 0 }, payout: null } }));
 }
 
+const ACTIVITY_TITLES: Record<string, { title: string; kind: CaseTimelineEntry["kind"] }> = {
+  [CASE_AUDIT_ACTION]: { title: "Case recorded", kind: "case" },
+  "allocation.approved": { title: "Plan approved by NGO", kind: "approval" },
+  "allocation.disbursement_simulated": { title: "Simulated disbursement recorded", kind: "payment" },
+  "supplier.registered": { title: "Supplier registered", kind: "supplier" },
+  "supplier.status_changed": { title: "Supplier status changed", kind: "supplier" },
+};
+
+/** The latest recorded events across the NGO's work, newest first. */
+export async function getRecentActivity(db: Database, limit = 6): Promise<CaseTimelineEntry[]> {
+  const logs = await db.auditLog.findMany({ where: { action: { in: Object.keys(ACTIVITY_TITLES) } }, orderBy: { createdAt: "desc" }, take: limit });
+  return logs.map((log) => {
+    const { title, kind } = ACTIVITY_TITLES[log.action]!;
+    const reference = log.entityId.startsWith("case_") ? `LL-${log.entityId.slice(5, 13).toUpperCase()}` : null;
+    const to = (log.details as { to?: unknown } | null)?.to;
+    return { kind, title: log.action === "supplier.status_changed" && typeof to === "string" ? `Supplier ${to}` : title, detail: reference, at: log.createdAt.toISOString() };
+  });
+}
+
 const money = (amount: { toFixed(places: number): string }, currency: string) => `${amount.toFixed(2)} ${currency}`;
 
 /** Every recorded step for one case, oldest first. A step with no record is simply absent. */

@@ -369,7 +369,7 @@ const ACCESS_NAMES: Record<string, string> = {
 type RouteAssessmentItem = NonNullable<CaseResult["finance"]>["routes"][number];
 
 /** Why a route can't be used, in words a family member understands (from Member 2's flags). */
-function plainReason(route: RouteAssessmentItem, currency: string): string {
+export function plainReason(route: RouteAssessmentItem, currency: string): string {
   const unavailable = route.flags.find((f) => f.code === "REQUIRED_ACCESS_UNAVAILABLE");
   if (unavailable) {
     const factor = (unavailable.evidence as { factor?: string } | undefined)?.factor;

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRightIcon, HeartHandIcon } from "@/components/icons";
+import { ArrowRightIcon } from "@/components/icons";
+import { Badge, Card, Choice, button, fieldClass } from "@/components/ui";
 import { api } from "@/services/api";
+import { caseRef } from "../dashboard/case-row";
 import { parseDonationTarget, type DonationTarget } from "./donation-target";
 
 const NEXT_STEPS = [
@@ -61,57 +63,64 @@ export default function DonatePage() {
     } catch (err) { setMessage(err instanceof Error ? err.message : "Could not start PayPal checkout"); setBusy(false); }
   }
 
+  const entered = Number(amount);
+  const presets = target ? [...[25, 50, 100].filter((value) => value < target.amount), target.amount] : [];
+  const money = (value: number) => (target ? new Intl.NumberFormat(undefined, { style: "currency", currency: target.currency }).format(value) : "");
+
   return (
-    <div className="space-y-6">
-      <header className="relative overflow-hidden rounded-3xl bg-navy p-7 text-white shadow-lg sm:p-9">
-        <HeartHandIcon className="pointer-events-none absolute -right-6 -top-6 h-48 w-48 text-white/10" />
-        <h1 className="relative text-3xl font-extrabold tracking-tight sm:text-4xl">Support approved assistance</h1>
-        <p className="relative mt-2 max-w-2xl text-indigo-100">
-          Fund a plan an NGO has already checked and approved. Payment is processed through PayPal Sandbox, so no real money moves.
-        </p>
-      </header>
+    <div className="mx-auto max-w-[1130px]">
+      <Link href="/workspace" className="text-sm font-semibold text-teal-text hover:underline">← Back</Link>
+      <h1 className="mt-2 text-[28px] font-bold text-navy">Support this assistance plan</h1>
+      {message && <p role="status" className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-navy">{message}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">The plan you are funding</h2>
-          {targetMessage && (
-            <div role="status" className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <p>{targetMessage}</p>
-              {!target && <Link href="/dashboard" className="mt-2 inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline">Open the NGO dashboard <ArrowRightIcon className="h-4 w-4" /></Link>}
-            </div>
-          )}
-          {target && (
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-indigo-50 p-4">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Approved amount</dt>
-                <dd className="tabular mt-1 text-2xl font-bold text-indigo-700">{target.amount.toFixed(2)} {target.currency}</dd>
+      <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <form onSubmit={submit} className="space-y-5">
+          <Card className="p-6">
+            <p className="font-bold text-navy">Donation amount</p>
+            {targetMessage && (
+              <div role="status" className="mt-3 rounded-xl border border-accent/50 bg-warning-tint p-4 text-sm text-warning">
+                <p>{targetMessage}</p>
+                {!target && <Link href="/workspace" className="mt-2 inline-flex items-center gap-1 font-semibold hover:underline">Back to your workspace <ArrowRightIcon className="h-4 w-4" /></Link>}
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Case reference</dt>
-                <dd className="mt-1 break-all font-mono text-sm text-slate-800">{target.caseId}</dd>
+            )}
+            {target && (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Donation amount">
+                {presets.map((value) => (
+                  <Choice key={value} selected={entered === value} onClick={() => setAmount(value.toFixed(2))} className="justify-center rounded-xl px-3 py-4 text-base font-bold">
+                    {value === target.amount ? `Full · ${money(value)}` : money(value)}
+                  </Choice>
+                ))}
               </div>
-            </dl>
-          )}
-          <h3 className="mt-6 text-sm font-semibold text-slate-800">What happens next</h3>
-          <ol className="mt-3 space-y-3 text-sm text-slate-600">
-            {NEXT_STEPS.map((step, index) => (
-              <li key={step} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">{index + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
+            )}
+            <label className="mt-4 block text-sm font-bold text-navy">
+              <span className="mb-1.5 block">Other amount ({target?.currency ?? "currency"})</span>
+              <input className={fieldClass} type="number" min="0.01" max={target?.amount} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required />
+            </label>
+          </Card>
 
-        <form onSubmit={submit} className="h-fit space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <label className="block text-sm font-semibold text-slate-800">
-            <span className="mb-1 block">Donation amount ({target?.currency ?? "currency"})</span>
-            <input className="w-full rounded-xl border border-slate-300 bg-white p-3 font-normal focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100" type="number" min="0.01" max={target?.amount} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required />
-          </label>
-          <button disabled={busy || !target} className="w-full rounded-full bg-indigo-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none">{busy ? "Connecting to PayPal…" : "Continue to PayPal Sandbox"}</button>
-          <p className="text-xs text-slate-500">No assistance payment is made by creating this donation.</p>
-          {message && <p role="status" className="rounded-2xl bg-slate-100 p-3 text-sm text-slate-700">{message}</p>}
+          <Card className="p-6">
+            <p className="font-bold text-navy">Payment</p>
+            <p className="mt-2 rounded-xl border border-dashed border-simulated bg-simulated-tint p-4 text-center text-sm text-simulated">You'll approve this on PayPal's Sandbox page, so no real money moves. LIFELINE never collects card or account details.</p>
+            <button disabled={busy || !target} className={`${button.primary} mt-4 w-full py-3.5 text-base`}>{busy ? "Connecting to PayPal…" : "Continue with PayPal"}</button>
+            <p className="mt-3 text-center text-[13px] text-slate-600">Processed by PayPal Sandbox · No assistance payment is made by creating this donation.</p>
+          </Card>
         </form>
+
+        <aside className="space-y-4">
+          <Card className="p-5">
+            <div className="flex flex-wrap gap-2"><Badge tone="human">NGO approved</Badge>{target && <Badge tone="neutral"><span className="font-mono">{caseRef(target.caseId)}</span></Badge>}</div>
+            <h2 className="mt-3 text-lg font-bold text-navy">The plan you are funding</h2>
+            {target ? <dl className="mt-3 flex justify-between text-sm font-bold text-navy"><dt>Approved amount</dt><dd className="tabular">{money(target.amount)}</dd></dl> : <p className="mt-2 text-sm text-slate-600">Choose an approved plan first.</p>}
+            {target && <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 p-4"><span className="font-semibold text-navy">You pay today</span><span className="tabular text-2xl font-extrabold text-navy">{entered > 0 ? money(entered) : "—"}</span></div>}
+          </Card>
+          <Card className="p-5">
+            <h2 className="font-bold text-navy">What happens next</h2>
+            <ol className="mt-3 space-y-2.5 text-sm text-slate-600">
+              {NEXT_STEPS.map((step, index) => <li key={step} className="flex gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">{index + 1}</span>{step}</li>)}
+            </ol>
+          </Card>
+          <p className="rounded-xl border border-teal/30 bg-teal-tint p-4 text-sm text-navy">Your contribution supports the NGO-approved plan shown above.</p>
+        </aside>
       </div>
     </div>
   );
