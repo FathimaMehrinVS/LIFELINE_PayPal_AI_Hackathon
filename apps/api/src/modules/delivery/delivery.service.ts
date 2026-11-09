@@ -4,7 +4,7 @@ import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
 import type { AuthSession } from "../../auth/session";
 import { canTransitionFulfilment, type FulfilmentStatus } from "../../rules/fulfilment";
-import { createPickupCode } from "../procurement/pickup-code";
+import { createPickupCode, MAX_PICKUP_CODE_ATTEMPTS, verifyPickupCode } from "../procurement/pickup-code";
 
 type Database = ReturnType<typeof getPrisma>;
 type Transaction = Prisma.TransactionClient;
@@ -228,7 +228,7 @@ export async function verifyDelivery(
 ): Promise<{ record: DeliveryRecord; duplicate: boolean }> {
   if (actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only an NGO can verify delivery");
   const db = getDatabase();
-  return db.$transaction(async (tx) => {
+  const outcome = await db.$transaction(async (tx) => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     if (allocation.status === "COMPLETED" && allocation.purchaseOrder?.fulfilmentStatus === "VERIFIED") {
@@ -237,6 +237,27 @@ export async function verifyDelivery(
     const order = allocation.purchaseOrder;
     if (!order || allocation.request.status !== "APPROVED" || order.fulfilmentStatus !== "HANDED_OVER") {
       throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be verified");
+    }
+    if (!order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "No active pickup code is available for this order");
+    if (order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
+      await tx.auditLog.create({ data: {
+        actorId: actor.id, action: "purchase_order.pickup_code_locked", entityType: "PurchaseOrder", entityId: order.id,
+        details: { allocation_id: allocation.id, attempts: order.pickupAttempts },
+      } });
+      return { failure: "locked" as const, attempts: order.pickupAttempts };
+    }
+    if (!verifyPickupCode(input.pickup_code, order.pickupCodeHash)) {
+      const attempt = order.pickupAttempts + 1;
+      const incremented = await tx.purchaseOrder.updateMany({
+        where: { id: order.id, fulfilmentStatus: "HANDED_OVER", pickupAttempts: order.pickupAttempts },
+        data: { pickupAttempts: { increment: 1 } },
+      });
+      if (incremented.count !== 1) throw new HttpError("VALIDATION_ERROR", "Pickup verification changed; please try again");
+      await tx.auditLog.create({ data: {
+        actorId: actor.id, action: "purchase_order.pickup_code_rejected", entityType: "PurchaseOrder", entityId: order.id,
+        details: { allocation_id: allocation.id, attempts: attempt },
+      } });
+      return { failure: "invalid" as const, attempts: attempt };
     }
     const handover = [...order.events].reverse().find((event) => event.status === "HANDED_OVER");
     if (!handover || deliveredItems(handover.deliveredItems).length === 0) {
@@ -279,4 +300,10 @@ export async function verifyDelivery(
     if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     return { record: toRecord(updated), duplicate: false };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  if ("failure" in outcome) {
+    const attempts = outcome.attempts;
+    if (outcome.failure === "locked") throw new HttpError("VALIDATION_ERROR", "Too many incorrect pickup codes. Ask an NGO worker to help.", { attempts });
+    throw new HttpError("VALIDATION_ERROR", "Pickup code is incorrect", { attempts, remaining_attempts: Math.max(0, MAX_PICKUP_CODE_ATTEMPTS - attempts) });
+  }
+  return outcome;
 }
