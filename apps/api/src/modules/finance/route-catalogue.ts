@@ -48,7 +48,18 @@ const DEMO_ROUTE_CATALOGUE: readonly FinancialRoute[] = [
   },
 ];
 
-/** Return fresh objects so callers cannot mutate the shared demo catalogue. */
-export function getDemoRouteCatalogue(): FinancialRoute[] {
-  return DEMO_ROUTE_CATALOGUE.map((route) => ({ ...route, requires: [...route.requires] }));
+/** Exact normalized area matching avoids claiming coverage based on a loose substring match. */
+export function supplierCoversLocation(location: string, serviceAreas: readonly string[]): boolean {
+  const normalize = (value: string) => value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
+  const caseAreas = new Set(location.split(",").map(normalize).filter(Boolean));
+  return serviceAreas.some((area) => caseAreas.has(normalize(area)));
+}
+
+/** Return fresh objects; a local partner is verified only when approved supplier coverage is confirmed. */
+export function getDemoRouteCatalogue(partnerCoversLocation = false): FinancialRoute[] {
+  return DEMO_ROUTE_CATALOGUE.map((route) => ({
+    ...route,
+    ...(route.id === "route_partner" ? { eligibility: partnerCoversLocation ? "verified" as const : "unverified" as const } : {}),
+    requires: [...route.requires],
+  }));
 }
