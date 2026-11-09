@@ -231,7 +231,7 @@ export async function verifyDelivery(
   const outcome = await db.$transaction(async (tx) => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
-    if (allocation.status === "COMPLETED" && allocation.purchaseOrder?.fulfilmentStatus === "VERIFIED") {
+    if (allocation.status === "COMPLETED" && allocation.purchaseOrder?.fulfilmentStatus === "RECIPIENT_CONFIRMED") {
       return { record: toRecord(allocation), duplicate: true };
     }
     const order = allocation.purchaseOrder;
@@ -282,7 +282,13 @@ export async function verifyDelivery(
     if (!["APPROVED", "DISBURSED"].includes(allocation.status)) {
       throw new HttpError("VALIDATION_ERROR", "This allocation cannot be completed from its current status");
     }
-    const orderChanged = await tx.purchaseOrder.updateMany({ where: { id: order.id, fulfilmentStatus: "HANDED_OVER" }, data: { fulfilmentStatus: "VERIFIED" } });
+    if (!canTransitionFulfilment("HANDED_OVER", "RECIPIENT_CONFIRMED", "NGO", { pickupCodeVerified: true })) {
+      throw new HttpError("VALIDATION_ERROR", "Delivery confirmation is not an allowed status change");
+    }
+    const orderChanged = await tx.purchaseOrder.updateMany({
+      where: { id: order.id, fulfilmentStatus: "HANDED_OVER", pickupCodeHash: order.pickupCodeHash },
+      data: { fulfilmentStatus: "RECIPIENT_CONFIRMED", pickupCodeHash: null },
+    });
     const allocationChanged = await tx.aidAllocation.updateMany({ where: { id: allocation.id, status: allocation.status }, data: { status: "COMPLETED" } });
     if (orderChanged.count !== 1 || allocationChanged.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
     const caseChanged = await tx.assistanceRequest.updateMany({ where: { id: allocation.requestId, status: "APPROVED" }, data: { status: "COMPLETED" } });
@@ -291,9 +297,9 @@ export async function verifyDelivery(
     const verificationNote = shortfalls.length > 0
       ? `Shortfall accepted by NGO: ${input.shortfall_reason}${input.note ? `; ${input.note}` : ""}`
       : input.note || null;
-    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "VERIFIED", actorId: actor.id, evidenceType: "NGO_CONFIRMATION", note: verificationNote } });
+    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "RECIPIENT_CONFIRMED", actorId: actor.id, evidenceType: "PICKUP_CODE", note: verificationNote } });
     await tx.auditLog.createMany({ data: [
-      { actorId: actor.id, action: "delivery.verified", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, verified_by: actor.id, shortfall_accepted: shortfalls.length > 0, shortfall_reason: shortfalls.length > 0 ? input.shortfall_reason : null, shortfalls } },
+      { actorId: actor.id, action: "delivery.recipient_confirmed", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, confirmed_by: actor.id, shortfall_accepted: shortfalls.length > 0, shortfall_reason: shortfalls.length > 0 ? input.shortfall_reason : null, shortfalls } },
       { actorId: actor.id, action: "allocation.completed", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id } },
     ] });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
