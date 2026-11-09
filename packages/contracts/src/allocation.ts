@@ -17,6 +17,7 @@ export type ApproveAllocationRequest = z.infer<typeof ApproveAllocationRequestSc
 
 export const AllocationResultSchema = z.object({
   allocation_id: z.string(),
+  purchase_order_id: z.string().optional(),
   case_id: z.string(),
   status: AllocationStatusSchema,
   amount: AmountSchema,
