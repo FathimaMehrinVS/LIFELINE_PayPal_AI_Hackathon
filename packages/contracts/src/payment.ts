@@ -33,17 +33,18 @@ export type DonationResult = z.infer<typeof DonationResultSchema>;
 export const PayoutStatusSchema = z.enum(["pending", "processing", "completed", "failed", "returned"]);
 export type PayoutStatus = z.infer<typeof PayoutStatusSchema>;
 
-/** POST /api/payments/payouts — only for an NGO-approved allocation. */
+/** POST /api/payments/payouts — records a simulated supplier payment against an approved purchase order. */
 export const CreatePayoutRequestSchema = z.object({
-  allocation_id: z.string().min(1),
-  amount: AmountSchema.positive(),
-  currency: CurrencySchema,
+  purchase_order_id: z.string().min(1),
+  reference: z.string().trim().min(1).max(120),
 });
 export type CreatePayoutRequest = z.infer<typeof CreatePayoutRequestSchema>;
 
 export const PayoutResultSchema = z.object({
   payout_id: z.string(),
   allocation_id: z.string(),
+  purchase_order_id: z.string().optional(),
+  reference: z.string().optional(),
   status: PayoutStatusSchema,
   amount: AmountSchema,
   currency: CurrencySchema,
