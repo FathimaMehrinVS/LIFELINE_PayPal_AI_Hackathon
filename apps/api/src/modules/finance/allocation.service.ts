@@ -59,11 +59,23 @@ export async function approveAllocation(
       }
       const routeId = assistance.financial?.recommendedRouteId;
       if (!assistance.basket || !routeId) throw new HttpError("VALIDATION_ERROR", "A costed basket and recommended route are required");
+      const assessments = Array.isArray(assistance.financial?.routes) ? assistance.financial.routes : [];
+      const recommendation = assessments.find((row) =>
+        !!row && typeof row === "object" && !Array.isArray(row) &&
+        "route_id" in row && row.route_id === routeId,
+      );
+      if (!recommendation || typeof recommendation !== "object" || Array.isArray(recommendation) || !("verdict" in recommendation) || recommendation.verdict !== "pass") {
+        throw new HttpError("VALIDATION_ERROR", "The recommended route is no longer eligible for approval");
+      }
       const route = getDemoRouteCatalogue(true).find((candidate) => candidate.id === routeId);
       if (!route) throw new HttpError("VALIDATION_ERROR", "The recommended route is no longer available");
       const fee = new Prisma.Decimal(assessFees(assistance.basket.total.toNumber(), route).estimated_fee);
       const amount = assistance.basket.total.plus(fee).toDecimalPlaces(2);
       const currency = assistance.basket.currency;
+      if (!assistance.situation.currency || !assistance.situation.budget || currency !== assistance.situation.currency ||
+          amount.lessThanOrEqualTo(0) || amount.greaterThan(assistance.situation.budget)) {
+        throw new HttpError("VALIDATION_ERROR", "The basket cost and route fee do not fit the assistance case budget and currency");
+      }
 
       const campaign = await tx.campaign.findUnique({ where: { id: input.campaign_id } });
       if (!campaign?.active) throw new HttpError("NOT_FOUND", "Active campaign not found");
