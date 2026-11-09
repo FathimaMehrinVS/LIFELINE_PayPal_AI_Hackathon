@@ -70,7 +70,7 @@ export default function ContributionsPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge tone={DONATION_STATUS[selected.status].tone}>{DONATION_STATUS[selected.status].label}</Badge>
             <Badge tone={recorded("supplier_payment") ? "success" : "neutral"}>Supplier payment {recorded("supplier_payment") ? "recorded" : "not yet recorded"}</Badge>
-            <Badge tone={recorded("recipient_confirmed") ? "success" : "neutral"}>Delivery {recorded("recipient_confirmed") ? "confirmed" : "not yet confirmed"}</Badge>
+            <Badge tone={recorded("verified") ? "success" : "neutral"}>Delivery {recorded("verified") ? "confirmed" : "not yet confirmed"}</Badge>
           </div>
         </div>
 

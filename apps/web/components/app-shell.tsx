@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
-import { BasketIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon } from "./icons";
+import { BasketIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
 
 // The page frames from "LIFELINE Screen Designs": public site, intake, NGO workspace, donor area, sign-in.
 // Sign-in and roles are checked by the (app) layout; the menu shows only what a role can use.
@@ -27,6 +27,7 @@ const NAV: { href: string; label: string; Icon: (p: { className?: string }) => R
   { href: "/commerce", label: "Product Baskets", Icon: BasketIcon },
   { href: "/suppliers", label: "Suppliers", Icon: StoreIcon, roles: ["NGO"] },
   { href: "/payments", label: "Payments", Icon: RouteIcon, roles: ["NGO"] },
+  { href: "/deliveries", label: "Delivery Tracking", Icon: UsersIcon, roles: ["NGO", "PARTNER"] },
   { href: "/audit", label: "Audit Logs", Icon: ShieldCheckIcon, roles: ["NGO"] },
   { href: "/plans", label: "Approved Plans", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/contributions", label: "My Contributions", Icon: HeartHandIcon, roles: ["DONOR"] },
