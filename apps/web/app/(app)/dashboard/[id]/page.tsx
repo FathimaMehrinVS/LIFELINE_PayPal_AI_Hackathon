@@ -2,12 +2,12 @@
 
 import type { AccessFactorKey, Availability, CaseResult, CaseTimelineEntry } from "@lifeline/contracts";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { AiPanel, Badge, type BadgeTone, Card, Overline } from "@/components/ui";
 import { api } from "@/services/api";
 import { MISSING_QUESTIONS } from "../../situation/situation-result";
-import { STATUS_LABELS, caseRef, formatMoney, fundingState, loadCases, recommendedRoute, routeName, sourceLabel } from "../case-row";
+import { STATUS_LABELS, caseRef, formatMoney, fundingState, recommendedRoute, routeName, sourceLabel } from "../case-row";
 
 // Owner: Member 1. One case, styled from "LIFELINE Screen Designs" page 11. Only recorded facts are shown.
 
@@ -166,37 +166,28 @@ function CaseView({ item, timeline }: { item: CaseResult; timeline: CaseTimeline
   );
 }
 
-function CasePage() {
+export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const sample = useSearchParams().get("sample") === "1";
   const [state, setState] = useState<{ item?: CaseResult; message?: string }>({});
   const [timeline, setTimeline] = useState<CaseTimelineEntry[]>([]);
 
   useEffect(() => {
     const caseId = decodeURIComponent(id);
-    loadCases(sample)
+    api.listCases()
       .then((cases) => {
         const item = cases.find((c) => c.case_id === caseId);
         setState(item ? { item } : { message: "This case was not found." });
       })
       .catch(() => setState({ message: "Can't load this case. Is the API running?" }));
-    if (!sample) api.getCaseTimeline(caseId).then(setTimeline).catch(() => setTimeline([]));
-  }, [id, sample]);
+    api.getCaseTimeline(caseId).then(setTimeline).catch(() => setTimeline([]));
+  }, [id]);
 
   return (
     <div>
-      <Link href={`/dashboard${sample ? "?sample=1" : ""}`} className="text-sm font-semibold text-teal-text hover:underline">← All cases</Link>
+      <Link href="/dashboard" className="text-sm font-semibold text-teal-text hover:underline">← All cases</Link>
       <div className="mt-2">
         {state.item ? <CaseView item={state.item} timeline={timeline} /> : <p className="text-slate-600">{state.message ?? "Loading…"}</p>}
       </div>
     </div>
-  );
-}
-
-export default function CaseDetailPage() {
-  return (
-    <Suspense>
-      <CasePage />
-    </Suspense>
   );
 }

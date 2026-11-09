@@ -8,7 +8,6 @@ import { attachOperations, getCaseTimeline, getRecentActivity } from "../orchest
 import { caseStore } from "../orchestration/case-store";
 import { caseModules } from "../orchestration/modules";
 import { runCase } from "../orchestration/run-case";
-import { sampleCases } from "../orchestration/sample-cases";
 import { HttpError } from "../utils/http-error";
 import { getRequestSession } from "../auth/role-guard";
 
@@ -61,10 +60,4 @@ casesRouter.get("/activity", async (_req, res) => {
 casesRouter.get("/:id/timeline", async (req, res) => {
   if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view a case timeline");
   res.json(await getCaseTimeline(getPrisma(), String(req.params.id)));
-});
-
-/** Sample cases for previewing the dashboard; never mixed into the real list. */
-casesRouter.get("/samples", (_req, res) => {
-  if (getRequestSession(res).role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO users can view sample cases");
-  res.json(sampleCases());
 });

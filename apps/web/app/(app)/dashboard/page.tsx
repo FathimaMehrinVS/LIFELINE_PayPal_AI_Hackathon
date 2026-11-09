@@ -1,12 +1,11 @@
 "use client";
 
 import type { CaseResult, Urgency } from "@lifeline/contracts";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { ApiRequestError, api } from "@/services/api";
 import { Badge, type BadgeTone, button, fieldClass } from "@/components/ui";
-import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, fundingState, loadCases, recommendedRoute, routeName, savedApproval, savedDisbursement } from "./case-row";
+import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, fundingState, recommendedRoute, routeName, savedApproval, savedDisbursement } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
 
 // Owner: Member 1 (feature/situation-agent). NGO dashboard: triage cases and approve aid.
@@ -22,7 +21,7 @@ function approvalError(err: unknown) {
   return "Can't reach the API";
 }
 
-function CasePanel({ row, sample, onClose, onDisburse }: { row: CaseRow; sample: boolean; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
+function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
   const { situation, finance, commerce, case_id, missing_information } = row.case;
   const route = recommendedRoute(row.case);
   const funding = fundingState(row.case);
@@ -52,7 +51,7 @@ function CasePanel({ row, sample, onClose, onDisburse }: { row: CaseRow; sample:
           <p className="text-navy">{missing_information.map((key) => key.replaceAll("_", " ")).join(" · ")}</p>
         </div>
       )}
-      <Link href={`/dashboard/${encodeURIComponent(case_id)}${sample ? "?sample=1" : ""}`} className={`${button.primary} w-full`}>Open case details</Link>
+      <Link href={`/dashboard/${encodeURIComponent(case_id)}`} className={`${button.primary} w-full`}>Open case details</Link>
 
       {approved?.status === "approved" && (
         <Link
@@ -105,8 +104,7 @@ function FundsSummary({ cases }: { cases: CaseResult[] }) {
   );
 }
 
-function Dashboard() {
-  const sample = useSearchParams().get("sample") === "1";
+export default function DashboardPage() {
   const [cases, setCases] = useState<CaseResult[]>([]);
   const [approvals, setApprovals] = useState<Record<string, Approval>>({});
   const [disbursements, setDisbursements] = useState<Record<string, Disbursement>>({});
@@ -119,14 +117,14 @@ function Dashboard() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setCases(await loadCases(sample));
+      setCases(await api.listCases());
       setError(null);
     } catch {
       setError("Can't load cases. Is the API running (npm run dev:api)?");
     } finally {
       setLoading(false);
     }
-  }, [sample]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -195,11 +193,6 @@ function Dashboard() {
         <button type="button" onClick={() => void refresh()} className={button.secondary}>{loading ? "Loading…" : "Refresh"}</button>
       </header>
 
-      {sample && (
-        <p className="mt-4 rounded-xl border border-dashed border-simulated bg-simulated-tint p-3 text-sm text-simulated">
-          <strong>Sample data:</strong> built from the shared contract samples to preview this screen. These are not real cases. <Link href="/dashboard" className="underline">Show real cases</Link>
-        </p>
-      )}
 
       <FundsSummary cases={cases} />
 
@@ -220,18 +213,10 @@ function Dashboard() {
 
       <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
         <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} onApprove={onApprove} onSelect={(row) => setSelectedId(row.case.case_id)} />
-        {selected && <CasePanel row={selected} sample={sample} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
+        {selected && <CasePanel row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
       </div>
       <p className="mt-3 text-xs text-slate-500">Select a row to review a case. Disbursement is simulated and does not transfer money.</p>
     </div>
   );
 }
 
-export default function DashboardPage() {
-  // useSearchParams needs a Suspense boundary in the App Router.
-  return (
-    <Suspense>
-      <Dashboard />
-    </Suspense>
-  );
-}

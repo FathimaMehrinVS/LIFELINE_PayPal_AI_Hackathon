@@ -19,11 +19,6 @@ export interface CaseRow {
   disbursement?: Disbursement;
 }
 
-/** Real cases, or the clearly labelled preview samples with `?sample=1`. */
-export async function loadCases(sample: boolean): Promise<CaseResult[]> {
-  return sample ? api.listSampleCases() : api.listCases();
-}
-
 /** The saved approval, so a refresh loses nothing. A status the browser has just set takes priority. */
 export function savedApproval(item: CaseResult): Approval | undefined {
   const allocation = item.operations?.allocation;
