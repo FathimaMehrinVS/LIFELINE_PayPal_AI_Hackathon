@@ -25,6 +25,7 @@ export const SubmitDeliveryEventRequestSchema = z.object({
 export type SubmitDeliveryEventRequest = z.infer<typeof SubmitDeliveryEventRequestSchema>;
 
 export const VerifyDeliveryRequestSchema = z.object({
+  pickup_code: z.string().regex(/^\d{8}$/, "Enter the 8-digit pickup code"),
   note: z.string().trim().max(500).optional(),
   accept_shortfall: z.boolean().optional(),
   shortfall_reason: z.string().trim().min(1).max(500).optional(),
