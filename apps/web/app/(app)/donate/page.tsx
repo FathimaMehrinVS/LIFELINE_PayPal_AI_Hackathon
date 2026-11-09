@@ -43,7 +43,7 @@ export default function DonatePage() {
     const parsedTarget = parseDonationTarget(window.location.search);
     if (!parsedTarget) {
       setTarget(null);
-      setTargetMessage("Choose an NGO-approved assistance allocation from the dashboard before donating.");
+      setTargetMessage("Choose an NGO-approved plan before donating.");
       return;
     }
 
@@ -69,7 +69,7 @@ export default function DonatePage() {
 
   return (
     <div className="mx-auto max-w-[1130px]">
-      <Link href="/workspace" className="text-sm font-semibold text-teal-text hover:underline">← Back</Link>
+      <Link href="/plans" className="text-sm font-semibold text-teal-text hover:underline">← All approved plans</Link>
       <h1 className="mt-2 text-[28px] font-bold text-navy">Support this assistance plan</h1>
       {message && <p role="status" className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-navy">{message}</p>}
 
@@ -80,7 +80,7 @@ export default function DonatePage() {
             {targetMessage && (
               <div role="status" className="mt-3 rounded-xl border border-accent/50 bg-warning-tint p-4 text-sm text-warning">
                 <p>{targetMessage}</p>
-                {!target && <Link href="/workspace" className="mt-2 inline-flex items-center gap-1 font-semibold hover:underline">Back to your workspace <ArrowRightIcon className="h-4 w-4" /></Link>}
+                {!target && <Link href="/plans" className="mt-2 inline-flex items-center gap-1 font-semibold hover:underline">See approved plans <ArrowRightIcon className="h-4 w-4" /></Link>}
               </div>
             )}
             {target && (

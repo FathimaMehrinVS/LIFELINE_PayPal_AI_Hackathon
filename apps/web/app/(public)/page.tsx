@@ -53,7 +53,7 @@ export default function HomePage() {
             <p className="mt-5 max-w-lg text-lg text-slate-600">LIFELINE turns a report of need into a checked, costed plan that an NGO approves and donors can fund.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/situation" className={button.primary}>Request Assistance <ArrowRightIcon className="h-4 w-4" /></Link>
-              <Link href="/donate" className={button.secondary}>Explore Approved Aid Plans</Link>
+              <Link href="/plans" className={button.secondary}>Explore Approved Aid Plans</Link>
             </div>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-slate-600">
               {["No payment needed to request help", "An NGO approves every plan", "AI never decides who gets aid"].map((point) => (
@@ -160,7 +160,7 @@ export default function HomePage() {
           <Overline>For donors</Overline>
           <h2 className="mt-1 text-2xl font-bold text-navy">Fund assistance with a clear destination</h2>
           <p className="mt-2 text-sm text-slate-600">Support a plan an NGO has already approved, and see what it buys.</p>
-          <Link href="/donate" className={`${button.confirm} mt-5`}>Explore approved aid plans</Link>
+          <Link href="/plans" className={`${button.confirm} mt-5`}>Explore approved aid plans</Link>
         </article>
       </div>
     </div>

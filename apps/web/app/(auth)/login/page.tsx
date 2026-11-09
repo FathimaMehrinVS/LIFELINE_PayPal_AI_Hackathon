@@ -24,7 +24,7 @@ function profileStateForError(error: unknown): ProfileState {
 
 function destinationFor(profile: AuthProfile): string {
   const requested = new URLSearchParams(window.location.search).get("next");
-  if (requested === "/donate" && (profile.role === "DONOR" || profile.role === "NGO")) return requested;
+  if ((requested === "/donate" || requested === "/plans" || requested === "/contributions") && (profile.role === "DONOR" || profile.role === "NGO")) return requested;
   if (requested === "/situation") return requested;
   return profile.role === "NGO" ? "/dashboard" : "/workspace";
 }
