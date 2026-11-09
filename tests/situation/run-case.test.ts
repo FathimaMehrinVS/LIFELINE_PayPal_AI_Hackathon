@@ -114,6 +114,12 @@ describe("runCase", () => {
     expect(modules.buildBasket).not.toHaveBeenCalled();
   });
 
+  it("tells the route catalogue where the family is", async () => {
+    const modules = fakeModules();
+    await runCase("case_1", { message: "..." }, modules);
+    expect(modules.routesFor).toHaveBeenCalledWith("EUR", "Demo region (synthetic)");
+  });
+
   describe("the amount a case is planned around", () => {
     const noBudget = (overrides: Partial<SituationResult> = {}): SituationResult => ({
       ...situation,

@@ -23,8 +23,8 @@ export interface CaseModules {
   analyzeSituation(input: SituationRequest): Promise<SituationResult>;
   evaluateRoutes(input: FinanceRequest): Promise<FinanceResult>;
   buildBasket(input: CommerceRequestInput): Promise<CommerceResult>;
-  /** Candidate payment routes to compare (Member 2's route catalogue). */
-  routesFor(currency: string): FinancialRoute[];
+  /** Candidate payment routes to compare (Member 2's route catalogue). The location lets a route depend on who serves that area. */
+  routesFor(currency: string, location: string): FinancialRoute[] | Promise<FinancialRoute[]>;
 }
 
 /**
@@ -102,7 +102,7 @@ export async function runCase(caseId: string, input: SituationRequest, modules: 
   }
 
   // 2. How can the money reach them?
-  const routes = modules.routesFor(currency);
+  const routes = await modules.routesFor(currency, location);
   const finance = await modules.evaluateRoutes({ amount: budget, currency, access, routes });
   const recommended = finance.routes.find((r) => r.route_id === finance.recommended_route_id);
 
