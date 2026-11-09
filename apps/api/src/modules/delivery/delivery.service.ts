@@ -41,6 +41,7 @@ function toRecord(allocation: any): DeliveryRecord {
   const order = allocation.purchaseOrder;
   return {
     allocation_id: allocation.id,
+    purchase_order_id: order?.id ?? null,
     case_id: allocation.requestId,
     allocation_status: allocation.status.toLowerCase(),
     amount: allocation.amount.toNumber(),

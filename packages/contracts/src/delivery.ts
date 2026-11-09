@@ -58,6 +58,7 @@ export const DeliveryEventSchema = z.object({
 
 export const DeliveryRecordSchema = z.object({
   allocation_id: z.string(),
+  purchase_order_id: z.string().nullable(),
   case_id: z.string(),
   allocation_status: z.enum(["approved", "disbursed", "completed"]),
   amount: AmountSchema,
