@@ -1,35 +1,49 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useAuthProfile } from "@/components/auth-session";
-import { BasketIcon, HeartHandIcon, PlusCircleIcon, RouteIcon, GridIcon, ShieldCheckIcon } from "@/components/icons";
+import { BasketIcon, GridIcon, HeartHandIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon } from "@/components/icons";
+import { Badge, Card, Overline } from "@/components/ui";
 
-const links = [
+type Tool = { href: string; title: string; text: string; Icon: (props: { className?: string }) => ReactNode; roles?: string[] };
+
+const TOOLS: Tool[] = [
   { href: "/situation", title: "Start a new request", text: "Share a need and begin the assistance review.", Icon: PlusCircleIcon },
-  { href: "/requests", title: "My requests", text: "Review requests you submitted through LIFELINE.", Icon: GridIcon },
-  { href: "/finance", title: "Financial assistance", text: "Explore the available financial access assessment.", Icon: RouteIcon },
-  { href: "/commerce", title: "Essentials", text: "Build a needs-based basket from available products.", Icon: BasketIcon },
-  { href: "/donate", title: "Donations", text: "Fund an assistance allocation approved by an NGO.", Icon: HeartHandIcon },
-  { href: "/profile", title: "Profile", text: "View your LIFELINE account and assigned role.", Icon: ShieldCheckIcon },
+  { href: "/dashboard", title: "Assistance cases", text: "Review, approve and follow every case.", Icon: GridIcon, roles: ["NGO"] },
+  { href: "/overview", title: "Overview", text: "See urgent cases, alerts and recent activity.", Icon: GridIcon, roles: ["NGO"] },
+  { href: "/requests", title: "My requests", text: "See the requests you submitted.", Icon: PlusCircleIcon },
+  { href: "/finance", title: "Financial assessments", text: "Compare the ways support can reach a family.", Icon: RouteIcon },
+  { href: "/commerce", title: "Product baskets", text: "Review the essentials chosen for a case.", Icon: BasketIcon },
+  { href: "/suppliers", title: "Suppliers", text: "Register, review and approve suppliers.", Icon: StoreIcon, roles: ["NGO"] },
+  { href: "/payments", title: "Payments", text: "Follow donations in and supplier payments out.", Icon: RouteIcon, roles: ["NGO"] },
+  { href: "/audit", title: "Audit logs", text: "Check who did what, and when.", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/plans", title: "Approved plans", text: "Fund a plan an NGO has approved.", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
+  { href: "/contributions", title: "My contributions", text: "Follow what happened after you gave.", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
+  { href: "/profile", title: "Profile", text: "View your account and assigned role.", Icon: ShieldCheckIcon },
 ];
 
 export default function WorkspacePage() {
   const profile = useAuthProfile();
+  const tools = TOOLS.filter((tool) => !tool.roles || tool.roles.includes(profile.role));
   return (
-    <div className="space-y-8">
-      <section className="rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-emerald-900 p-8 text-white sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-200">Your LIFELINE workspace</p>
-        <h1 className="mt-3 text-3xl font-extrabold sm:text-4xl">Welcome back</h1>
-        <p className="mt-3 text-blue-100">Signed in as {profile.email}. Your account role is {profile.role.toLowerCase()}.</p>
-      </section>
+    <div className="space-y-6">
+      <div>
+        <Overline>Your LIFELINE workspace</Overline>
+        <h1 className="mt-1 text-[28px] font-bold text-navy">Welcome back</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-slate-600">Signed in as {profile.email} <Badge tone="human">{profile.role}</Badge></p>
+      </div>
       <section aria-label="Your LIFELINE tools" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {links.map(({ href, title, text, Icon }) => <Link key={href} href={href} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
-          <Icon className="h-7 w-7 text-emerald-700" />
-          <h2 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-emerald-800">{title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-        </Link>)}
+        {tools.map(({ href, title, text, Icon }) => (
+          <Link key={href} href={href} className="group">
+            <Card className="h-full p-5 transition group-hover:border-teal">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-tint text-teal-text"><Icon className="h-5 w-5" /></span>
+              <h2 className="mt-3 font-bold text-navy">{title}</h2>
+              <p className="mt-1 text-sm text-slate-600">{text}</p>
+            </Card>
+          </Link>
+        ))}
       </section>
-      {profile.role === "NGO" && <Link href="/dashboard" className="inline-flex rounded-full bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-800">Open NGO dashboard</Link>}
     </div>
   );
 }
