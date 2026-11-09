@@ -5,6 +5,7 @@ import type {
   CaseResult,
   CommerceRequestInput,
   CommerceResult,
+  CreateSupplierRequestInput,
   CreateDonationRequest,
   CreatePayoutRequest,
   DonationResult,
@@ -13,6 +14,9 @@ import type {
   PayoutResult,
   SituationRequest,
   SituationResult,
+  Supplier,
+  SupplierDetail,
+  UpdateSupplierStatusRequest,
 } from "@lifeline/contracts";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -69,6 +73,10 @@ export const api = {
   /** With `replaces`, re-runs a case that needed information, keeping its id. */
   createCase: (body: SituationRequest, replaces?: string) =>
     post<CaseResult>(replaces ? `/api/cases?replaces=${encodeURIComponent(replaces)}` : "/api/cases", body),
+  listSuppliers: () => get<Supplier[]>("/api/suppliers"),
+  getSupplier: (id: string) => get<SupplierDetail>(`/api/suppliers/${encodeURIComponent(id)}`),
+  registerSupplier: (body: CreateSupplierRequestInput) => post<SupplierDetail>("/api/suppliers", body),
+  updateSupplierStatus: (id: string, body: UpdateSupplierStatusRequest) => post<SupplierDetail>(`/api/suppliers/${encodeURIComponent(id)}/status`, body),
   listCases: () => get<CaseResult[]>("/api/cases"),
   listMyCases: () => get<CaseResult[]>("/api/cases/mine"),
   listSampleCases: () => get<CaseResult[]>("/api/cases/samples"),

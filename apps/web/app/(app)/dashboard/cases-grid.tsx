@@ -19,7 +19,7 @@ import { type CaseRow, STATUS_LABELS, caseRef, URGENCY_RANK, formatMoney, recomm
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 // The LIFELINE theme colours (see app/globals.css), passed to AG Grid's Quartz theme.
-const theme = themeQuartz.withParams({
+export const lifelineGridTheme = themeQuartz.withParams({
   accentColor: "#159B91",
   backgroundColor: "#FFFFFF",
   foregroundColor: "#142D4E",
@@ -219,7 +219,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, onApprove, onSelect
 
   return (
     <AgGridReact<CaseRow>
-      theme={theme}
+      theme={lifelineGridTheme}
       rowData={rows}
       columnDefs={columnDefs}
       defaultColDef={{ sortable: true, resizable: true }}
