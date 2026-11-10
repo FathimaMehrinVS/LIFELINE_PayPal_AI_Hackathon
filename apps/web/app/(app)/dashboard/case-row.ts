@@ -74,12 +74,4 @@ export function caseRef(caseId: string) {
   return `LL-${caseId.replace(/^case_/, "").slice(0, 8).toUpperCase()}`;
 }
 
-export function formatMoney(amount: number | null | undefined, currency: string | null | undefined) {
-  if (amount === null || amount === undefined) return "";
-  if (!currency) return amount.toLocaleString();
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
-  } catch {
-    return `${amount.toLocaleString()} ${currency}`;
-  }
-}
+export { formatMoney } from "@/lib/currency";

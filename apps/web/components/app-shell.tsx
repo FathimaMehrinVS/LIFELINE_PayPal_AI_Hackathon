@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
+import { MoneyGate, MoneyProvider, useMoneySettings } from "./money-provider";
 import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
 
 // The page frames from "LIFELINE Screen Designs": public site, intake, NGO workspace, donor area, sign-in.
@@ -126,6 +127,13 @@ function DonorNav({ path }: { path: string }) {
   );
 }
 
+/** Shows which currency amounts are in, and links to where it can be changed. */
+function CurrencyLink() {
+  const settings = useMoneySettings();
+  if (!settings) return null;
+  return <Link href="/profile" className="whitespace-nowrap text-sm text-slate-600 hover:text-navy" title="Change the currency amounts are shown in">Amounts in <strong className="font-semibold text-navy">{settings.currency}</strong></Link>;
+}
+
 function Account() {
   const profile = useAuthProfile();
   const { signOut, signingOut } = useSignOut();
@@ -178,6 +186,7 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
             <p className="font-bold text-navy">{current?.label}</p>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            <CurrencyLink />
             <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated">PayPal Sandbox</span>
             <Link href="/situation" className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 font-semibold text-white hover:opacity-90"><PlusCircleIcon className="h-4 w-4" /> New case</Link>
             <button type="button" onClick={() => void signOut()} disabled={signingOut} className="font-medium text-navy hover:underline disabled:opacity-60 lg:hidden">{signingOut ? "Signing out…" : "Sign out"}</button>
@@ -205,7 +214,8 @@ export function AppFrame({ children }: { children: ReactNode }) {
     document.title = `${pageTitle(path)} · LIFELINE`;
   }, [path]);
   const skip = <a href="#main" className={SKIP_LINK}>Skip to main content</a>;
-  if (frame === "intake") return <>{skip}<TopBarShell right={<Account />}>{children}</TopBarShell></>;
-  if (frame === "donor") return <>{skip}<TopBarShell tag="Donor" right={<><DonorNav path={path} /><Account /></>}>{children}</TopBarShell></>;
-  return <>{skip}<WorkspaceFrame path={path}>{children}</WorkspaceFrame></>;
+  const content = <MoneyGate>{children}</MoneyGate>;
+  if (frame === "intake") return <MoneyProvider>{skip}<TopBarShell right={<><CurrencyLink /><Account /></>}>{content}</TopBarShell></MoneyProvider>;
+  if (frame === "donor") return <MoneyProvider>{skip}<TopBarShell tag="Donor" right={<><DonorNav path={path} /><CurrencyLink /><Account /></>}>{content}</TopBarShell></MoneyProvider>;
+  return <MoneyProvider>{skip}<WorkspaceFrame path={path}>{content}</WorkspaceFrame></MoneyProvider>;
 }
