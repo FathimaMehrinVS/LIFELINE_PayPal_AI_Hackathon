@@ -5,7 +5,7 @@ import { createApp } from "../../apps/api/src/app";
 import { attachOperations, getCaseTimeline, getRecentActivity } from "../../apps/api/src/orchestration/case-operations";
 
 const amount = (value: number) => ({ toNumber: () => value, toFixed: (places: number) => value.toFixed(places) });
-const item = (id: string) => ({ case_id: id }) as CaseResult;
+const item = (id: string, urgency = "medium") => ({ case_id: id, situation: { urgency, missing_information: [] } }) as unknown as CaseResult;
 const at = (minute: number) => new Date(`2026-11-09T10:0${minute}:00Z`);
 
 const allocation = {
@@ -34,6 +34,14 @@ describe("attachOperations", () => {
     expect(withPayout!.operations?.payout).toMatchObject({ mode: "simulated", status: "completed" });
     expect(withoutPayout!.operations?.funding.captured).toBe(30.3);
     expect(withoutPayout!.operations?.payout).toBeNull();
+  });
+
+  it("marks a case high risk when its supplier is suspended, and normal otherwise", async () => {
+    const suspended = { ...allocation, purchaseOrder: { id: "po_1", fulfilmentStatus: "ACCEPTED", merchant: { name: "Shop", status: "SUSPENDED", incidents: [] }, partnerUser: null } };
+    const [risky] = await attachOperations(db([suspended]), [item("case_a")]);
+    const [plain] = await attachOperations(db([allocation]), [item("case_a")]);
+    expect(risky!.risk_level).toBe("HIGH_RISK");
+    expect(plain!.risk_level).toBe("NORMAL");
   });
 });
 
