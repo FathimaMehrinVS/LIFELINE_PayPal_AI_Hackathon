@@ -6,7 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 export interface ServerAuthProfile {
   id: string;
   email: string;
-  role: "NGO" | "DONOR" | "PARTNER";
+  role: "ADMIN" | "NGO" | "DONOR" | "PARTNER";
 }
 
 export async function getServerAuthProfile(): Promise<ServerAuthProfile | null> {
@@ -19,7 +19,7 @@ export async function getServerAuthProfile(): Promise<ServerAuthProfile | null> 
     });
     if (!response.ok) return null;
     const profile = await response.json() as ServerAuthProfile;
-    if (!profile.id || !profile.email || !["NGO", "DONOR", "PARTNER"].includes(profile.role)) return null;
+    if (!profile.id || !profile.email || !["ADMIN", "NGO", "DONOR", "PARTNER"].includes(profile.role)) return null;
     return profile;
   } catch {
     return null;

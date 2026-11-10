@@ -14,8 +14,8 @@ const ROLES: { role: TeamRole; label: string; text: string }[] = [
   { role: "PARTNER", label: "Partner", text: "Records preparation and handover for deliveries assigned to them." },
   { role: "NGO", label: "NGO staff", text: "Sees cases and family details, approves plans and manages suppliers and access." },
 ];
-const LABEL: Record<TeamRole, string> = { DONOR: "Donor", PARTNER: "Partner", NGO: "NGO staff" };
-const TONE: Record<TeamRole, BadgeTone> = { DONOR: "info", PARTNER: "neutral", NGO: "human" };
+const LABEL: Record<TeamRole | "ADMIN", string> = { DONOR: "Donor", PARTNER: "Partner", NGO: "NGO staff", ADMIN: "LIFELINE Admin" };
+const TONE: Record<TeamRole | "ADMIN", BadgeTone> = { DONOR: "info", PARTNER: "neutral", NGO: "human", ADMIN: "simulated" };
 type Filter = "all" | "pending" | TeamRole;
 
 export default function TeamPage() {
@@ -93,7 +93,8 @@ export default function TeamPage() {
               <ul className="divide-y divide-slate-100">
                 {shown.map((member) => {
                   const isMe = member.id === me.id;
-                  const choice = choices[member.id] ?? member.role ?? "DONOR";
+                  const isAdmin = member.role === "ADMIN";
+                  const choice: TeamRole = choices[member.id] ?? (member.role && member.role !== "ADMIN" ? member.role : "DONOR");
                   const changed = choice !== member.role;
                   return (
                     <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -103,7 +104,7 @@ export default function TeamPage() {
                       </div>
                       <div className="flex flex-wrap items-center gap-2.5">
                         {member.role ? <Badge tone={TONE[member.role]}>{LABEL[member.role]}</Badge> : <Badge tone="warning">No access yet</Badge>}
-                        {isMe ? <span className="text-[13px] text-slate-600">Another NGO team member must change your access</span> : (
+                        {isMe ? <span className="text-[13px] text-slate-600">Another NGO team member must change your access</span> : isAdmin ? <span className="text-[13px] text-slate-600">Only a LIFELINE Admin can change this account</span> : (
                           <>
                             <label className="sr-only" htmlFor={`role-${member.id}`}>Access for {member.email}</label>
                             <select id={`role-${member.id}`} value={choice} onChange={(event) => setChoices((current) => ({ ...current, [member.id]: event.target.value as TeamRole }))} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-navy">

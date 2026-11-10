@@ -5,6 +5,7 @@ import { createRoleGuard, type SessionResolver } from "./auth/role-guard";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { allocationRouter } from "./routes/allocation.routes";
 import { authRouter } from "./routes/auth.routes";
+import { adminRouter } from "./routes/admin.routes";
 import { casesRouter } from "./routes/cases.routes";
 import { commerceRouter } from "./routes/commerce.routes";
 import { donationRouter } from "./routes/donation.routes";
@@ -32,6 +33,7 @@ export function createApp(dependencies: { resolveSession?: SessionResolver } = {
   });
 
   app.use("/api/auth", authRouter);
+  app.use("/api/admin", requireRoles("ADMIN"), adminRouter);
   app.use("/api/situation", requireRoles("NGO", "DONOR", "PARTNER"), situationRouter);
   app.use("/api/finance", requireRoles("NGO", "DONOR", "PARTNER"), financeRouter);
   app.use("/api/commerce", requireRoles("NGO", "DONOR", "PARTNER"), commerceRouter);

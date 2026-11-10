@@ -22,6 +22,7 @@ export async function changeRole(db: Database, userId: string, role: TeamRole, a
   const updated = await db.$transaction(async (tx) => {
     const user = await tx.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (!user) throw new HttpError("NOT_FOUND", "Account not found");
+    if (user.role === "ADMIN") throw new HttpError("FORBIDDEN", "Only a LIFELINE Admin can change an Admin account");
     if (user.role === role) throw new HttpError("VALIDATION_ERROR", `This account already has ${role} access`);
     const changed = await tx.user.update({ where: { id: userId }, data: { role }, select: { id: true, email: true, name: true, role: true, createdAt: true } });
     await tx.auditLog.create({ data: { action: ROLE_CHANGED, entityType: "User", entityId: userId, actorId, details: { from: user.role?.toLowerCase() ?? "pending", to: role.toLowerCase() } } });

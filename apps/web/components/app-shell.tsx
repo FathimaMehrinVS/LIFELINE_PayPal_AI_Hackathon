@@ -30,12 +30,13 @@ const NAV: { href: string; label: string; Icon: (p: { className?: string }) => R
   { href: "/audit", label: "Audit Logs", Icon: ShieldCheckIcon, roles: ["NGO"] },
   { href: "/team", label: "Team & Access", Icon: KeyIcon, roles: ["NGO"] },
   { href: "/requests", label: "My Requests", Icon: PlusCircleIcon },
+  { href: "/admin/users", label: "Manage Accounts", Icon: ShieldCheckIcon, roles: ["ADMIN"] },
   { href: "/plans", label: "Approved Plans", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/contributions", label: "My Contributions", Icon: HeartHandIcon, roles: ["DONOR"] },
   { href: "/profile", label: "Profile", Icon: ShieldCheckIcon },
 ];
 
-const ROLE_LABEL: Record<string, string> = { NGO: "NGO team", DONOR: "Donor account", PARTNER: "Community partner" };
+const ROLE_LABEL: Record<string, string> = { ADMIN: "LIFELINE Admin", NGO: "NGO team", DONOR: "Donor account", PARTNER: "Community partner" };
 
 function useSignOut() {
   const router = useRouter();
@@ -158,7 +159,9 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
   const profile = useAuthProfile();
   const { signOut, signingOut } = useSignOut();
   const [menuOpen, setMenuOpen] = useState(false);
-  const items = NAV.filter((item) => !item.roles || item.roles.includes(profile.role));
+  const items = NAV.filter((item) => profile.role === "ADMIN"
+    ? item.roles?.includes("ADMIN") || item.href === "/profile"
+    : !item.roles || item.roles.includes(profile.role));
   const current = items.find((item) => path.startsWith(item.href));
   const isNgo = profile.role === "NGO";
 

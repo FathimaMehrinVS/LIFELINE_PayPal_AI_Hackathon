@@ -4,6 +4,8 @@ import type { SituationResult } from "@lifeline/contracts";
 import { describe, expect, it } from "vitest";
 import { caseModules } from "../../apps/api/src/orchestration/modules";
 import { runCase } from "../../apps/api/src/orchestration/run-case";
+import { evaluateRoutes as assessRoutes } from "../../apps/api/src/modules/finance/finance.service";
+import { getDemoRouteCatalogue } from "../../apps/api/src/modules/finance/route-catalogue";
 
 const sampleSituation: SituationResult = JSON.parse(
   readFileSync(join(import.meta.dirname, "../../packages/contracts/samples/situation-result.json"), "utf8"),
@@ -35,6 +37,66 @@ describe("caseModules", () => {
   it("uses Member 2's route catalogue", async () => {
     const ids = (await caseModules.routesFor("EUR", "Demo region")).map((route) => route.id);
     expect(ids).toEqual(expect.arrayContaining(["route_bank", "route_paypal"]));
+  });
+
+  it("uses a covered partner route when the family has no bank, wallet, or cash access", async () => {
+    const noPaymentAccess: SituationResult = {
+      ...sampleSituation,
+      location: "Demo region",
+      access: {
+        ...sampleSituation.access,
+        bank_availability: "unavailable",
+        atm_access: "unavailable",
+        wallet_acceptance: "unavailable",
+        cash_availability: "unavailable",
+        merchant_acceptance: "available",
+        connectivity: "unavailable",
+      },
+    };
+    const modules = {
+      ...caseModules,
+      analyzeSituation: async () => noPaymentAccess,
+      routesFor: async () => getDemoRouteCatalogue(true),
+      evaluateRoutes: (input: Parameters<typeof assessRoutes>[0]) => assessRoutes(input, {
+        generateJson: async <T>() => ({ explanation: "The covered local supplier can provide the aid." }) as T,
+      }),
+    };
+
+    const result = await runCase("case_partner_covered", request, modules);
+
+    expect(result.status).toBe("complete");
+    expect(result.finance?.recommended_route_id).toBe("route_partner");
+    expect(result.commerce).not.toBeNull();
+  });
+
+  it("reports no safe route when no supplier covers the family's area", async () => {
+    const noPaymentAccess: SituationResult = {
+      ...sampleSituation,
+      location: "Unserved region",
+      access: {
+        ...sampleSituation.access,
+        bank_availability: "unavailable",
+        atm_access: "unavailable",
+        wallet_acceptance: "unavailable",
+        cash_availability: "unavailable",
+        merchant_acceptance: "available",
+        connectivity: "unavailable",
+      },
+    };
+    const modules = {
+      ...caseModules,
+      analyzeSituation: async () => noPaymentAccess,
+      routesFor: async () => getDemoRouteCatalogue(false),
+      evaluateRoutes: (input: Parameters<typeof assessRoutes>[0]) => assessRoutes(input, {
+        generateJson: async <T>() => ({ explanation: "No verified route is available." }) as T,
+      }),
+    };
+
+    const result = await runCase("case_partner_unserved", request, modules);
+
+    expect(result.status).toBe("no_usable_route");
+    expect(result.finance?.recommended_route_id).toBeNull();
+    expect(result.commerce).toBeNull();
   });
 
   it("asks about wallet acceptance when it is the only thing holding the PayPal route back", async () => {

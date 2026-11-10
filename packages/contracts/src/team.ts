@@ -8,8 +8,8 @@ export const TeamMemberSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string(),
-  /** Null for older accounts created before new accounts became donors. */
-  role: TeamRoleSchema.nullable(),
+  /** Null for older accounts created before new accounts became donors. ADMIN accounts are shown but can't be changed here. */
+  role: z.enum(["ADMIN", "NGO", "DONOR", "PARTNER"]).nullable(),
   created_at: z.string(),
 });
 export type TeamMember = z.infer<typeof TeamMemberSchema>;

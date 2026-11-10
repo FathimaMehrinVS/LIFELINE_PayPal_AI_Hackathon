@@ -39,7 +39,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 export interface AuthProfile {
   id: string;
   email: string;
-  role: "NGO" | "DONOR" | "PARTNER";
+  role: "ADMIN" | "NGO" | "DONOR" | "PARTNER";
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "ADMIN" | "NGO" | "DONOR" | "PARTNER" | null;
+  created_at: string;
 }
 
 export interface AuthProfileProvisionResult {
@@ -110,5 +118,7 @@ export const api = {
   getAuditRecords: () => get<AuditRecords>("/api/records/audit"),
   approveAllocation: (body: ApproveAllocationRequest) => post<AllocationResult>("/api/allocations/approve", body),
   getAuthProfile: (accessToken: string) => request<AuthProfile>("GET", "/api/auth/me", undefined, accessToken),
+  listAdminUsers: () => get<AdminUser[]>("/api/admin/users"),
+  setUserRole: (id: string, role: NonNullable<AdminUser["role"]>) => post<AdminUser>(`/api/admin/users/${encodeURIComponent(id)}/role`, { role }),
   provisionAuthProfile: (accessToken: string) => request<AuthProfileProvisionResult>("POST", "/api/auth/profile", undefined, accessToken),
 };

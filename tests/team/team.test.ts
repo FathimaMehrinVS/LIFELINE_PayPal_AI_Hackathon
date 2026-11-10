@@ -53,6 +53,17 @@ describe("team and access", () => {
     expect(audit).toHaveLength(0);
   });
 
+  it("won't let NGO staff change a LIFELINE Admin's access", async () => {
+    const { app, audit, state } = setup("ADMIN");
+    expect((await request(app).post("/u_1/role").send({ role: "DONOR" })).status).toBe(403);
+    expect(state.role).toBe("ADMIN");
+    expect(audit).toHaveLength(0);
+  });
+
+  it("can't be used to grant Admin access", async () => {
+    expect((await request(setup().app).post("/u_1/role").send({ role: "ADMIN" })).status).toBe(400);
+  });
+
   it("rejects an unknown role and a change to the same role", async () => {
     const { app } = setup("PARTNER");
     expect((await request(app).post("/u_1/role").send({ role: "ADMIN" })).status).toBe(400);

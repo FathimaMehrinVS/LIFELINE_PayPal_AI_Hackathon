@@ -7,7 +7,7 @@ import { createAllocationRouter } from "../../apps/api/src/routes/allocation.rou
 import { getPrisma } from "../../apps/api/src/database/prisma";
 import { createRoleGuard } from "../../apps/api/src/auth/role-guard";
 
-function setup(options: { caseStatus?: string; caseExists?: boolean; campaignExists?: boolean; supplierStatus?: string } = {}) {
+function setup(options: { caseStatus?: string; caseExists?: boolean; campaignExists?: boolean; supplierStatus?: string; paymentConflict?: boolean } = {}) {
   const assistance: any = {
     id: "case_1",
     status: options.caseStatus ?? "AWAITING_APPROVAL",
@@ -27,6 +27,9 @@ function setup(options: { caseStatus?: string; caseExists?: boolean; campaignExi
     },
     merchant: {
       findUnique: vi.fn(async () => ({ id: "supplier_1", status: options.supplierStatus ?? "APPROVED" })),
+    },
+    supplierIncident: {
+      findMany: vi.fn(async () => options.paymentConflict ? [{ description: "Supplier bank account details changed" }] : []),
     },
     aidAllocation: {
       findUnique: vi.fn(async () => assistance.allocation),
@@ -102,12 +105,22 @@ describe("NGO allocation approval", () => {
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
   });
 
-  it("rejects a supplier that is not approved", async () => {
-    const h = setup({ supplierStatus: "SUSPENDED" });
+  it.each(["PENDING", "SUSPENDED"]) ("rejects a %s supplier", async (supplierStatus) => {
+    const h = setup({ supplierStatus });
     const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
     expect(response.status).toBe(400);
     expect(response.body.error.message).toContain("approved supplier");
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
+  });
+
+  it("holds approval when an open supplier incident reports conflicting payment details", async () => {
+    const h = setup({ paymentConflict: true });
+    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("payment-details conflict");
+    expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
+    expect(h.tx.purchaseOrder.create).not.toHaveBeenCalled();
   });
 
   it("rejects a case that is not awaiting approval or lacks a basket", async () => {

@@ -15,6 +15,7 @@ datasource db {
 // ─── Shared ──────────────────────────────────────────────────────────────
 
 enum Role {
+  ADMIN
   DONOR
   RECIPIENT
   NGO
