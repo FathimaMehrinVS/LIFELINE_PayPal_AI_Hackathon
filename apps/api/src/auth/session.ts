@@ -2,7 +2,7 @@ import { env } from "../config/env";
 import { getPrisma } from "../database/prisma";
 import { HttpError } from "../utils/http-error";
 
-export const AUTH_ROLES = ["NGO", "DONOR", "PARTNER"] as const;
+export const AUTH_ROLES = ["ADMIN", "NGO", "DONOR", "PARTNER"] as const;
 export type AuthRole = (typeof AUTH_ROLES)[number];
 
 export interface AuthSession {

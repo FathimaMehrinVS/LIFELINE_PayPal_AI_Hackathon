@@ -11,7 +11,7 @@ function fail(message: string): never {
 }
 
 if (!authUserId || !uuidPattern.test(authUserId) || !requestedRole || extraArgs.length || !AUTH_ROLES.includes(requestedRole as AuthRole)) {
-  fail("Usage: npm run auth:assign-role -- <supabase-auth-user-uuid> <NGO|DONOR|PARTNER>");
+  fail("Usage: npm run auth:assign-role -- <supabase-auth-user-uuid> <ADMIN|NGO|DONOR|PARTNER>");
 }
 if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
   fail("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for this admin command");
