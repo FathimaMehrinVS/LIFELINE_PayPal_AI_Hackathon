@@ -3,6 +3,8 @@
 import { type CaseResult, PLANNING_DAYS_OF_COVER, PLANNING_HOUSEHOLD_SIZE } from "@lifeline/contracts";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuthProfile } from "@/components/auth-session";
+import { button } from "@/components/ui";
 import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
 import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, type ReporterRole, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
@@ -66,6 +68,8 @@ export function CaseOutcome({ role, result, onAnswer, busy, showDetails: details
 }
 
 function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
+  // What someone said on the first screen isn't proof of NGO access; only the account's role is.
+  const reviewer = useAuthProfile().role === "NGO" && role === "ngo";
   const route = recommendedRoute(result);
   const { finance, commerce, situation } = result;
   if (!route || !finance) return null;
@@ -77,9 +81,9 @@ function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
           ✓
         </span>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-emerald-900">{role === "ngo" ? "A plan is ready for your review" : "We found a way to help"}</h2>
+          <h2 className="text-lg font-semibold text-emerald-900">{reviewer ? "A plan is ready for your review" : "We found a way to help"}</h2>
           <p className="text-sm text-emerald-800">
-            {role === "ngo" ? "Check it and approve it on the NGO dashboard. Nothing is paid until you do." : "An NGO reviews it next. Nothing is paid until they approve."}
+            {reviewer ? "Check it and approve it on the NGO dashboard. Nothing is paid until you do." : "An NGO reviews it next. Nothing is paid until they approve."}
           </p>
         </div>
         <ListenButton
@@ -136,13 +140,9 @@ function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 pt-1">
-          <Link href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-            {role === "ngo" ? "Review and approve" : "Open in NGO dashboard"}
-          </Link>
-          <Link href="/dashboard" className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            NGO approval is required before donation
-          </Link>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {reviewer && <Link href="/dashboard" className={button.primary}>Review and approve</Link>}
+          <p className="text-sm text-slate-600">{reviewer ? "Donors can fund it only after you approve it." : "An NGO team member reviews it before any donation."}</p>
         </div>
       </div>
     </section>
