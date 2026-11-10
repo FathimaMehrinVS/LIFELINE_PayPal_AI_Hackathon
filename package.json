@@ -12,7 +12,6 @@
     "node": ">=22"
   },
   "scripts": {
-    "postinstall": "prisma generate",
     "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @lifeline/api\" \"npm run dev -w @lifeline/web\"",
     "dev:api": "npm run dev -w @lifeline/api",
     "dev:web": "npm run dev -w @lifeline/web",
