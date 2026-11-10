@@ -50,12 +50,12 @@ Status: `todo` · `doing` · `blocked` · `done`
 | M1-7 | Donor plans list and progress page | Member 1 | 10 Nov | M1-6 | done |
 | M1-8 | Deploy to Render; register PayPal webhook | Member 1 | 11 Nov | M3-2 helps | todo |
 | M1-9 | README, status doc, demo script, video, Devpost | Member 1 | 12 Nov | all | doing |
-| M2-1 | Partner route and plain-language explanations | Member 2 | 8 Nov | none | todo |
-| M2-2 | Approve the real cost | Member 2 | 9 Nov | M1-1 | todo |
-| M2-3 | Purchase orders | Member 2 | 9 Nov | M1-1, M1-4 | todo |
-| M2-4 | Fulfilment events and pickup code | Member 2 | 10 Nov | M2-3 | todo |
-| M2-5 | Supplier payment record | Member 2 | 10 Nov | M2-3 | todo |
-| M2-6 | Risk levels and price check | Member 2 | 10 Nov | M2-3 | todo |
+| M2-1 | Partner route and plain-language explanations | Member 2 | 8 Nov | none | done |
+| M2-2 | Approve the real cost | Member 2 | 9 Nov | M1-1 | done |
+| M2-3 | Purchase orders | Member 2 | 9 Nov | M1-1, M1-4 | done |
+| M2-4 | Fulfilment events and pickup code | Member 2 | 10 Nov | M2-3 | done |
+| M2-5 | Supplier payment record | Member 2 | 10 Nov | M2-3 | done |
+| M2-6 | Risk levels and price check | Member 2 | 10 Nov | M2-3 | done |
 | M3-1 | Login and roles | Member 3 | 9 Nov | none | done |
 | M3-2 | One successful PayPal Sandbox capture | Member 3 | 9 Nov | none | todo |
 
@@ -141,8 +141,12 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
+| 10 Nov | Member 2 | M2-6: open supplier incidents explicitly reporting payment/account detail conflicts now produce HIGH_RISK and block approval and simulated payment. Price outlier comparison was cut per the handoff cut order | M1, M2 |
+| 10 Nov | Member 2 | Connected supplier-aware partner routing, cost-derived NGO approval, purchase orders, append-only fulfilment, one-time pickup-code confirmation, simulated supplier payments, and the initial case risk-level display | M1, M2, M3 |
 | 9 Nov | Member 1 | Supplier approval now needs six verified checks with evidence, saved in `AuditLog`. Enforced by the API | Everyone |
 | 9 Nov | Member 1 | Workspace page removed; `/workspace` now redirects. People land on Overview (NGO), Approved Plans (donor) or Delivery Tracking (partner). Use `homeFor` from `lib/home.ts` | Everyone |
 | 9 Nov | Member 1 | Added `/api/plans` and `/api/records`, donor pages, Payments and Audit Logs. Donations nav now opens Approved Plans. Rewrote the Financial Assessments page (old `finance/components` removed) and restyled Donate and home. M1-6 is waiting on M2-3 and M2-4 | Everyone |
+| 8 Nov | Member 2 | Added schema-independent fulfilment transition and risk rules; endpoints and persistence still await M1 schema | M1, M2 |
+| 8 Nov | Member 2 | Started M2-1: plain-language finance explanation; partner verification awaits M1 supplier status and service areas | M1, M2 |
 | 8 Nov | Member 3 | Login/profile provisioning and role-based authorization are complete on `main` (`4e93e02`). API roles come from the verified Supabase user and linked `User` profile; protected routes enforce authentication, role, and ownership checks. M3-2 remains open until a real Sandbox capture is confirmed | Everyone |
 | 8 Nov | Member 1 | Final sprint handoff created | Everyone |

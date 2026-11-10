@@ -7,18 +7,13 @@ import { createAllocationRouter } from "../../apps/api/src/routes/allocation.rou
 import { getPrisma } from "../../apps/api/src/database/prisma";
 import { createRoleGuard } from "../../apps/api/src/auth/role-guard";
 
-function setup(options: {
-  caseStatus?: string;
-  caseExists?: boolean;
-  campaignExists?: boolean;
-  captured?: string;
-  allocated?: string;
-} = {}) {
+function setup(options: { caseStatus?: string; caseExists?: boolean; campaignExists?: boolean; supplierStatus?: string } = {}) {
   const assistance: any = {
     id: "case_1",
     status: options.caseStatus ?? "AWAITING_APPROVAL",
     situation: { budget: new Prisma.Decimal("100.00"), currency: "EUR" },
-    basket: { id: "basket_1" },
+    financial: { recommendedRouteId: "route_paypal", routes: [{ route_id: "route_paypal", verdict: "pass" }] },
+    basket: { id: "basket_1", total: new Prisma.Decimal("70.00"), currency: "EUR", items: [{ id: "item_1" }] },
     allocation: null,
   };
   let allocationId = 0;
@@ -30,14 +25,13 @@ function setup(options: {
     campaign: {
       findUnique: vi.fn(async () => options.campaignExists === false ? null : { id: "camp_demo", active: true, currency: "EUR" }),
     },
-    donation: {
-      aggregate: vi.fn(),
+    merchant: {
+      findUnique: vi.fn(async () => ({ id: "supplier_1", status: options.supplierStatus ?? "APPROVED" })),
     },
     aidAllocation: {
-      aggregate: vi.fn(),
       findUnique: vi.fn(async () => assistance.allocation),
       create: vi.fn(async ({ data }: any) => {
-        const allocation = { id: `allocation_${++allocationId}`, ...data };
+        const allocation = { id: `allocation_${++allocationId}`, purchaseOrder: null, ...data };
         assistance.allocation = allocation;
         return allocation;
       }),
@@ -46,6 +40,10 @@ function setup(options: {
         return assistance.allocation;
       }),
     },
+    purchaseOrder: {
+      create: vi.fn(async ({ data }: any) => ({ id: "purchase_order_1", merchantId: data.merchantId, ...data })),
+    },
+    fulfilmentEvent: { create: vi.fn(async ({ data }: any) => data) },
     auditLog: { create: vi.fn(async ({ data }: any) => data) },
   };
   const prisma: any = {
@@ -61,22 +59,25 @@ function setup(options: {
   return { app, assistance, tx, prisma, getDatabase };
 }
 
-const validRequest = { case_id: "case_1", campaign_id: "camp_demo", amount: 80, currency: "EUR" };
+const validRequest = { case_id: "case_1", campaign_id: "camp_demo", merchant_id: "supplier_1" };
 
 describe("NGO allocation approval", () => {
-  it("approves an eligible case within captured campaign funds and persists an audit entry", async () => {
+  it("calculates basket total plus route fee and creates the purchase order atomically", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, actor_id: "spoofed-profile" });
+    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, amount: 100, currency: "EUR" });
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
-      allocation_id: "allocation_1", case_id: "case_1", status: "approved", amount: 80, currency: "EUR",
+      allocation_id: "allocation_1", purchase_order_id: "purchase_order_1", case_id: "case_1", status: "approved", amount: 73.5, currency: "EUR",
     });
     expect(response.body.approved_at).toEqual(expect.any(String));
     expect(h.assistance.status).toBe("APPROVED");
-    expect(h.tx.aidAllocation.create).toHaveBeenCalledWith({ data: expect.objectContaining({
-      requestId: "case_1", campaignId: "camp_demo", amount: new Prisma.Decimal(80), currency: "EUR", status: "APPROVED",
-    }) });
+    expect(h.tx.aidAllocation.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      requestId: "case_1", campaignId: "camp_demo", amount: new Prisma.Decimal(73.5), currency: "EUR", status: "APPROVED",
+    }) }));
+    expect(h.tx.purchaseOrder.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      allocationId: "allocation_1", merchantId: "supplier_1", amount: new Prisma.Decimal(73.5), currency: "EUR", fulfilmentStatus: "AWAITING_ACCEPTANCE",
+    }), select: { id: true, merchantId: true } });
     expect(h.tx.auditLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({
       actorId: "verified-ngo-profile", action: "allocation.approved", entityType: "AidAllocation", entityId: "allocation_1",
     }) });
@@ -87,7 +88,7 @@ describe("NGO allocation approval", () => {
 
   it("validates the request before accessing the database", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, amount: 0 });
+    const response = await request(h.app).post("/api/allocations/approve").send({ case_id: "case_1", campaign_id: "camp_demo" });
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
     expect(h.getDatabase).not.toHaveBeenCalled();
@@ -101,7 +102,15 @@ describe("NGO allocation approval", () => {
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
   });
 
-  it("rejects a case that is not awaiting approval or lacks its completed basket", async () => {
+  it("rejects a supplier that is not approved", async () => {
+    const h = setup({ supplierStatus: "SUSPENDED" });
+    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("approved supplier");
+    expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a case that is not awaiting approval or lacks a basket", async () => {
     const h = setup({ caseStatus: "ANALYZED" });
     const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
     expect(response.status).toBe(400);
@@ -116,31 +125,26 @@ describe("NGO allocation approval", () => {
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
   });
 
-  it("approves an eligible allocation before donations have been captured", async () => {
-    const h = setup({ captured: "0.00", allocated: "0.00" });
-    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe("approved");
-    expect(h.tx.donation.aggregate).not.toHaveBeenCalled();
-  });
-
-  it("rejects a case or campaign currency mismatch", async () => {
+  it("rejects an amount that exceeds the case budget", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/allocations/approve").send({ ...validRequest, currency: "USD" });
+    h.assistance.basket.total = new Prisma.Decimal("99.00");
+    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
     expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("budget");
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
   });
 
-  it("returns the existing matching approval without creating a duplicate", async () => {
+  it("returns an existing matching approval without creating a duplicate", async () => {
     const h = setup({ caseStatus: "APPROVED" });
     h.assistance.allocation = {
-      id: "allocation_existing", requestId: "case_1", campaignId: "camp_demo", amount: new Prisma.Decimal("80.00"),
+      id: "allocation_existing", requestId: "case_1", campaignId: "camp_demo", amount: new Prisma.Decimal("73.50"),
       currency: "EUR", status: "APPROVED", approvedAt: new Date("2026-11-07T10:00:00.000Z"),
+      purchaseOrder: { id: "purchase_order_existing", merchantId: "supplier_1" },
     };
     const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ allocation_id: "allocation_existing", status: "approved" });
+    expect(response.body).toMatchObject({ allocation_id: "allocation_existing", purchase_order_id: "purchase_order_existing", status: "approved" });
     expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
-    expect(h.tx.auditLog.create).not.toHaveBeenCalled();
+    expect(h.tx.purchaseOrder.create).not.toHaveBeenCalled();
   });
 });

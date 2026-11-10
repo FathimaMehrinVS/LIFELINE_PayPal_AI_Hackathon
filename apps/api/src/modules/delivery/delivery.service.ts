@@ -3,6 +3,8 @@ import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
 import type { AuthSession } from "../../auth/session";
+import { canTransitionFulfilment, type FulfilmentStatus } from "../../rules/fulfilment";
+import { createPickupCode, MAX_PICKUP_CODE_ATTEMPTS, verifyPickupCode } from "../procurement/pickup-code";
 
 type Database = ReturnType<typeof getPrisma>;
 type Transaction = Prisma.TransactionClient;
@@ -12,7 +14,7 @@ const allocationInclude = {
   donations: { where: { status: "CAPTURED" }, select: { amount: true } },
   purchaseOrder: {
     include: {
-      merchant: { select: { id: true, name: true } },
+      merchant: { select: { id: true, name: true, status: true } },
       partnerUser: { select: { id: true, name: true, email: true } },
       events: { orderBy: { createdAt: "asc" as const } },
     },
@@ -24,14 +26,6 @@ const purchaseOrderInclude = {
   partnerUser: { select: { id: true, name: true, email: true } },
   events: { orderBy: { createdAt: "asc" as const } },
 } satisfies Prisma.PurchaseOrderInclude;
-
-const nextPartnerStatus: Record<string, string> = {
-  AWAITING_ACCEPTANCE: "ACCEPTED",
-  ACCEPTED: "PREPARING",
-  PREPARING: "READY",
-  READY: "DISPATCHED",
-  DISPATCHED: "HANDED_OVER",
-};
 
 function deliveredItems(value: Prisma.JsonValue | null): DeliveryRecord["events"][number]["delivered_items"] {
   if (!Array.isArray(value)) return [];
@@ -47,6 +41,7 @@ function toRecord(allocation: any): DeliveryRecord {
   const order = allocation.purchaseOrder;
   return {
     allocation_id: allocation.id,
+    purchase_order_id: order?.id ?? null,
     case_id: allocation.requestId,
     allocation_status: allocation.status.toLowerCase(),
     amount: allocation.amount.toNumber(),
@@ -126,15 +121,32 @@ export async function assignDelivery(
       tx.donation.aggregate({ where: { allocationId: allocation.id, status: "CAPTURED", currency: allocation.currency }, _sum: { amount: true } }),
     ]);
     if (!partner || partner.role !== "PARTNER") throw new HttpError("VALIDATION_ERROR", "Choose an existing PARTNER profile");
-    if (!merchant || merchant.status !== "APPROVED" || !merchant.verified) throw new HttpError("VALIDATION_ERROR", "Choose an approved, verified supplier");
+    if (!merchant || merchant.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", "Choose an approved supplier");
     ensureFunding(allocation, captured._sum.amount);
 
     const existing = await tx.purchaseOrder.findUnique({ where: { allocationId: allocation.id }, include: purchaseOrderInclude });
     if (existing) {
-      if (existing.merchantId === merchant.id && existing.partnerUserId === partner.id) {
+      if (existing.merchantId !== merchant.id) {
+        throw new HttpError("VALIDATION_ERROR", "This purchase order is already assigned to a different supplier");
+      }
+      if (existing.partnerUserId === partner.id) {
         return { record: toRecord({ ...allocation, purchaseOrder: existing }), duplicate: true };
       }
-      throw new HttpError("VALIDATION_ERROR", "A different delivery assignment already exists for this allocation");
+      if (existing.partnerUserId) throw new HttpError("VALIDATION_ERROR", "A different delivery partner is already assigned to this purchase order");
+      const assigned = await tx.purchaseOrder.updateMany({
+        where: { id: existing.id, partnerUserId: null },
+        data: { partnerUserId: partner.id },
+      });
+      if (assigned.count !== 1) throw new HttpError("VALIDATION_ERROR", "Purchase order assignment changed; reload and try again");
+      const purchaseOrder = { ...existing, partnerUserId: partner.id, partnerUser: partner };
+      await tx.auditLog.create({ data: {
+        actorId: actor.id,
+        action: "delivery.assigned",
+        entityType: "AidAllocation",
+        entityId: allocation.id,
+        details: { case_id: allocation.requestId, partner_user_id: partner.id, merchant_id: merchant.id, purchase_order_id: purchaseOrder.id },
+      } });
+      return { record: toRecord({ ...allocation, purchaseOrder }), duplicate: false };
     }
 
     const purchaseOrder = await tx.purchaseOrder.create({
@@ -159,18 +171,25 @@ export async function submitDeliveryEvent(
   actor: AuthSession,
   getDatabase: typeof getPrisma = getPrisma,
 ): Promise<DeliveryRecord> {
-  if (actor.role !== "PARTNER") throw new HttpError("FORBIDDEN", "Only the assigned partner can submit delivery updates");
+  if (actor.role !== "PARTNER" && actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only an NGO or assigned supplier can submit delivery updates");
   const db = getDatabase();
   return db.$transaction(async (tx) => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     const order = allocation.purchaseOrder;
-    if (!order || order.partnerUserId !== actor.id) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
+    if (!order || (actor.role === "PARTNER" && order.partnerUserId !== actor.id)) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
+    if (actor.role === "PARTNER" && order.merchant.status !== "APPROVED") {
+      throw new HttpError("VALIDATION_ERROR", "A suspended supplier cannot update this purchase order");
+    }
     if (allocation.status === "COMPLETED") throw new HttpError("VALIDATION_ERROR", "Completed assistance cannot receive more delivery updates");
 
-    const requestedStatus = input.status.toUpperCase() as "ACCEPTED" | "PREPARING" | "READY" | "DISPATCHED" | "HANDED_OVER";
-    if (nextPartnerStatus[order.fulfilmentStatus] !== requestedStatus) {
+    const requestedStatus = input.status.toUpperCase() as FulfilmentStatus;
+    const actorKind = actor.role === "PARTNER" ? "SUPPLIER" : "NGO";
+    if (!canTransitionFulfilment(order.fulfilmentStatus as FulfilmentStatus, requestedStatus, actorKind)) {
       throw new HttpError("VALIDATION_ERROR", `Delivery cannot transition from ${order.fulfilmentStatus} to ${requestedStatus}`);
+    }
+    if (requestedStatus === "ISSUE_REPORTED" && !input.note?.trim()) {
+      throw new HttpError("VALIDATION_ERROR", "A short note is required when reporting a delivery issue");
     }
 
     let savedItems: { basket_item_id: string; name: string; quantity: number }[] = [];
@@ -193,7 +212,14 @@ export async function submitDeliveryEvent(
       throw new HttpError("VALIDATION_ERROR", "Delivered items can only be recorded with the handover");
     }
 
-    const changed = await tx.purchaseOrder.updateMany({ where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus }, data: { fulfilmentStatus: requestedStatus } });
+    const pickupCode = requestedStatus === "READY" ? createPickupCode() : null;
+    const changed = await tx.purchaseOrder.updateMany({
+      where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus },
+      data: {
+        fulfilmentStatus: requestedStatus,
+        ...(pickupCode ? { pickupCodeHash: pickupCode.hash, pickupAttempts: 0 } : {}),
+      },
+    });
     if (changed.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
     await tx.fulfilmentEvent.create({ data: {
       purchaseOrderId: order.id,
@@ -212,7 +238,7 @@ export async function submitDeliveryEvent(
     } });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
     if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
-    return toRecord(updated);
+    return { ...toRecord(updated), ...(pickupCode ? { pickup_code: pickupCode.code } : {}) };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
@@ -224,15 +250,36 @@ export async function verifyDelivery(
 ): Promise<{ record: DeliveryRecord; duplicate: boolean }> {
   if (actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only an NGO can verify delivery");
   const db = getDatabase();
-  return db.$transaction(async (tx) => {
+  const outcome = await db.$transaction(async (tx) => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
-    if (allocation.status === "COMPLETED" && allocation.purchaseOrder?.fulfilmentStatus === "VERIFIED") {
+    if (allocation.status === "COMPLETED" && allocation.purchaseOrder?.fulfilmentStatus === "RECIPIENT_CONFIRMED") {
       return { record: toRecord(allocation), duplicate: true };
     }
     const order = allocation.purchaseOrder;
     if (!order || allocation.request.status !== "APPROVED" || order.fulfilmentStatus !== "HANDED_OVER") {
-      throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be verified");
+      throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be confirmed");
+    }
+    if (!order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "No active pickup code is available for this order");
+    if (order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
+      await tx.auditLog.create({ data: {
+        actorId: actor.id, action: "purchase_order.pickup_code_locked", entityType: "PurchaseOrder", entityId: order.id,
+        details: { allocation_id: allocation.id, attempts: order.pickupAttempts },
+      } });
+      return { failure: "locked" as const, attempts: order.pickupAttempts };
+    }
+    if (!verifyPickupCode(input.pickup_code, order.pickupCodeHash)) {
+      const attempt = order.pickupAttempts + 1;
+      const incremented = await tx.purchaseOrder.updateMany({
+        where: { id: order.id, fulfilmentStatus: "HANDED_OVER", pickupAttempts: order.pickupAttempts },
+        data: { pickupAttempts: { increment: 1 } },
+      });
+      if (incremented.count !== 1) throw new HttpError("VALIDATION_ERROR", "Pickup verification changed; please try again");
+      await tx.auditLog.create({ data: {
+        actorId: actor.id, action: "purchase_order.pickup_code_rejected", entityType: "PurchaseOrder", entityId: order.id,
+        details: { allocation_id: allocation.id, attempts: attempt },
+      } });
+      return { failure: "invalid" as const, attempts: attempt };
     }
     const handover = [...order.events].reverse().find((event) => event.status === "HANDED_OVER");
     if (!handover || deliveredItems(handover.deliveredItems).length === 0) {
@@ -257,7 +304,13 @@ export async function verifyDelivery(
     if (!["APPROVED", "DISBURSED"].includes(allocation.status)) {
       throw new HttpError("VALIDATION_ERROR", "This allocation cannot be completed from its current status");
     }
-    const orderChanged = await tx.purchaseOrder.updateMany({ where: { id: order.id, fulfilmentStatus: "HANDED_OVER" }, data: { fulfilmentStatus: "VERIFIED" } });
+    if (!canTransitionFulfilment("HANDED_OVER", "RECIPIENT_CONFIRMED", "NGO", { pickupCodeVerified: true })) {
+      throw new HttpError("VALIDATION_ERROR", "Delivery confirmation is not an allowed status change");
+    }
+    const orderChanged = await tx.purchaseOrder.updateMany({
+      where: { id: order.id, fulfilmentStatus: "HANDED_OVER", pickupCodeHash: order.pickupCodeHash },
+      data: { fulfilmentStatus: "RECIPIENT_CONFIRMED", pickupCodeHash: null },
+    });
     const allocationChanged = await tx.aidAllocation.updateMany({ where: { id: allocation.id, status: allocation.status }, data: { status: "COMPLETED" } });
     if (orderChanged.count !== 1 || allocationChanged.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
     const caseChanged = await tx.assistanceRequest.updateMany({ where: { id: allocation.requestId, status: "APPROVED" }, data: { status: "COMPLETED" } });
@@ -266,13 +319,19 @@ export async function verifyDelivery(
     const verificationNote = shortfalls.length > 0
       ? `Shortfall accepted by NGO: ${input.shortfall_reason}${input.note ? `; ${input.note}` : ""}`
       : input.note || null;
-    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "VERIFIED", actorId: actor.id, evidenceType: "NGO_CONFIRMATION", note: verificationNote } });
+    await tx.fulfilmentEvent.create({ data: { purchaseOrderId: order.id, status: "RECIPIENT_CONFIRMED", actorId: actor.id, evidenceType: "PICKUP_CODE", note: verificationNote } });
     await tx.auditLog.createMany({ data: [
-      { actorId: actor.id, action: "delivery.verified", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, verified_by: actor.id, shortfall_accepted: shortfalls.length > 0, shortfall_reason: shortfalls.length > 0 ? input.shortfall_reason : null, shortfalls } },
+      { actorId: actor.id, action: "delivery.recipient_confirmed", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id, confirmed_by: actor.id, shortfall_accepted: shortfalls.length > 0, shortfall_reason: shortfalls.length > 0 ? input.shortfall_reason : null, shortfalls } },
       { actorId: actor.id, action: "allocation.completed", entityType: "AidAllocation", entityId: allocation.id, details: { case_id: allocation.requestId, purchase_order_id: order.id } },
     ] });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
     if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     return { record: toRecord(updated), duplicate: false };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  if ("failure" in outcome) {
+    const attempts = outcome.attempts ?? 0;
+    if (outcome.failure === "locked") throw new HttpError("VALIDATION_ERROR", "Too many incorrect pickup codes. Ask an NGO worker to help.", { attempts });
+    throw new HttpError("VALIDATION_ERROR", "Pickup code is incorrect", { attempts, remaining_attempts: Math.max(0, MAX_PICKUP_CODE_ATTEMPTS - attempts) });
+  }
+  return outcome;
 }

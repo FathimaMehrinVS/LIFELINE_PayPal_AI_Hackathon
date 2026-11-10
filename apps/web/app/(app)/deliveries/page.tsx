@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeliveryPartner, DeliveryRecord, Supplier } from "@lifeline/contracts";
+import type { DeliveryPartner, DeliveryRecord } from "@lifeline/contracts";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthProfile } from "@/components/auth-session";
 import { Badge, Card, Overline, fieldClass, button } from "@/components/ui";
@@ -28,9 +28,9 @@ export default function DeliveriesPage() {
   const profile = useAuthProfile();
   const [records, setRecords] = useState<DeliveryRecord[] | null>(null);
   const [partners, setPartners] = useState<DeliveryPartner[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [partnerChoices, setPartnerChoices] = useState<Record<string, string>>({});
-  const [supplierChoices, setSupplierChoices] = useState<Record<string, string>>({});
+  const [pickupCodes, setPickupCodes] = useState<Record<string, string>>({});
+  const [pickupCodeInputs, setPickupCodeInputs] = useState<Record<string, string>>({});
   const [handoverQuantities, setHandoverQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [acceptedShortfalls, setAcceptedShortfalls] = useState<Record<string, boolean>>({});
@@ -49,12 +49,10 @@ export default function DeliveriesPage() {
     void Promise.all([
       api.listDeliveries(),
       profile.role === "NGO" ? api.listDeliveryPartners() : Promise.resolve([]),
-      profile.role === "NGO" ? api.listSuppliers() : Promise.resolve([]),
-    ]).then(([rows, partnerRows, supplierRows]) => {
+    ]).then(([rows, partnerRows]) => {
       if (!active) return;
       setRecords(rows);
       setPartners(partnerRows);
-      setSuppliers(supplierRows.filter((supplier) => supplier.status === "approved"));
     }).catch((cause: unknown) => {
       if (active) setError(cause instanceof ApiRequestError ? cause.message : "Could not load delivery records.");
     });
@@ -64,7 +62,11 @@ export default function DeliveriesPage() {
   async function act(key: string, action: () => Promise<unknown>, success: string) {
     setBusy(key); setError(""); setMessage("");
     try {
-      await action();
+      const result = await action();
+      const pickupCode = result && typeof result === "object" ? (result as { pickup_code?: unknown }).pickup_code : undefined;
+      if (typeof pickupCode === "string") {
+        setPickupCodes((current) => ({ ...current, [key]: pickupCode }));
+      }
       await refresh();
       setMessage(success);
     } catch (cause) {
@@ -89,7 +91,7 @@ export default function DeliveriesPage() {
         const handedOver = [...record.events].reverse().find((event) => event.status === "handed_over");
         const handedOverQuantities = new Map(handedOver?.delivered_items.map((item) => [item.basket_item_id, item.quantity]) ?? []);
         const shortfalls = record.expected_items.filter((item) => (handedOverQuantities.get(item.basket_item_id) ?? 0) < item.quantity);
-        const assigned = Boolean(record.fulfilment_status);
+        const assigned = Boolean(record.partner);
         return (
           <Card key={key} className="p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -97,11 +99,11 @@ export default function DeliveriesPage() {
               <Badge tone={record.allocation_status === "completed" ? "success" : assigned ? "human" : "neutral"} className="capitalize">{record.fulfilment_status?.replaceAll("_", " ") ?? record.allocation_status}</Badge>
             </div>
             {record.expected_items.length > 0 && <div className="mt-4"><p className="text-sm font-semibold text-navy">Approved basket</p><ul className="mt-1 space-y-1 text-sm text-slate-600">{record.expected_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul></div>}
-            {ngo && !assigned && (
+            {ngo && !assigned && record.purchase_order_id && (
               <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
-                <label className="text-sm font-semibold text-navy">Approved supplier<select className={`${fieldClass} mt-1`} value={supplierChoices[key] ?? ""} onChange={(event) => setSupplierChoices((current) => ({ ...current, [key]: event.target.value }))}><option value="">Choose supplier</option>{suppliers.map((supplier) => <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>)}</select></label>
+                <p className="text-sm font-semibold text-navy">Approved supplier<span className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">{record.merchant?.name ?? "Unavailable"}</span></p>
                 <label className="text-sm font-semibold text-navy">Partner profile<select className={`${fieldClass} mt-1`} value={partnerChoices[key] ?? ""} onChange={(event) => setPartnerChoices((current) => ({ ...current, [key]: event.target.value }))}><option value="">Choose assigned partner</option>{partners.map((item) => <option key={item.user_id} value={item.user_id}>{item.name} · {item.email}</option>)}</select></label>
-                <div className="sm:col-span-2">{record.captured_amount < record.amount && <p className="mb-2 text-[13px] text-slate-600">Assignment unlocks once the full approved amount has been captured.</p>}<button className={button.primary} disabled={busy === key || record.captured_amount < record.amount || !supplierChoices[key] || !partnerChoices[key]} onClick={() => void act(key, () => api.assignDelivery({ allocation_id: key, merchant_id: supplierChoices[key]!, partner_user_id: partnerChoices[key]! }), "Partner assigned to funded allocation.")}>{busy === key ? "Assigning…" : "Assign partner"}</button>{record.captured_amount < record.amount && <p className="mt-2 text-xs text-warning">Captured donations must cover the approved amount before supplier assignment.</p>}</div>
+                <div className="sm:col-span-2"><button className={button.primary} disabled={busy === key || record.captured_amount < record.amount || !record.merchant || !partnerChoices[key]} onClick={() => void act(key, () => api.assignDelivery({ allocation_id: key, merchant_id: record.merchant!.merchant_id, partner_user_id: partnerChoices[key]! }), "Partner assigned to funded purchase order.")}>{busy === key ? "Assigning…" : "Assign partner"}</button>{record.captured_amount < record.amount && <p className="mt-2 text-xs text-warning">Captured donations must cover the approved amount before partner assignment.</p>}</div>
               </div>
             )}
             {assigned && <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600"><span>Supplier: <strong className="text-navy">{record.merchant?.name}</strong></span><span>· Partner: <strong className="text-navy">{record.partner?.name ?? "unassigned"}</strong></span></div>}
@@ -115,7 +117,8 @@ export default function DeliveriesPage() {
                 }}>{busy === key ? "Saving…" : next.label}</button>
               </div>
             )}
-            {ngo && record.fulfilment_status === "handed_over" && <div className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4"><p className="font-semibold text-navy">Partner handover for review</p><ul className="mt-2 space-y-1 text-sm text-slate-700">{handedOver?.delivered_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul>{shortfalls.length > 0 && <div className="mt-3 rounded-lg border border-warning/30 bg-warning-tint p-3"><p className="text-sm font-semibold text-warning">Shortfall against approved basket</p><ul className="mt-1 text-sm text-warning">{shortfalls.map((item) => <li key={item.basket_item_id}>{item.name}: {handedOverQuantities.get(item.basket_item_id) ?? 0} of {item.quantity}</li>)}</ul><label className="mt-3 flex items-start gap-2 text-sm font-semibold text-navy"><input type="checkbox" checked={acceptedShortfalls[key] ?? false} onChange={(event) => setAcceptedShortfalls((current) => ({ ...current, [key]: event.target.checked }))} /><span>I approve completing this allocation with the recorded shortfall.</span></label>{acceptedShortfalls[key] && <label className="mt-3 block text-sm font-semibold text-navy">Reason for accepting the shortfall<input className={`${fieldClass} mt-1`} maxLength={500} value={shortfallReasons[key] ?? ""} onChange={(event) => setShortfallReasons((current) => ({ ...current, [key]: event.target.value }))} /></label>}</div>}<label className="mt-3 block text-sm font-semibold text-navy">Verification note <input className={`${fieldClass} mt-1`} maxLength={500} value={notes[key] ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [key]: event.target.value }))} /></label><button className={`${button.primary} mt-3`} disabled={busy === key || (shortfalls.length > 0 && (!acceptedShortfalls[key] || !shortfallReasons[key]?.trim()))} onClick={() => void act(key, () => api.verifyDelivery(key, { ...(notes[key] ? { note: notes[key] } : {}), ...(shortfalls.length > 0 ? { accept_shortfall: true, shortfall_reason: shortfallReasons[key] } : {}) }), "Delivery verified and assistance case completed.")}>{busy === key ? "Verifying…" : "Verify delivery and complete case"}</button></div>}
+            {partner && record.fulfilment_status === "ready" && pickupCodes[key] && <div role="status" className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4"><p className="text-sm font-semibold text-navy">One-time pickup code</p><p className="mt-1 font-mono text-2xl font-bold tracking-widest text-teal-text">{pickupCodes[key]}</p><p className="mt-1 text-xs text-slate-600">Share this code with the NGO worker or recipient. It is shown only when the order is first marked ready.</p></div>}
+            {ngo && record.fulfilment_status === "handed_over" && <div className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4"><p className="font-semibold text-navy">Partner handover for review</p><ul className="mt-2 space-y-1 text-sm text-slate-700">{handedOver?.delivered_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul>{shortfalls.length > 0 && <div className="mt-3 rounded-lg border border-warning/30 bg-warning-tint p-3"><p className="text-sm font-semibold text-warning">Shortfall against approved basket</p><ul className="mt-1 text-sm text-warning">{shortfalls.map((item) => <li key={item.basket_item_id}>{item.name}: {handedOverQuantities.get(item.basket_item_id) ?? 0} of {item.quantity}</li>)}</ul><label className="mt-3 flex items-start gap-2 text-sm font-semibold text-navy"><input type="checkbox" checked={acceptedShortfalls[key] ?? false} onChange={(event) => setAcceptedShortfalls((current) => ({ ...current, [key]: event.target.checked }))} /><span>I approve completing this allocation with the recorded shortfall.</span></label>{acceptedShortfalls[key] && <label className="mt-3 block text-sm font-semibold text-navy">Reason for accepting the shortfall<input className={`${fieldClass} mt-1`} maxLength={500} value={shortfallReasons[key] ?? ""} onChange={(event) => setShortfallReasons((current) => ({ ...current, [key]: event.target.value }))} /></label>}</div>}<label className="mt-3 block text-sm font-semibold text-navy">Pickup code<input className={`${fieldClass} mt-1`} inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={pickupCodeInputs[key] ?? ""} onChange={(event) => setPickupCodeInputs((current) => ({ ...current, [key]: event.target.value.replace(/\D/g, "").slice(0, 8) }))} /></label><label className="mt-3 block text-sm font-semibold text-navy">Verification note <input className={`${fieldClass} mt-1`} maxLength={500} value={notes[key] ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [key]: event.target.value }))} /></label><button className={`${button.primary} mt-3`} disabled={busy === key || pickupCodeInputs[key]?.length !== 8 || (shortfalls.length > 0 && (!acceptedShortfalls[key] || !shortfallReasons[key]?.trim()))} onClick={() => void act(key, () => api.verifyDelivery(key, { pickup_code: pickupCodeInputs[key]!, ...(notes[key] ? { note: notes[key] } : {}), ...(shortfalls.length > 0 ? { accept_shortfall: true, shortfall_reason: shortfallReasons[key] } : {}) }), "Pickup code confirmed. Recipient collection recorded.")}>{busy === key ? "Verifying…" : "Confirm collection"}</button></div>}
             {assigned && <><h3 className="mt-5 text-sm font-bold text-navy">Recorded history</h3><DeliveryHistory record={record} /></>}
           </Card>
         );

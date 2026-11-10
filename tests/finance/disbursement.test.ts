@@ -18,10 +18,20 @@ function setup(options: { allocationExists?: boolean; allocationStatus?: string;
     request: { id: "case-1", status: "APPROVED" },
     campaign: { id: "campaign-1", currency: "EUR" },
   };
+  const order: any = {
+    id: "purchase-order-1",
+    allocationId: allocation.id,
+    merchant: { status: "APPROVED" },
+    amount: allocation.amount,
+    currency: allocation.currency,
+    allocation,
+  };
   let payoutRow: any = null;
   const tx: any = {
+    purchaseOrder: {
+      findUnique: vi.fn(async () => options.allocationExists === false ? null : order),
+    },
     aidAllocation: {
-      findUnique: vi.fn(async () => options.allocationExists === false ? null : allocation),
       updateMany: vi.fn(async ({ where, data }: any) => {
         if (allocation.id !== where.id || allocation.status !== where.status) return { count: 0 };
         Object.assign(allocation, data);
@@ -56,10 +66,10 @@ function setup(options: { allocationExists?: boolean; allocationStatus?: string;
   return { app, allocation, tx, prisma, getDatabase, getPayout: () => payoutRow };
 }
 
-const requestBody = { allocation_id: "allocation-1", amount: 75, currency: "EUR" };
+const requestBody = { purchase_order_id: "purchase-order-1", reference: "invoice-2026-001" };
 
 describe("simulated assistance disbursement", () => {
-  it("returns NOT_FOUND for a missing allocation", async () => {
+  it("returns NOT_FOUND for a missing purchase order", async () => {
     const h = setup({ allocationExists: false });
     const response = await request(h.app).post("/api/payments/payouts").send(requestBody);
     expect(response.status).toBe(404);
@@ -75,9 +85,8 @@ describe("simulated assistance disbursement", () => {
   });
 
   it.each([
-    ["amount", { ...requestBody, amount: 74.99 }],
-    ["currency", { ...requestBody, currency: "USD" }],
-    ["invalid request amount", { ...requestBody, amount: 0 }],
+    ["empty purchase order id", { ...requestBody, purchase_order_id: "" }],
+    ["empty reference", { ...requestBody, reference: " " }],
   ])("rejects invalid %s", async (_label, body) => {
     const h = setup();
     const response = await request(h.app).post("/api/payments/payouts").send(body);
@@ -109,15 +118,15 @@ describe("simulated assistance disbursement", () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({
-      payout_id: "payout-1", allocation_id: "allocation-1", status: "completed", amount: 75,
+      payout_id: "payout-1", allocation_id: "allocation-1", purchase_order_id: "purchase-order-1", reference: "invoice-2026-001", status: "completed", amount: 75,
       currency: "EUR", mode: "simulated",
     });
     expect(response.body.notice).toContain("no money was transferred to the recipient");
     expect(h.allocation.status).toBe("DISBURSED");
-    expect(h.getPayout()).toMatchObject({ allocationId: "allocation-1", status: "COMPLETED", mode: "SIMULATED" });
+    expect(h.getPayout()).toMatchObject({ allocationId: "allocation-1", purchaseOrderId: "purchase-order-1", reference: "invoice-2026-001", status: "COMPLETED", mode: "SIMULATED" });
     expect(h.tx.auditLog.create).toHaveBeenCalledOnce();
     expect(h.tx.auditLog.create.mock.calls[0]?.[0].data).toMatchObject({
-      actorId: "verified-ngo-profile", action: "allocation.disbursement_simulated", entityId: "allocation-1",
+      actorId: "verified-ngo-profile", action: "supplier.payment_simulated", entityId: "purchase-order-1",
       details: expect.objectContaining({ mode: "SIMULATED" }),
     });
     expect(h.tx.auditLog.create.mock.calls[0]?.[0].data.details.notice).toContain("no money was transferred");

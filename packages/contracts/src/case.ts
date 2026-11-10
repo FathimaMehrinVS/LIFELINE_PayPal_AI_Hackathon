@@ -21,12 +21,16 @@ export type CaseStatus = z.infer<typeof CaseStatusSchema>;
 export const BudgetSourceSchema = z.enum(["stated", "ngo", "emergency_package"]);
 export type BudgetSource = z.infer<typeof BudgetSourceSchema>;
 
+export const RiskLevelSchema = z.enum(["NORMAL", "URGENT", "HIGH_RISK"]);
+export type RiskLevel = z.infer<typeof RiskLevelSchema>;
+
 /** What has been recorded since the plan was made. Each is a separate fact: funded never means paid or delivered. */
 export const CaseOperationsSchema = z.object({
   allocation: AllocationResultSchema.nullable(),
   funding: z.object({ captured: AmountSchema, donations: z.number().int().nonnegative() }),
   payout: PayoutResultSchema.nullable(),
   delivery: z.object({
+    purchase_order_id: z.string().optional(),
     fulfilment_status: DeliveryFulfilmentStatusSchema,
     merchant_name: z.string(),
     partner_name: z.string().nullable(),
@@ -50,6 +54,7 @@ export const CaseResultSchema = z.object({
   finance: FinanceResultSchema.nullable(),
   commerce: CommerceResultSchema.nullable(),
   missing_information: z.array(z.string()),
+  risk_level: RiskLevelSchema.optional(),
   budget_source: BudgetSourceSchema.optional(),
   /** On the NGO case list only. */
   operations: CaseOperationsSchema.optional(),

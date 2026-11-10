@@ -8,6 +8,7 @@ import { HttpError } from "../../apps/api/src/utils/http-error";
 import { createDeliveryRouter } from "../../apps/api/src/routes/deliveries.routes";
 import { getPrisma } from "../../apps/api/src/database/prisma";
 import type { AuthRole } from "../../apps/api/src/auth/session";
+import { createPickupCode } from "../../apps/api/src/modules/procurement/pickup-code";
 
 const assignment = { allocation_id: "alloc-1", merchant_id: "merchant-1", partner_user_id: "partner-1" };
 const NGO = { id: "ngo-1", email: "ngo@example.test", role: "NGO" as const };
@@ -31,10 +32,10 @@ function makeAllocation(overrides: Record<string, unknown> = {}) {
 }
 
 function setup(options: { role?: AuthRole; allocation?: any; secondAllocation?: any; capture?: string } = {}) {
-  const allocation = options.allocation === undefined ? makeAllocation() : options.allocation;
   const partner = { id: "partner-1", name: "Local Partner", email: "partner@example.test", role: "PARTNER" };
   const merchant = { id: "merchant-1", name: "Approved Supplier", status: "APPROVED", verified: true };
-  const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "AWAITING_ACCEPTANCE", merchant, partnerUser: partner, events: [] as any[] };
+  const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: null as string | null, fulfilmentStatus: "AWAITING_ACCEPTANCE", pickupCodeHash: null as string | null, pickupAttempts: 0, merchant, partnerUser: null as any, events: [] as any[] };
+  const allocation = options.allocation === undefined ? makeAllocation({ purchaseOrder: order }) : options.allocation;
   const tx: any = {
     aidAllocation: {
       findUnique: vi.fn(async () => allocation),
@@ -45,7 +46,15 @@ function setup(options: { role?: AuthRole; allocation?: any; secondAllocation?: 
     donation: { aggregate: vi.fn(async () => ({ _sum: { amount: new Prisma.Decimal(options.capture ?? "75.00") } })) },
     purchaseOrder: {
       findUnique: vi.fn(async () => allocation.purchaseOrder),
-      updateMany: vi.fn(async ({ data }: any) => { if (allocation.purchaseOrder) Object.assign(allocation.purchaseOrder, data); return { count: 1 }; }),
+      updateMany: vi.fn(async ({ data }: any) => {
+        if (allocation.purchaseOrder) {
+          const { pickupAttempts, ...rest } = data;
+          Object.assign(allocation.purchaseOrder, rest);
+          if (pickupAttempts?.increment) allocation.purchaseOrder.pickupAttempts += pickupAttempts.increment;
+          else if (typeof pickupAttempts === "number") allocation.purchaseOrder.pickupAttempts = pickupAttempts;
+        }
+        return { count: 1 };
+      }),
       create: vi.fn(async ({ data }: any) => { allocation.purchaseOrder = { ...order, ...data }; return allocation.purchaseOrder; }),
       findMany: vi.fn(async () => []),
     },
@@ -82,7 +91,8 @@ describe("assistance delivery verification", () => {
     const response = await request(h.app).post("/api/deliveries").set("Authorization", "Bearer ngo").send(assignment);
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({ allocation_id: "alloc-1", case_id: "case-1", fulfilment_status: "awaiting_acceptance", partner: { user_id: "partner-1" }, merchant: { merchant_id: "merchant-1" } });
-    expect(h.tx.purchaseOrder.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ partnerUserId: "partner-1", merchantId: "merchant-1" }) }));
+    expect(h.tx.purchaseOrder.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { partnerUserId: "partner-1" } }));
+    expect(h.tx.purchaseOrder.create).not.toHaveBeenCalled();
     expect(h.tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ actorId: "ngo-1", action: "delivery.assigned" }) }));
   });
 
@@ -102,8 +112,8 @@ describe("assistance delivery verification", () => {
 
   it("records sequential partner preparation and handover with server-derived actor and delivered items", async () => {
     const allocation = makeAllocation({ purchaseOrder: {
-      id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "AWAITING_ACCEPTANCE", events: [],
-      merchant: { id: "merchant-1", name: "Approved Supplier" },
+      id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "AWAITING_ACCEPTANCE", pickupCodeHash: null, pickupAttempts: 0, events: [],
+      merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" },
       partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" },
     } });
     const h = setup({ allocation });
@@ -121,7 +131,7 @@ describe("assistance delivery verification", () => {
   });
 
   it("allows only the assigned partner to submit the next lifecycle update", async () => {
-    const allocation = makeAllocation({ purchaseOrder: { id: "po-1", partnerUserId: "another-partner", fulfilmentStatus: "AWAITING_ACCEPTANCE", events: [], merchant: { id: "merchant-1", name: "Supplier" }, partnerUser: null } });
+    const allocation = makeAllocation({ purchaseOrder: { id: "po-1", partnerUserId: "another-partner", fulfilmentStatus: "AWAITING_ACCEPTANCE", events: [], merchant: { id: "merchant-1", name: "Supplier", status: "APPROVED" }, partnerUser: null } });
     const h = setup({ allocation });
     const response = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({ status: "accepted" });
     expect(response.status).toBe(404);
@@ -129,7 +139,7 @@ describe("assistance delivery verification", () => {
   });
 
   it("rejects skipped transitions and handover items from another case", async () => {
-    const invalid = makeAllocation({ purchaseOrder: { id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "ACCEPTED", events: [], merchant: { id: "merchant-1", name: "Supplier" }, partnerUser: { id: "partner-1", name: "Partner", email: "partner@example.test" } } });
+    const invalid = makeAllocation({ purchaseOrder: { id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "ACCEPTED", events: [], merchant: { id: "merchant-1", name: "Supplier", status: "APPROVED" }, partnerUser: { id: "partner-1", name: "Partner", email: "partner@example.test" } } });
     const h = setup({ allocation: invalid });
     const skipped = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({ status: "ready" });
     expect(skipped.status).toBe(400);
@@ -142,38 +152,40 @@ describe("assistance delivery verification", () => {
 
   it("prevents a partner from self-verifying its own handover", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer partner").send({});
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer partner").send({ pickup_code: "12345678" });
     expect(response.status).toBe(403);
     expect(h.tx.aidAllocation.findUnique).not.toHaveBeenCalled();
   });
 
   it("allows NGO verification only after a recorded handover, completes the allocation and audits both transitions", async () => {
+    const pickup = createPickupCode();
     const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: "Picked up at the local point", evidenceType: "SUPPLIER_CONFIRMATION", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 2 }], createdAt: new Date("2026-11-09T09:00:00Z") };
-    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", merchant: { id: "merchant-1", name: "Approved Supplier" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", pickupCodeHash: pickup.hash, pickupAttempts: 0, merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
     const allocation = makeAllocation({ purchaseOrder: order });
     const h = setup({ allocation });
-    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "VERIFIED", events: [...order.events, { status: "VERIFIED", actorId: "ngo-1", note: "Handover checked", evidenceType: "NGO_CONFIRMATION", deliveredItems: null, createdAt: new Date("2026-11-09T10:00:00Z") }] } }));
-    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ note: "Handover checked" });
+    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "RECIPIENT_CONFIRMED", pickupCodeHash: null, events: [...order.events, { status: "RECIPIENT_CONFIRMED", actorId: "ngo-1", note: "Handover checked", evidenceType: "PICKUP_CODE", deliveredItems: null, createdAt: new Date("2026-11-09T10:00:00Z") }] } }));
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ pickup_code: pickup.code, note: "Handover checked" });
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "verified", case_id: "case-1" });
+    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "recipient_confirmed", case_id: "case-1" });
     expect(h.tx.assistanceRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "COMPLETED" } }));
-    expect(h.tx.fulfilmentEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "VERIFIED", actorId: "ngo-1", evidenceType: "NGO_CONFIRMATION" }) }));
+    expect(h.tx.fulfilmentEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "RECIPIENT_CONFIRMED", actorId: "ngo-1", evidenceType: "PICKUP_CODE" }) }));
     expect(h.tx.auditLog.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.arrayContaining([
-      expect.objectContaining({ actorId: "ngo-1", action: "delivery.verified", entityId: "alloc-1" }),
+      expect.objectContaining({ actorId: "ngo-1", action: "delivery.recipient_confirmed", entityId: "alloc-1" }),
       expect.objectContaining({ actorId: "ngo-1", action: "allocation.completed", entityId: "alloc-1" }),
     ]) }));
     expect(h.tx.auditLog.createMany.mock.calls[0]?.[0].data).toEqual(expect.arrayContaining([
-      expect.objectContaining({ action: "delivery.verified", details: expect.objectContaining({ shortfall_accepted: false, shortfall_reason: null, shortfalls: [] }) }),
+      expect.objectContaining({ action: "delivery.recipient_confirmed", details: expect.objectContaining({ shortfall_accepted: false, shortfall_reason: null, shortfalls: [] }) }),
     ]));
   });
 
   it("rejects a partial handover until the NGO explicitly accepts the shortfall with a reason", async () => {
+    const pickup = createPickupCode();
     const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: null, evidenceType: "SUPPLIER_CONFIRMATION", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 1 }], createdAt: new Date("2026-11-09T09:00:00Z") };
-    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", merchant: { id: "merchant-1", name: "Approved Supplier" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", pickupCodeHash: pickup.hash, pickupAttempts: 0, merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
     const allocation = makeAllocation({ purchaseOrder: order });
     const h = setup({ allocation });
 
-    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ note: "The recipient was present" });
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ pickup_code: pickup.code, note: "The recipient was present" });
 
     expect(response.status).toBe(400);
     expect(response.body.error.message).toContain("Delivery quantities are incomplete");
@@ -184,25 +196,26 @@ describe("assistance delivery verification", () => {
   });
 
   it("allows the NGO to accept and record a partial-delivery shortfall with a reason", async () => {
+    const pickup = createPickupCode();
     const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: null, evidenceType: "SUPPLIER_CONFIRMATION", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 1 }], createdAt: new Date("2026-11-09T09:00:00Z") };
-    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", merchant: { id: "merchant-1", name: "Approved Supplier" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", pickupCodeHash: pickup.hash, pickupAttempts: 0, merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
     const allocation = makeAllocation({ purchaseOrder: order });
     const h = setup({ allocation });
-    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "VERIFIED", events: [...order.events, { status: "VERIFIED", actorId: "ngo-1", note: "Shortfall accepted by NGO: supplier ran out of stock", evidenceType: "NGO_CONFIRMATION", deliveredItems: null, createdAt: new Date("2026-11-09T10:00:00Z") }] } }));
+    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "RECIPIENT_CONFIRMED", pickupCodeHash: null, events: [...order.events, { status: "RECIPIENT_CONFIRMED", actorId: "ngo-1", note: "Shortfall accepted by NGO: supplier ran out of stock", evidenceType: "PICKUP_CODE", deliveredItems: null, createdAt: new Date("2026-11-09T10:00:00Z") }] } }));
 
-    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ accept_shortfall: true, shortfall_reason: "Supplier ran out of stock" });
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ pickup_code: pickup.code, accept_shortfall: true, shortfall_reason: "Supplier ran out of stock" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "verified" });
+    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "recipient_confirmed" });
     expect(h.tx.fulfilmentEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ actorId: "ngo-1", note: "Shortfall accepted by NGO: Supplier ran out of stock" }) }));
     expect(h.tx.auditLog.createMany.mock.calls[0]?.[0].data).toEqual(expect.arrayContaining([
-      expect.objectContaining({ actorId: "ngo-1", action: "delivery.verified", details: expect.objectContaining({ shortfall_accepted: true, shortfall_reason: "Supplier ran out of stock", shortfalls: [{ basket_item_id: "basket-item-1", name: "Water container", planned_quantity: 2, delivered_quantity: 1 }] }) }),
+      expect.objectContaining({ actorId: "ngo-1", action: "delivery.recipient_confirmed", details: expect.objectContaining({ shortfall_accepted: true, shortfall_reason: "Supplier ran out of stock", shortfalls: [{ basket_item_id: "basket-item-1", name: "Water container", planned_quantity: 2, delivered_quantity: 1 }] }) }),
     ]));
   });
 
   it("requires a shortfall reason at request validation time", async () => {
     const h = setup();
-    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ accept_shortfall: true });
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ pickup_code: "12345678", accept_shortfall: true });
     expect(response.status).toBe(400);
     expect(response.body.error.details).toEqual(expect.arrayContaining([expect.objectContaining({ path: "shortfall_reason" })]));
     expect(h.tx.aidAllocation.findUnique).not.toHaveBeenCalled();

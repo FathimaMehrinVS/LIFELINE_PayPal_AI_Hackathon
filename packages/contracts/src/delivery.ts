@@ -18,13 +18,14 @@ export const DeliveredItemSchema = z.object({
 });
 
 export const SubmitDeliveryEventRequestSchema = z.object({
-  status: z.enum(["accepted", "preparing", "ready", "dispatched", "handed_over"]),
+  status: z.enum(["accepted", "preparing", "ready", "dispatched", "handed_over", "issue_reported"]),
   note: z.string().trim().max(500).optional(),
   delivered_items: z.array(DeliveredItemSchema).min(1).max(100).optional(),
 });
 export type SubmitDeliveryEventRequest = z.infer<typeof SubmitDeliveryEventRequestSchema>;
 
 export const VerifyDeliveryRequestSchema = z.object({
+  pickup_code: z.string().regex(/^\d{8}$/, "Enter the 8-digit pickup code"),
   note: z.string().trim().max(500).optional(),
   accept_shortfall: z.boolean().optional(),
   shortfall_reason: z.string().trim().min(1).max(500).optional(),
@@ -57,6 +58,7 @@ export const DeliveryEventSchema = z.object({
 
 export const DeliveryRecordSchema = z.object({
   allocation_id: z.string(),
+  purchase_order_id: z.string().nullable(),
   case_id: z.string(),
   allocation_status: z.enum(["approved", "disbursed", "completed"]),
   amount: AmountSchema,
@@ -67,8 +69,33 @@ export const DeliveryRecordSchema = z.object({
   partner: z.object({ user_id: z.string(), name: z.string(), email: z.string() }).nullable(),
   expected_items: z.array(DeliveryBasketItemSchema),
   events: z.array(DeliveryEventSchema),
+  /** Returned only once, when READY is first recorded. Never stored in the database. */
+  pickup_code: z.string().optional(),
 });
 export type DeliveryRecord = z.infer<typeof DeliveryRecordSchema>;
+
+export const PurchaseOrderItemSchema = z.object({
+  basket_item_id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  quantity: z.number().int().positive(),
+  unit_price: AmountSchema,
+  subtotal: AmountSchema,
+});
+
+export const PurchaseOrderSchema = z.object({
+  purchase_order_id: z.string(),
+  allocation_id: z.string(),
+  merchant_id: z.string(),
+  supplier_name: z.string(),
+  amount: AmountSchema,
+  currency: CurrencySchema,
+  status: DeliveryFulfilmentStatusSchema,
+  expected_ready_at: z.iso.datetime().nullable(),
+  items: z.array(PurchaseOrderItemSchema),
+  events: z.array(DeliveryEventSchema),
+});
+export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
 
 export const DeliveryPartnerSchema = z.object({ user_id: z.string(), name: z.string(), email: z.string() });
 export type DeliveryPartner = z.infer<typeof DeliveryPartnerSchema>;

@@ -3,6 +3,8 @@ import { getPrisma } from "../database/prisma";
 import { roundMoney } from "../utils/money";
 import { HttpError } from "../utils/http-error";
 import { CASE_AUDIT_ACTION } from "./case-store";
+import { determineRiskLevel } from "../rules/risk-level";
+import { incidentReportsPaymentDetailsConflict } from "../modules/finance/supplier-risk";
 
 // Owner: Member 1. What has actually happened to each case since it was saved, read from the money records.
 // Only recorded facts appear here: a captured donation never implies that a supplier was paid.
@@ -16,7 +18,7 @@ export async function attachOperations(db: Database, cases: CaseResult[]): Promi
     include: {
       donations: { where: { status: "CAPTURED" }, select: { amount: true } },
       payouts: { orderBy: { createdAt: "desc" }, take: 1 },
-      purchaseOrder: { select: { fulfilmentStatus: true, merchant: { select: { name: true } }, partnerUser: { select: { name: true } } } },
+      purchaseOrder: { select: { id: true, fulfilmentStatus: true, merchant: { select: { name: true, status: true, incidents: { where: { status: "OPEN" }, select: { description: true } } } }, partnerUser: { select: { name: true } } } },
     },
   });
   const byCase = new Map<string, CaseOperations>(allocations.map((allocation) => {
@@ -34,19 +36,36 @@ export async function attachOperations(db: Database, cases: CaseResult[]): Promi
       payout: payout ? {
         payout_id: payout.id,
         allocation_id: payout.allocationId,
+        ...(payout.purchaseOrderId ? { purchase_order_id: payout.purchaseOrderId } : {}),
+        ...(payout.reference ? { reference: payout.reference } : {}),
         status: payout.status.toLowerCase() as NonNullable<CaseOperations["payout"]>["status"],
         amount: payout.amount.toNumber(),
         currency: payout.currency,
         mode: payout.mode.toLowerCase() as NonNullable<CaseOperations["payout"]>["mode"],
       } : null,
       delivery: allocation.purchaseOrder ? {
+        purchase_order_id: allocation.purchaseOrder.id,
         fulfilment_status: allocation.purchaseOrder.fulfilmentStatus.toLowerCase() as NonNullable<CaseOperations["delivery"]>["fulfilment_status"],
         merchant_name: allocation.purchaseOrder.merchant.name,
         partner_name: allocation.purchaseOrder.partnerUser?.name ?? null,
       } : null,
     }];
   }));
-  return cases.map((item) => ({ ...item, operations: byCase.get(item.case_id) ?? { allocation: null, funding: { captured: 0, donations: 0 }, payout: null, delivery: null } }));
+  const risks = new Map(allocations.map((allocation) => [allocation.requestId, {
+    supplierStatus: allocation.purchaseOrder?.merchant.status ?? null,
+    conflictingPaymentDetails: allocation.purchaseOrder?.merchant.incidents.some((incident) =>
+      incidentReportsPaymentDetailsConflict(incident.description),
+    ) ?? false,
+  }]));
+  return cases.map((item) => ({
+    ...item,
+    risk_level: determineRiskLevel({
+      urgency: item.situation.urgency.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      missingInformation: item.situation.missing_information,
+      ...risks.get(item.case_id),
+    }),
+    operations: byCase.get(item.case_id) ?? { allocation: null, funding: { captured: 0, donations: 0 }, payout: null, delivery: null },
+  }));
 }
 
 const ACTIVITY_TITLES: Record<string, { title: string; kind: CaseTimelineEntry["kind"] }> = {
@@ -57,6 +76,9 @@ const ACTIVITY_TITLES: Record<string, { title: string; kind: CaseTimelineEntry["
   "delivery.status_changed": { title: "Delivery preparation updated", kind: "supplier" },
   "delivery.handover_recorded": { title: "Handover recorded by partner", kind: "supplier" },
   "delivery.verified": { title: "Delivery verified by NGO", kind: "supplier" },
+  "delivery.recipient_confirmed": { title: "Recipient collection confirmed", kind: "supplier" },
+  "purchase_order.created": { title: "Purchase order created", kind: "supplier" },
+  "supplier.payment_simulated": { title: "Simulated supplier payment recorded", kind: "payment" },
   "allocation.completed": { title: "Assistance completed", kind: "approval" },
   "supplier.registered": { title: "Supplier registered", kind: "supplier" },
   "supplier.status_changed": { title: "Supplier status changed", kind: "supplier" },
@@ -105,7 +127,7 @@ export async function getCaseTimeline(db: Database, caseId: string): Promise<Cas
   }
   if (allocation) {
     const deliveryLogs = await db.auditLog.findMany({
-      where: { entityType: "AidAllocation", entityId: allocation.id, action: { in: ["delivery.assigned", "delivery.status_changed", "delivery.handover_recorded", "delivery.verified", "allocation.completed"] } },
+      where: { entityType: "AidAllocation", entityId: allocation.id, action: { in: ["delivery.assigned", "delivery.status_changed", "delivery.handover_recorded", "delivery.verified", "delivery.recipient_confirmed", "allocation.completed"] } },
       orderBy: { createdAt: "asc" },
     });
     for (const log of deliveryLogs) {

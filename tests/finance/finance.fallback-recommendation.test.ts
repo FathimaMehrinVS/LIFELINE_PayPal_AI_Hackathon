@@ -11,10 +11,10 @@ describe("finance explanation fallback with a recommendation", () => {
     });
 
     expect(result.recommended_route_id).toBe("route_paypal");
-    expect(result.explanation).toContain("PayPal-supported route is recommended");
-    expect(result.explanation).toContain("an illustrative fee of EUR 15.00");
-    expect(result.explanation).toContain("EUR 285.00 usable");
-    expect(result.explanation).toContain("Bank transfer was blocked");
+    expect(result.explanation).toContain("We recommend PayPal-supported route");
+    expect(result.explanation).toContain("illustrative fee is EUR 15.00");
+    expect(result.explanation).toContain("leaving EUR 285.00 for the family");
+    expect(result.explanation).not.toMatch(/flags|deterministic|eligibility|route_paypal|score|blocked/i);
     expect(result.explanation).not.toContain(".;");
     expect(result.explanation).not.toContain("..");
   });

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prestart": "prisma generate --config ../../prisma.config.ts",
     "dev": "node --env-file-if-exists=../../.env --import tsx --watch src/server.ts",
     "start": "node --env-file-if-exists=../../.env --import tsx src/server.ts",
     "auth:assign-role": "node --env-file-if-exists=../../.env --import tsx src/scripts/assign-auth-role.ts",

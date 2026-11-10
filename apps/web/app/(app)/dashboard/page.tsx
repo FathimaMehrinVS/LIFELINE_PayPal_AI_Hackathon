@@ -1,6 +1,6 @@
 "use client";
 
-import type { CaseResult, Urgency } from "@lifeline/contracts";
+import type { CaseResult, Supplier, Urgency } from "@lifeline/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -22,7 +22,8 @@ function approvalError(err: unknown) {
   return "Can't reach the API";
 }
 
-function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow) => void }) {
+function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => void; onDisburse: (row: CaseRow, reference: string) => void }) {
+  const [reference, setReference] = useState("");
   const { situation, finance, commerce, case_id, missing_information } = row.case;
   const route = recommendedRoute(row.case);
   const funding = fundingState(row.case);
@@ -69,8 +70,12 @@ function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => 
             <>
               <p className="mt-2">Records an internal demo state only. No money is sent through PayPal or to anyone.</p>
               {row.disbursement?.state === "error" && <p role="alert" className="mt-2 text-critical">{row.disbursement.message}</p>}
-              <button type="button" disabled={row.disbursement?.state === "pending"} onClick={() => onDisburse(row)} className={`${button.secondary} mt-3 w-full`}>
-                {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated disbursement"}
+              <label className="mt-3 block text-xs font-medium text-slate-700">
+                Payment reference
+                <input value={reference} onChange={(event) => setReference(event.target.value)} maxLength={120} placeholder="Invoice or payment reference" className={`${fieldClass} mt-1`} />
+              </label>
+              <button type="button" disabled={row.disbursement?.state === "pending" || !reference.trim() || !approved.purchase_order_id} onClick={() => onDisburse(row, reference.trim())} className={`${button.secondary} mt-3 w-full`}>
+                {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated supplier payment"}
               </button>
             </>
           ) : (
@@ -109,13 +114,15 @@ export default function DashboardPage() {
   const [cases, setCases] = useState<CaseResult[]>([]);
   const [approvals, setApprovals] = useState<Record<string, Approval>>({});
   const [disbursements, setDisbursements] = useState<Record<string, Disbursement>>({});
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierChoices, setSupplierChoices] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState<number | null>(null);
-  const [confirming, setConfirming] = useState<CaseRow | null>(null);
+  const [confirming, setConfirming] = useState<{ row: CaseRow; supplierId: string } | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -130,6 +137,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    void api.listSuppliers().then(setSuppliers).catch(() => setSuppliers([]));
+  }, []);
+
+  useEffect(() => {
     void refresh();
   }, [refresh]);
 
@@ -138,10 +149,10 @@ export default function DashboardPage() {
 
   const failedApproval = rows.find((row) => row.approval?.state === "error");
 
-  const onApprove = useCallback(async (row: CaseRow) => {
-    const { case_id, situation } = row.case;
-    if (situation.budget === null || situation.currency === null) {
-      setApprovals((a) => ({ ...a, [case_id]: { state: "error", message: "This case has no amount to approve yet." } }));
+  const onApprove = useCallback(async (row: CaseRow, merchant_id: string) => {
+    const { case_id } = row.case;
+    if (!merchant_id) {
+      setApprovals((a) => ({ ...a, [case_id]: { state: "error", message: "Choose an approved supplier first." } }));
       return;
     }
     setApprovals((a) => ({ ...a, [case_id]: { state: "pending" } }));
@@ -149,8 +160,7 @@ export default function DashboardPage() {
       const result = await api.approveAllocation({
         case_id,
         campaign_id: CAMPAIGN_ID,
-        amount: situation.budget,
-        currency: situation.currency,
+        merchant_id,
       });
       setApprovals((a) => ({ ...a, [case_id]: { state: "approved", result } }));
     } catch (err) {
@@ -158,17 +168,21 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const onDisburse = useCallback(async (row: CaseRow) => {
+  const askToApprove = useCallback((row: CaseRow, supplierId: string) => setConfirming({ row, supplierId }), []);
+
+  const onChooseSupplier = useCallback((caseId: string, supplierId: string) => {
+    setSupplierChoices((current) => ({ ...current, [caseId]: supplierId }));
+  }, []);
+
+  const onDisburse = useCallback(async (row: CaseRow, reference: string) => {
     const approval = row.approval;
     if (approval?.state !== "approved" || approval.result.status !== "approved") return;
     const { case_id } = row.case;
     setDisbursements((current) => ({ ...current, [case_id]: { state: "pending" } }));
     try {
-      const result = await api.createPayout({
-        allocation_id: approval.result.allocation_id,
-        amount: approval.result.amount,
-        currency: approval.result.currency,
-      });
+      const purchase_order_id = approval.result.purchase_order_id ?? row.case.operations?.delivery?.purchase_order_id;
+      if (!purchase_order_id) throw new Error("This approved plan has no purchase order yet");
+      const result = await api.createPayout({ purchase_order_id, reference });
       setDisbursements((current) => ({ ...current, [case_id]: { state: "complete", result } }));
       setApprovals((current) => {
         const existing = current[case_id];
@@ -230,7 +244,7 @@ export default function DashboardPage() {
       )}
 
       <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""} ${visible === 0 ? "hidden" : ""}`}>
-        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} onApprove={setConfirming} onSelect={(row) => setSelectedId(row.case.case_id)} onVisibleCount={setVisible} />
+        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} suppliers={suppliers} supplierChoices={supplierChoices} onChooseSupplier={onChooseSupplier} onApprove={askToApprove} onSelect={(row) => setSelectedId(row.case.case_id)} onVisibleCount={setVisible} />
         {selected && <CasePanel row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
       </div>
       <ConfirmDialog
@@ -238,9 +252,9 @@ export default function DashboardPage() {
         title="Approve this plan?"
         confirmLabel="Approve plan"
         onCancel={() => setConfirming(null)}
-        onConfirm={() => { if (confirming) void onApprove(confirming); setConfirming(null); }}
+        onConfirm={() => { if (confirming) void onApprove(confirming.row, confirming.supplierId); setConfirming(null); }}
       >
-        {confirming && <p>You are approving <strong className="text-navy">{formatMoney(confirming.case.situation.budget, confirming.case.situation.currency)}</strong> for case <strong className="font-mono text-navy">{caseRef(confirming.case.case_id)}</strong>. Donors can fund it as soon as it is approved, and this can&apos;t be undone from LIFELINE.</p>}
+        {confirming && <p>You are approving case <strong className="font-mono text-navy">{caseRef(confirming.row.case.case_id)}</strong> with <strong className="text-navy">{suppliers.find((supplier) => supplier.supplier_id === confirming.supplierId)?.name ?? "the chosen supplier"}</strong>. LIFELINE works out the amount from the basket and route. Donors can fund it as soon as it is approved, and this can&apos;t be undone from LIFELINE.</p>}
       </ConfirmDialog>
       <p className="mt-3 text-xs text-slate-500">Select a row to review a case. Disbursement is simulated and does not transfer money.</p>
     </div>
