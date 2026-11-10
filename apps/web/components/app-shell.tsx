@@ -145,51 +145,86 @@ function Account() {
   );
 }
 
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+    </svg>
+  );
+}
+
 function WorkspaceFrame({ path, children }: { path: string; children: ReactNode }) {
   const profile = useAuthProfile();
   const { signOut, signingOut } = useSignOut();
+  const [menuOpen, setMenuOpen] = useState(false);
   const items = NAV.filter((item) => !item.roles || item.roles.includes(profile.role));
   const current = items.find((item) => path.startsWith(item.href));
   const isNgo = profile.role === "NGO";
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   return (
     <div className="min-h-screen lg:pl-[260px]">
-      <aside className="bg-navy text-white lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-[260px] lg:flex-col">
-        <div className="px-5 pb-1 pt-5">
-          <Wordmark light />
-          <p className="ml-[46px] hidden text-xs text-slate-300 lg:block">{isNgo ? "NGO Workspace" : "Workspace"}</p>
+      {menuOpen && <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-30 bg-navy/40 lg:hidden" />}
+      <aside className="relative z-40 bg-navy text-white lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-[260px] lg:flex-col">
+        <div className="flex items-center justify-between px-4 py-3 lg:block lg:px-5 lg:pb-1 lg:pt-5">
+          <div>
+            <Wordmark light />
+            <p className="ml-[46px] hidden text-xs text-slate-300 lg:block">{isNgo ? "NGO Workspace" : "Workspace"}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="workspace-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-white/10 lg:hidden"
+          >
+            <MenuIcon open={menuOpen} />
+          </button>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 py-3 lg:mt-3 lg:flex-col lg:overflow-visible" aria-label="Workspace">
-          {items.map(({ href, label, Icon }) => {
-            const active = path.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-medium ${active ? "border-teal bg-slate-800 text-white" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}
-              >
-                <Icon className="h-5 w-5" /> {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mx-3 mb-4 mt-auto hidden rounded-xl bg-slate-800 p-3.5 lg:block">
-          <p className="truncate text-sm font-semibold">{profile.email}</p>
-          <p className="mt-0.5 text-xs text-slate-300">{ROLE_LABEL[profile.role] ?? profile.role}</p>
-          <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-3 w-full rounded-lg border border-white/20 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
+        <div
+          id="workspace-menu"
+          className={`${menuOpen ? "flex" : "hidden"} absolute inset-x-0 top-full max-h-[calc(100vh-4.5rem)] flex-col overflow-y-auto bg-navy pb-3 shadow-xl lg:static lg:flex lg:max-h-none lg:flex-1 lg:overflow-visible lg:pb-0 lg:shadow-none`}
+        >
+          <nav className="flex flex-col gap-1 px-3 py-2 lg:mt-3 lg:py-3" aria-label="Workspace">
+            {items.map(({ href, label, Icon }) => {
+              const active = path.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-medium ${active ? "border-teal bg-slate-800 text-white" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}
+                >
+                  <Icon className="h-5 w-5" /> {label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="mx-3 mt-2 rounded-xl bg-slate-800 p-3.5 lg:mb-4 lg:mt-auto">
+            <p className="truncate text-sm font-semibold">{profile.email}</p>
+            <p className="mt-0.5 text-xs text-slate-300">{ROLE_LABEL[profile.role] ?? profile.role}</p>
+            <button type="button" onClick={() => void signOut()} disabled={signingOut} className="mt-3 w-full rounded-lg border border-white/20 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
+          </div>
         </div>
       </aside>
       <div>
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-200 bg-white px-4 py-3 sm:px-8">
           <div>
             <p className="text-xs text-slate-500">{isNgo ? "NGO workspace" : "LIFELINE"}</p>
             <p className="font-bold text-navy">{current?.label}</p>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
             <CurrencyLink />
-            <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated">PayPal Sandbox</span>
+            <span className="hidden rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated sm:inline-flex">PayPal Sandbox</span>
             <Link href="/situation" className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 font-semibold text-white hover:opacity-90"><PlusCircleIcon className="h-4 w-4" /> New case</Link>
-            <button type="button" onClick={() => void signOut()} disabled={signingOut} className="font-medium text-navy hover:underline disabled:opacity-60 lg:hidden">{signingOut ? "Signing out…" : "Sign out"}</button>
           </div>
         </header>
         <main id="main" className="max-w-[1680px] px-4 py-7 sm:px-8">{children}</main>
