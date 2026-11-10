@@ -10,12 +10,9 @@ AI extracts, explains, and ranks. Deterministic backend rules validate amounts, 
 
 ## Current status
 
-The main case, finance, commerce, NGO approval, donation, and dashboard flows are implemented. The API supports PayPal Sandbox order creation, capture validation, cancellation, and signature-verified webhook processing. Channel3 product search is optional and falls back to a local synthetic registry.
+The main case, finance, commerce, NGO approval, donation, and dashboard flows are implemented, and the app is deployed (API on Render, web on Vercel). A PayPal Sandbox donation has been approved and captured end to end, and PayPal's webhooks reach the deployed API and pass signature verification. Channel3 product search is optional and falls back to a local synthetic registry. See [integration status](docs/integration-status.md) for exactly what is real, sandboxed and simulated.
 
-Two deployment/live-verification items remain:
-
-- PayPal Sandbox buyer approval for EUR currently fails with `UNSUPPORTED_PAYEE_CURRENCY`, even though OAuth and EUR order creation succeed and the configured German Sandbox seller has EUR as its primary currency. No successful capture has been established for that failing checkout.
-- Live webhook delivery requires a deployed public HTTPS endpoint, webhook registration in the PayPal Sandbox app, `PAYPAL_WEBHOOK_ID`, and a delivery test.
+**Live app:** https://lifeline-pay-pal-ai-hackathon-wwr2.vercel.app
 
 Supabase email/password authentication, linked LIFELINE profiles, and server-side role/ownership authorization are implemented. Supported application roles are NGO, DONOR, and PARTNER; users without an assigned role remain pending, and beneficiaries do not need login accounts. The simulated disbursement is not a real PayPal transfer or proof of aid delivery. See the [authentication guide](docs/authentication.md) and [complete project overview](docs/project-overview.md) for implementation details and limitations.
 
@@ -179,10 +176,8 @@ Tests mock external services and do not perform live PayPal, Channel3, LLM, or p
 
 ## Known limitations
 
-- PayPal is Sandbox-only; the current EUR approval failure is `UNSUPPORTED_PAYEE_CURRENCY` and its PayPal-side receiving/eligibility cause remains unresolved.
-- Live PayPal webhook registration and public HTTPS delivery verification remain deployment tasks.
+- PayPal is Sandbox-only. Plans are funded in EUR; amounts are shown in each viewer's currency for reference only.
 - Assistance disbursement is simulated; actual payments to aid recipients and delivery confirmation are outside this MVP.
-- Supabase authentication and role-based authorization are implemented; live PayPal Sandbox capture is not yet verified because buyer approval fails with `UNSUPPORTED_PAYEE_CURRENCY`.
 - Product registry entries and demo humanitarian data are synthetic; Channel3 price/availability data is external and may not represent local stock.
 - The demo dashboard is not suitable as a production NGO case-management portal.
 
