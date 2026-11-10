@@ -3,6 +3,7 @@ import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
 import { getDemoRouteCatalogue } from "./route-catalogue";
 import { assessFees } from "../../rules/fees";
+import { incidentReportsPaymentDetailsConflict } from "./supplier-risk";
 import { HttpError } from "../../utils/http-error";
 
 type Database = ReturnType<typeof getPrisma>;
@@ -143,6 +144,13 @@ export async function approveAllocation(
       if (campaign.currency !== currency) throw new HttpError("VALIDATION_ERROR", "Plan currency must match the campaign currency");
       if (!merchant) throw new HttpError("NOT_FOUND", "Supplier not found");
       if (merchant.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", "Only an approved supplier can receive a purchase order");
+      const supplierIncidents = await tx.supplierIncident.findMany({
+        where: { merchantId: merchant.id, status: "OPEN" },
+        select: { description: true },
+      });
+      if (supplierIncidents.some((incident) => incidentReportsPaymentDetailsConflict(incident.description))) {
+        throw new HttpError("VALIDATION_ERROR", "Approval is on hold because the supplier has a reported payment-details conflict");
+      }
 
       if (existing?.status === "APPROVED" || existing?.status === "DISBURSED") {
         if (existing.campaignId !== campaign.id || existing.currency !== currency || !new Prisma.Decimal(existing.amount).equals(amount)) {
