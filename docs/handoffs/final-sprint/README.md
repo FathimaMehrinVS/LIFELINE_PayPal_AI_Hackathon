@@ -55,7 +55,7 @@ Status: `todo` · `doing` · `blocked` · `done`
 | M2-3 | Purchase orders | Member 2 | 9 Nov | M1-1, M1-4 | done |
 | M2-4 | Fulfilment events and pickup code | Member 2 | 10 Nov | M2-3 | done |
 | M2-5 | Supplier payment record | Member 2 | 10 Nov | M2-3 | done |
-| M2-6 | Risk levels and price check | Member 2 | 10 Nov | M2-3 | doing |
+| M2-6 | Risk levels and price check | Member 2 | 10 Nov | M2-3 | done |
 | M3-1 | Login and roles | Member 3 | 9 Nov | none | done |
 | M3-2 | One successful PayPal Sandbox capture | Member 3 | 9 Nov | none | todo |
 
@@ -141,7 +141,8 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
-| 10 Nov | Member 2 | Connected supplier-aware partner routing, cost-derived NGO approval, purchase orders, append-only fulfilment, one-time pickup-code confirmation, simulated supplier payments, and case risk levels. M2-6 price/conflicting-payment detection remains in progress | M1, M2, M3 |
+| 10 Nov | Member 2 | M2-6: open supplier incidents explicitly reporting payment/account detail conflicts now produce HIGH_RISK and block approval and simulated payment. Price outlier comparison was cut per the handoff cut order | M1, M2 |
+| 10 Nov | Member 2 | Connected supplier-aware partner routing, cost-derived NGO approval, purchase orders, append-only fulfilment, one-time pickup-code confirmation, simulated supplier payments, and the initial case risk-level display | M1, M2, M3 |
 | 9 Nov | Member 1 | Added `/api/plans` and `/api/records`, donor pages, Payments and Audit Logs. Donations nav now opens Approved Plans. Rewrote the Financial Assessments page (old `finance/components` removed) and restyled Donate and home. M1-6 is waiting on M2-3 and M2-4 | Everyone |
 | 8 Nov | Member 2 | Added schema-independent fulfilment transition and risk rules; endpoints and persistence still await M1 schema | M1, M2 |
 | 8 Nov | Member 2 | Started M2-1: plain-language finance explanation; partner verification awaits M1 supplier status and service areas | M1, M2 |
