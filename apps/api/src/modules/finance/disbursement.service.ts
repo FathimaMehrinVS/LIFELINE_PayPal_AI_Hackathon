@@ -2,6 +2,7 @@ import type { CreatePayoutRequest, PayoutResult } from "@lifeline/contracts";
 import { Prisma } from "../../generated/prisma/client";
 import { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
+import { incidentReportsPaymentDetailsConflict } from "./supplier-risk";
 
 const SIMULATION_NOTICE = "Simulated supplier payment only. No PayPal payout was sent; no money was transferred to the recipient.";
 
@@ -66,6 +67,13 @@ export async function simulateAllocationDisbursement(
     }
     if (order.merchant.status !== "APPROVED") {
       throw new HttpError("VALIDATION_ERROR", "Payment is on hold because the supplier is not approved");
+    }
+    const supplierIncidents = await tx.supplierIncident.findMany({
+      where: { merchantId: order.merchantId, status: "OPEN" },
+      select: { description: true },
+    });
+    if (supplierIncidents.some((incident) => incidentReportsPaymentDetailsConflict(incident.description))) {
+      throw new HttpError("VALIDATION_ERROR", "Payment is on hold because the supplier has a reported payment-details conflict");
     }
     if (!/^[A-Z]{3}$/.test(order.currency) || new Prisma.Decimal(order.amount).lessThanOrEqualTo(0) ||
         !order.amount.equals(allocation.amount) || order.currency !== allocation.currency || allocation.campaign.currency !== allocation.currency) {
