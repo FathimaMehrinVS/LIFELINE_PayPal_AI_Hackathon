@@ -18,6 +18,7 @@ describe("finance sample evaluation", () => {
       { route_id: "route_bank", verdict: "block", usable_value: 294 },
       { route_id: "route_agent", verdict: "review", usable_value: 240 },
       { route_id: "route_paypal", verdict: "pass", usable_value: 285 },
+      { route_id: "route_partner", verdict: "review", usable_value: 294 },
     ]);
     expect(result.explanation).toBe("PayPal leaves €285 usable.");
   });
