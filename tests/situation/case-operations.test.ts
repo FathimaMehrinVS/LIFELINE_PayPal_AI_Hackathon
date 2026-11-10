@@ -27,6 +27,22 @@ describe("attachOperations", () => {
     expect(result!.operations).toEqual({ allocation: null, funding: { captured: 0, donations: 0 }, payout: null, delivery: null });
   });
 
+  it("shows HIGH_RISK for an open supplier incident about changed payment details", async () => {
+    const order = {
+      id: "po_1",
+      fulfilmentStatus: "AWAITING_ACCEPTANCE",
+      merchant: {
+        name: "Supplier",
+        status: "APPROVED",
+        incidents: [{ description: "Supplier bank account details changed" }],
+      },
+      partnerUser: null,
+    };
+    const [result] = await attachOperations(db([{ ...allocation, purchaseOrder: order }]), [item("case_a")]);
+
+    expect(result!.risk_level).toBe("HIGH_RISK");
+  });
+
   it("keeps a donation and a supplier payment as separate facts", async () => {
     const paid = { ...allocation, payouts: [{ id: "p1", allocationId: "alloc_1", status: "COMPLETED", amount: amount(30), currency: "EUR", mode: "SIMULATED" }] };
     const [withPayout] = await attachOperations(db([paid]), [item("case_a")]);
