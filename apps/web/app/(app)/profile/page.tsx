@@ -64,7 +64,7 @@ export default function ProfilePage() {
           <div><dt className="text-sm text-slate-600">Email</dt><dd className="mt-1 break-all font-semibold text-navy">{profile.email}</dd></div>
           <div><dt className="text-sm text-slate-600">LIFELINE role</dt><dd className="mt-1"><Badge tone="human">{profile.role}</Badge></dd></div>
         </dl>
-        <p className="mt-5 border-t border-slate-200 pt-4 text-sm text-slate-600">Roles are assigned by a LIFELINE operator. You can&apos;t change your own role from this page.</p>
+        <p className="mt-5 border-t border-slate-200 pt-4 text-sm text-slate-600">NGO staff manage access from Team &amp; Access. You can&apos;t change your own role.</p>
       </Card>
       <CurrencySetting />
     </section>

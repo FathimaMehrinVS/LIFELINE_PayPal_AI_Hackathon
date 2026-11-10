@@ -236,7 +236,7 @@ export default function LoginPage() {
               </form>
 
               <p className="mt-5 text-center text-sm text-slate-600">{mode === "sign-in" ? "New to LIFELINE?" : "Already have an account?"} <button type="button" onClick={() => { setMode(mode === "sign-in" ? "sign-up" : "sign-in"); setFormError(""); setNotice(""); }} className="font-bold text-[#117F78] hover:text-[#0B655F]">{mode === "sign-in" ? "Create an account" : "Sign in"}</button></p>
-              <p className="mt-6 border-t border-slate-200 pt-5 text-xs leading-5 text-slate-500">Creating an account does not assign an NGO, donor or partner role. New profiles remain pending until an administrator reviews and assigns access.</p>
+              <p className="mt-6 border-t border-slate-200 pt-5 text-xs leading-5 text-slate-500">New accounts start as donors, so you can fund and follow approved plans straight away. NGO staff give partner or NGO access from Team & Access.</p>
             </>
           )}
         </div>

@@ -65,6 +65,7 @@ const AUDIT_LABELS: Record<string, { title: string; category: AuditRecords["entr
   "supplier.registered": { title: "Supplier registered", category: "supplier" },
   "supplier.status_changed": { title: "Supplier status changed", category: "supplier" },
   "supplier.check_recorded": { title: "Supplier check recorded", category: "supplier" },
+  "user.role_changed": { title: "Access changed", category: "other" },
 };
 
 const asText = (value: unknown) => (typeof value === "string" && value ? value : null);

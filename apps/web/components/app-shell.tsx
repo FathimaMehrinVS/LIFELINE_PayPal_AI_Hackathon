@@ -6,7 +6,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
 import { MoneyGate, MoneyProvider, useMoneySettings } from "./money-provider";
-import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon } from "./icons";
+import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon, KeyIcon } from "./icons";
 
 // The page frames from "LIFELINE Screen Designs": public site, intake, NGO workspace, donor area, sign-in.
 // Sign-in and roles are checked by the (app) layout; the menu shows only what a role can use.
@@ -28,6 +28,7 @@ const NAV: { href: string; label: string; Icon: (p: { className?: string }) => R
   { href: "/payments", label: "Payments", Icon: CoinsIcon, roles: ["NGO"] },
   { href: "/deliveries", label: "Delivery Tracking", Icon: UsersIcon, roles: ["NGO", "PARTNER"] },
   { href: "/audit", label: "Audit Logs", Icon: ShieldCheckIcon, roles: ["NGO"] },
+  { href: "/team", label: "Team & Access", Icon: KeyIcon, roles: ["NGO"] },
   { href: "/requests", label: "My Requests", Icon: PlusCircleIcon },
   { href: "/plans", label: "Approved Plans", Icon: HeartHandIcon, roles: ["NGO", "DONOR"] },
   { href: "/contributions", label: "My Contributions", Icon: HeartHandIcon, roles: ["DONOR"] },

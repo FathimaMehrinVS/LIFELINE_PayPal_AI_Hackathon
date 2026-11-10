@@ -17,6 +17,7 @@ import { purchaseOrdersRouter } from "./routes/purchase-orders.routes";
 import { recordsRouter } from "./routes/records.routes";
 import { situationRouter } from "./routes/situation.routes";
 import { suppliersRouter } from "./routes/suppliers.routes";
+import { teamRouter } from "./routes/team.routes";
 
 export function createApp(dependencies: { resolveSession?: SessionResolver } = {}) {
   const app = express();
@@ -41,6 +42,7 @@ export function createApp(dependencies: { resolveSession?: SessionResolver } = {
   app.use("/api/purchase-orders", requireRoles("NGO", "PARTNER"), purchaseOrdersRouter);
   app.use("/api/plans", requireRoles("DONOR", "NGO"), plansRouter);
   app.use("/api/records", requireRoles("NGO"), recordsRouter);
+  app.use("/api/team", requireRoles("NGO"), teamRouter);
   // Both mounted at /api/payments; each router owns different paths.
   app.use("/api/payments", requireRoles("DONOR", "NGO"), donationRouter);
   app.use("/api/payments", requireRoles("NGO"), payoutRouter);

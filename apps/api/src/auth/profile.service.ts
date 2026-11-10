@@ -10,8 +10,11 @@ export interface ProvisionedProfile {
 
 export interface ProfileProvisionDependencies {
   findByAuthUserId: (authUserId: string) => Promise<ProvisionedProfile | null>;
-  create: (input: { authUserId: string; email: string; name: string; role: null }) => Promise<ProvisionedProfile>;
+  create: (input: { authUserId: string; email: string; name: string; role: typeof NEW_ACCOUNT_ROLE }) => Promise<ProvisionedProfile>;
 }
+
+/** New accounts can give and follow plans straight away. Partner and NGO access is granted by NGO staff. */
+export const NEW_ACCOUNT_ROLE = "DONOR" as const;
 
 function isUniqueConstraintError(error: unknown): boolean {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "P2002");
@@ -30,7 +33,7 @@ export function createPendingProfileProvisioner(dependencies: ProfileProvisionDe
         authUserId: identity.id,
         email,
         name: identity.name?.trim() || email,
-        role: null,
+        role: NEW_ACCOUNT_ROLE,
       });
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;

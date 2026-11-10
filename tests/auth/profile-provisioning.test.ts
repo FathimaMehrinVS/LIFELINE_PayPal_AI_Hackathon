@@ -20,17 +20,17 @@ function memoryProfiles(): ProfileProvisionDependencies & { create: ReturnType<t
 }
 
 describe("pending LIFELINE profile provisioning", () => {
-  it("creates a pending profile from verified Supabase identity fields only", async () => {
+  it("creates a donor profile from verified Supabase identity fields only", async () => {
     const profiles = memoryProfiles();
     const provision = createPendingProfileProvisioner(profiles);
     const result = await provision(identity);
 
-    expect(result).toEqual({ id: "lifeline-profile-id", email: identity.email, role: null });
+    expect(result).toEqual({ id: "lifeline-profile-id", email: identity.email, role: "DONOR" });
     expect(profiles.create).toHaveBeenCalledWith({
       authUserId: identity.id,
       email: identity.email,
       name: identity.name,
-      role: null,
+      role: "DONOR",
     });
   });
 
@@ -88,11 +88,11 @@ describe("pending LIFELINE profile provisioning", () => {
       .send({ email: "attacker@example.test", role: "NGO", authUserId: "another-user" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ id: "lifeline-profile-id", email: identity.email, role: null });
+    expect(response.body).toEqual({ id: "lifeline-profile-id", email: identity.email, role: "DONOR" });
     expect(profiles.create).toHaveBeenCalledWith(expect.objectContaining({
       authUserId: identity.id,
       email: identity.email,
-      role: null,
+      role: "DONOR",
     }));
   });
 

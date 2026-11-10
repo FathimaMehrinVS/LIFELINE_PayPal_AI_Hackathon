@@ -87,6 +87,12 @@ export const UsersIcon = (p: IconProps) => (
     <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.5a6.5 6.5 0 0 1 3.5 5.5" />
   </Svg>
 );
+export const KeyIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="m10.8 12.2 8.7-8.7M16 7l3 3M14 9l2 2" />
+  </Svg>
+);
 export const CoinsIcon = (p: IconProps) => (
   <Svg {...p}>
     <ellipse cx="9" cy="7" rx="6" ry="3" />
