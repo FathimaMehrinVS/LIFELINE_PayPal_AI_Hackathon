@@ -7,7 +7,7 @@ import { createPayoutRouter } from "../../apps/api/src/routes/payout.routes";
 import { getPrisma } from "../../apps/api/src/database/prisma";
 import { createRoleGuard } from "../../apps/api/src/auth/role-guard";
 
-function setup(options: { allocationExists?: boolean; allocationStatus?: string; captured?: string } = {}) {
+function setup(options: { allocationExists?: boolean; allocationStatus?: string; captured?: string; paymentConflict?: boolean } = {}) {
   const allocation: any = {
     id: "allocation-1",
     requestId: "case-1",
@@ -30,6 +30,9 @@ function setup(options: { allocationExists?: boolean; allocationStatus?: string;
   const tx: any = {
     purchaseOrder: {
       findUnique: vi.fn(async () => options.allocationExists === false ? null : order),
+    },
+    supplierIncident: {
+      findMany: vi.fn(async () => options.paymentConflict ? [{ description: "Supplier bank account details changed" }] : []),
     },
     aidAllocation: {
       updateMany: vi.fn(async ({ where, data }: any) => {
@@ -110,6 +113,16 @@ describe("simulated assistance disbursement", () => {
     expect(response.body.error.message).toContain("Captured campaign donations are insufficient");
     expect(h.tx.aidAllocation.updateMany).not.toHaveBeenCalled();
     expect(h.tx.payout.create).not.toHaveBeenCalled();
+  });
+
+  it("holds simulated supplier payment when an open incident reports conflicting payment details", async () => {
+    const h = setup({ paymentConflict: true });
+    const response = await request(h.app).post("/api/payments/payouts").send(requestBody);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("payment-details conflict");
+    expect(h.tx.payout.create).not.toHaveBeenCalled();
+    expect(h.tx.aidAllocation.updateMany).not.toHaveBeenCalled();
   });
 
   it("records an unmistakably simulated disbursement and audit entry without changing Donation state", async () => {
