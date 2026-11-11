@@ -100,6 +100,18 @@ export default function OverviewPage() {
     pendingSuppliers.length > 0 && { tone: "bg-warning-tint text-warning", title: `${pendingSuppliers.length} ${pendingSuppliers.length === 1 ? "supplier awaits" : "suppliers await"} review`, text: "They can't receive orders until approved", href: "/suppliers" },
   ].filter((alert): alert is { tone: string; title: string; text: string; href: string } => Boolean(alert));
 
+  // Until the cases arrive, show placeholders: zeros would wrongly say there is nothing to do.
+  if (cases === null && !error) {
+    return (
+      <div className="space-y-5" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading the overview…</span>
+        <div className="h-9 w-72 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-200" />)}</div>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="h-72 animate-pulse rounded-2xl bg-slate-200" /><div className="h-72 animate-pulse rounded-2xl bg-slate-200" /></div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <header className="flex flex-wrap items-start justify-between gap-4">

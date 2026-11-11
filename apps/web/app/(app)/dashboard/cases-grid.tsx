@@ -238,7 +238,8 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         colId: "location",
         valueGetter: (p) => p.data?.case.situation.location ?? "",
         filter: "agTextColumnFilter",
-        width: 115,
+        tooltipValueGetter: (p) => p.value,
+        width: 130,
       },
       {
         headerName: "Status",
@@ -270,7 +271,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
           const route = p.data && recommendedRoute(p.data.case);
           return route ? routeName(route.route_id) : "";
         },
-        width: 90,
+        width: 120,
       },
       {
         headerName: "Sent",
@@ -306,7 +307,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         colId: "funding",
         valueGetter: (p) => (p.data ? fundingState(p.data.case)?.label ?? "" : ""),
         cellRenderer: FundingCell,
-        width: 125,
+        width: 150,
       },
       {
         headerName: "Supplier payment",

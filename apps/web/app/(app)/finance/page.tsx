@@ -66,7 +66,7 @@ export default function FinancialAssessmentPage() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-5"><p className="text-sm text-slate-600">Assistance budget</p><p className="tabular text-3xl font-bold text-navy">{formatMoney(budget, finance.currency)}</p></Card>
-        <Card className="p-5"><p className="text-sm text-slate-600">Currency</p><p className="text-3xl font-bold text-navy">{finance.currency}</p></Card>
+        <Card className="p-5"><p className="text-sm text-slate-600">Plan currency</p><p className="text-3xl font-bold text-navy">{finance.currency}</p></Card>
         <Card className="p-5">
           <p className="text-sm text-slate-600">Recipient access</p>
           <p className="mt-1 text-sm font-semibold text-navy">{unavailable.length ? `No ${unavailable.join(", no ")}` : "No access reported as unavailable"}</p>
