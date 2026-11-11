@@ -5,6 +5,7 @@ import { getRequestSession } from "../auth/role-guard";
 import { getPrisma } from "../database/prisma";
 import { validateBody } from "../middleware/validate";
 import { HttpError } from "../utils/http-error";
+import { clearSessionCache } from "../auth/session-cache";
 
 const UpdateRoleSchema = z.object({ role: z.enum(AUTH_ROLES) }).strict();
 
@@ -50,6 +51,7 @@ export function createAdminRouter(getDatabase: typeof getPrisma = getPrisma) {
         details: { previous_role: target.role, assigned_role: role },
       },
     });
+    clearSessionCache();
     res.json({ ...updated, created_at: updated.createdAt.toISOString() });
   });
 

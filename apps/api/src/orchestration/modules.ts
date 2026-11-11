@@ -4,7 +4,7 @@ import { productSource } from "../modules/commerce/product-source";
 import { evaluateRoutes } from "../modules/finance/finance.service";
 import { getDemoRouteCatalogue } from "../modules/finance/route-catalogue";
 import { rankProducts } from "../modules/commerce/service";
-import { analyzeSituation } from "../modules/situation/situation.service";
+import { analyzeSituationCached } from "../modules/situation/analysis-cache";
 import { buildBasket } from "../rules/basket";
 import { env } from "../config/env";
 import { getPrisma } from "../database/prisma";
@@ -15,7 +15,7 @@ import { singleSupplierProducts } from "./supplier-choice";
 // Owner: Member 1. Connects the real modules (Members 1, 2 and 3) to the Orchestrator.
 
 export const caseModules: CaseModules = {
-  analyzeSituation: (input) => analyzeSituation(input, llm),
+  analyzeSituation: (input) => analyzeSituationCached(input, llm),
   // Member 2: fees, scores and verdicts are deterministic; the LLM only writes the explanation.
   evaluateRoutes: (input) => evaluateRoutes(input, llm),
   // The demo catalogue is synthetic and currency-independent (fees are percentages), so currency isn't used yet.

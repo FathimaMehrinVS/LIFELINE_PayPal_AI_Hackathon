@@ -1,6 +1,7 @@
 import { env } from "../config/env";
 import { getPrisma } from "../database/prisma";
 import { HttpError } from "../utils/http-error";
+import { cacheSessions } from "./session-cache";
 
 export const AUTH_ROLES = ["ADMIN", "NGO", "DONOR", "PARTNER"] as const;
 export type AuthRole = (typeof AUTH_ROLES)[number];
@@ -105,4 +106,4 @@ export function createSessionResolver(dependencies: SessionResolverDependencies)
   };
 }
 
-export const resolveAuthenticatedSession = createSessionResolver(defaultDependencies);
+export const resolveAuthenticatedSession = cacheSessions(createSessionResolver(defaultDependencies));

@@ -64,8 +64,11 @@ function requestStatus(status: CaseResult["status"]) {
  * kept in an AuditLog entry; the dashboard list is read from there.
  */
 export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): CaseStore {
+  // Listing reads and re-validates every saved case, so the result is kept for 15 seconds and cleared on every save.
+  let listed: { at: number; cases: CaseResult[] } | null = null;
   return {
     async save(result, request, createdById, actorId) {
+      listed = null;
       const db = prisma();
       const { case_id: id, situation, finance, commerce } = result;
       const previous = await db.assistanceRequest.findUnique({ where: { id }, select: { createdById: true } });
@@ -138,6 +141,7 @@ export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): C
     },
 
     async list() {
+      if (listed && Date.now() - listed.at < 15_000) return listed.cases.map((item) => structuredClone(item));
       const entries = await prisma().auditLog.findMany({
         where: { action: CASE_AUDIT_ACTION, entityType: "AssistanceRequest" },
         orderBy: { createdAt: "desc" },
@@ -151,6 +155,7 @@ export function createPrismaCaseStore(prisma: () => PrismaClient = getPrisma): C
         const parsed = CaseResultSchema.safeParse(entry.details);
         if (parsed.success) cases.push(parsed.data); // skip rows from an older contract instead of failing the list
       }
+      listed = { at: Date.now(), cases: cases.map((item) => structuredClone(item)) };
       return cases;
     },
 

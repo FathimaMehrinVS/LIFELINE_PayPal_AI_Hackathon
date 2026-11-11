@@ -62,6 +62,14 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Recent GET results, so moving between pages doesn't refetch the same data. Any change or sign-out clears it. */
+const recent = new Map<string, { at: number; value: unknown }>();
+const RECENT_MS = 15_000;
+
+export function clearApiCache(): void {
+  recent.clear();
+}
+
 async function request<TResponse>(method: "GET" | "POST", path: string, body?: unknown, accessToken?: string): Promise<TResponse> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -69,6 +77,12 @@ async function request<TResponse>(method: "GET" | "POST", path: string, body?: u
     ? (await getSupabaseBrowserClient().auth.getSession()).data.session?.access_token
     : undefined);
   if (token) headers.Authorization = `Bearer ${token}`;
+  // Keyed by the account's token too, so one person's data is never shown to another.
+  const cacheKey = `${token?.slice(-16) ?? "anonymous"}:${path}`;
+  if (method === "GET") {
+    const known = recent.get(cacheKey);
+    if (known && Date.now() - known.at < RECENT_MS) return structuredClone(known.value) as TResponse;
+  }
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
@@ -76,6 +90,8 @@ async function request<TResponse>(method: "GET" | "POST", path: string, body?: u
   });
   const json = await res.json();
   if (!res.ok) throw new ApiRequestError(res.status, json as ApiError);
+  if (method === "GET") recent.set(cacheKey, { at: Date.now(), value: structuredClone(json) });
+  else recent.clear();
   return json as TResponse;
 }
 

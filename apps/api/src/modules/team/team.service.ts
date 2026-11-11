@@ -1,6 +1,7 @@
 import type { TeamMember, TeamRole } from "@lifeline/contracts";
 import type { getPrisma } from "../../database/prisma";
 import { HttpError } from "../../utils/http-error";
+import { clearSessionCache } from "../../auth/session-cache";
 
 // Owner: Member 1. Replaces the terminal command for giving people access. Every change is audited.
 
@@ -28,5 +29,6 @@ export async function changeRole(db: Database, userId: string, role: TeamRole, a
     await tx.auditLog.create({ data: { action: ROLE_CHANGED, entityType: "User", entityId: userId, actorId, details: { from: user.role?.toLowerCase() ?? "pending", to: role.toLowerCase() } } });
     return changed;
   });
+  clearSessionCache();
   return toMember(updated);
 }

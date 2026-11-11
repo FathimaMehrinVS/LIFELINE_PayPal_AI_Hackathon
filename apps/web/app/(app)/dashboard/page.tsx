@@ -4,7 +4,7 @@ import type { CaseResult, Supplier, Urgency } from "@lifeline/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { ApiRequestError, api } from "@/services/api";
+import { ApiRequestError, api, clearApiCache } from "@/services/api";
 import { Badge, type BadgeTone, button, fieldClass, EmptyState } from "@/components/ui";
 import { type Approval, type CaseRow, type Disbursement, STATUS_LABELS, caseRef, formatMoney, fundingState, recommendedRoute, routeName, savedApproval, savedDisbursement } from "./case-row";
 import { CasesGrid, type StatusFilter } from "./cases-grid";
@@ -214,7 +214,7 @@ export default function DashboardPage() {
           <h1 className="text-[28px] font-bold leading-tight text-navy">Assistance cases</h1>
           <p className="text-slate-600">{cases.length} active · {urgent} urgent · {count("complete")} ready for approval</p>
         </div>
-        <button type="button" onClick={() => void refresh()} className={button.secondary}>{loading ? "Loading…" : "Refresh"}</button>
+        <button type="button" onClick={() => { clearApiCache(); void refresh(); }} className={button.secondary}>{loading ? "Loading…" : "Refresh"}</button>
       </header>
 
 

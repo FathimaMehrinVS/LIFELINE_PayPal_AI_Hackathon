@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuthProfile } from "./auth-session";
 import { MoneyGate, MoneyProvider, useMoneySettings } from "./money-provider";
 import { BasketIcon, CoinsIcon, GridIcon, HeartHandIcon, HomeIcon, PlusCircleIcon, RouteIcon, ShieldCheckIcon, StoreIcon, UsersIcon, KeyIcon } from "./icons";
+import { clearApiCache } from "@/services/api";
 
 // The page frames from "LIFELINE Screen Designs": public site, intake, NGO workspace, donor area, sign-in.
 // Sign-in and roles are checked by the (app) layout; the menu shows only what a role can use.
@@ -44,6 +45,7 @@ function useSignOut() {
   async function signOut() {
     setSigningOut(true);
     try {
+      clearApiCache();
       await getSupabaseBrowserClient().auth.signOut({ scope: "local" });
       await fetch("/api/auth-session", { method: "DELETE", credentials: "same-origin" });
     } finally {
