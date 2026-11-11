@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { CaseResult, CommerceResult, NeedCategory } from "@lifeline/contracts";
 import { BasketIcon, CheckIcon } from "@/components/icons";
-import { Badge, fieldClass } from "@/components/ui";
+import { Badge, button, fieldClass } from "@/components/ui";
 import { api } from "@/services/api";
 import { caseRef, formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
 import { CasePicker, useSelectedCase } from "../dashboard/use-cases";
@@ -15,7 +15,6 @@ const currencies = ["EUR", "USD"];
 const needLabel = (need: string) => need.replaceAll("_", " ");
 const money = (value: number, currency: string) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
 const hasBasket = (item: CaseResult) => item.commerce !== null;
-const inputClass = "w-full rounded-xl border border-slate-300 bg-white p-3 font-normal focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100";
 
 export default function ProductBasketsPage() {
   const { cases, selected, setSelectedId, error } = useSelectedCase(hasBasket);
@@ -60,7 +59,7 @@ function CaseBasket({ item }: { item: CaseResult }) {
       <section className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">Case needs · <span className="font-mono">{caseRef(item.case_id)}</span></p>
-          <h1 className="text-lg font-bold text-navy">{item.situation.summary}</h1>
+          <h1 className="mt-1 max-w-3xl text-[15px] font-medium leading-relaxed text-navy">{item.situation.summary}</h1>
           {route && <p className="mt-1 text-sm text-slate-600">Route: <strong className="text-navy">{routeName(route.route_id)}</strong></p>}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -80,19 +79,24 @@ function CaseBasket({ item }: { item: CaseResult }) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {products.map(({ product, inBasket }) => (
               <article key={`${product.product_id}-${inBasket}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex h-24 items-center justify-center rounded-xl bg-slate-100 text-slate-500"><BasketIcon className="h-9 w-9" /></div>
-                <div className="mt-3 flex items-start justify-between gap-2">
-                  <h2 className="font-bold text-navy">{product.name}</h2>
-                  <p className="tabular font-bold text-navy">{money(product.unit_price)}</p>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><BasketIcon className="h-5 w-5" /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-bold text-navy">{product.name}</h2>
+                      <p className="tabular shrink-0 font-bold text-navy">{money(product.unit_price)}</p>
+                    </div>
+                    <p className="text-sm text-slate-600">{product.merchant_name}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-600">{product.merchant_name}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <Badge tone={inBasket ? "success" : "warning"}>{inBasket ? "Suggested" : "Alternative"}</Badge>
                   <Badge tone="neutral">{product.source === "channel3" ? "External · not verified" : "Synthetic demo"}</Badge>
                 </div>
-                <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className="text-slate-600">Quantity <strong className="tabular text-navy">{inBasket ? product.quantity : 0}</strong></span>
-                  {inBasket && <span className="rounded-lg border border-teal/30 bg-teal-tint px-3 py-1.5 font-semibold text-teal-text">In basket</span>}
+                <div className="mt-3 flex min-h-8 items-center justify-between border-t border-slate-100 pt-3 text-sm">
+                  {inBasket
+                    ? <><span className="text-slate-600">Quantity <strong className="tabular text-navy">{product.quantity}</strong></span><span className="inline-flex items-center gap-1 font-semibold text-teal-text"><CheckIcon className="h-4 w-4" /> In basket</span></>
+                    : <span className="text-slate-500">Not in basket · swap option</span>}
                 </div>
               </article>
             ))}
@@ -116,7 +120,10 @@ function CaseBasket({ item }: { item: CaseResult }) {
             <div className="flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-navy"><dt>Total estimated</dt><dd className="tabular">{money(totalCost)}</dd></div>
           </dl>
           <div className="mt-3 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-teal" style={{ width: `${Math.min(100, budget > 0 ? (totalCost / budget) * 100 : 0)}%` }} /></div>
-          <div className="mt-1.5 flex justify-between text-sm"><span className="text-slate-600">Budget {money(budget)}</span><span className="font-semibold text-success">Reserve {money(commerce.reserve)}</span></div>
+          <dl className="mt-2 space-y-1 text-sm">
+            <div className="flex justify-between gap-3"><dt className="text-slate-600">Budget</dt><dd className="tabular text-right text-navy">{money(budget)}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="font-semibold text-success">Reserve kept</dt><dd className="tabular text-right font-semibold text-success">{money(commerce.reserve)}</dd></div>
+          </dl>
           {commerce.unmet_needs.length > 0 && <p className="mt-3 rounded-lg bg-warning-tint p-3 text-sm text-warning"><strong className="capitalize">{commerce.unmet_needs.map(needLabel).join(", ")}</strong> not covered yet.</p>}
           <p className="mt-3 text-[13px] text-slate-600">Local catalogue prices are illustrative and online prices are estimates. Stock isn't guaranteed until a supplier accepts an order.</p>
         </aside>
@@ -129,7 +136,7 @@ function QuickPlanner() {
   const [needs, setNeeds] = useState<NeedCategory[]>(["food", "water", "hygiene"]);
   const [budget, setBudget] = useState("100");
   const [currency, setCurrency] = useState("EUR");
-  const [location, setLocation] = useState("Demo location");
+  const [location, setLocation] = useState("Demo Town");
   const [householdSize, setHouseholdSize] = useState("4");
   const [days, setDays] = useState("7");
   const [basket, setBasket] = useState<CommerceResult | null>(null);
@@ -179,31 +186,31 @@ function QuickPlanner() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Field label="Budget">
-            <input className={inputClass} type="number" min="0.01" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} required />
+            <input className={fieldClass} type="number" min="0.01" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} required />
           </Field>
           <Field label="Currency">
-            <select className={inputClass} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <select className={fieldClass} value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {currencies.map((code) => <option key={code}>{code}</option>)}
             </select>
           </Field>
           <Field label="Location">
-            <input className={inputClass} value={location} onChange={(e) => setLocation(e.target.value)} required />
+            <input className={fieldClass} value={location} onChange={(e) => setLocation(e.target.value)} required />
           </Field>
           <Field label="People">
-            <input className={inputClass} type="number" min="1" step="1" value={householdSize} onChange={(e) => setHouseholdSize(e.target.value)} />
+            <input className={fieldClass} type="number" min="1" step="1" value={householdSize} onChange={(e) => setHouseholdSize(e.target.value)} />
           </Field>
           <Field label="Days to cover">
-            <input className={inputClass} type="number" min="1" max="90" step="1" value={days} onChange={(e) => setDays(e.target.value)} />
+            <input className={fieldClass} type="number" min="1" max="90" step="1" value={days} onChange={(e) => setDays(e.target.value)} />
           </Field>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5">
-          <button disabled={busy || needs.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-navy px-6 py-2.5 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+          <button disabled={busy || needs.length === 0} className={button.primary}>
             <BasketIcon className="h-5 w-5" /> {busy ? "Building basket…" : "Build basket"}
           </button>
           <span className="text-xs text-slate-500">{needs.length === 0 ? "Pick at least one need." : "Local catalogue prices are illustrative; online prices are estimates."}</span>
         </div>
-        {error && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
+        {error && <p role="alert" className="rounded-2xl border border-critical/30 bg-critical-tint p-4 text-critical">{error}</p>}
       </form>
 
       {basket && (
@@ -231,7 +238,7 @@ function QuickPlanner() {
             </ul>
           </section>
 
-          <p className="rounded-2xl bg-indigo-50 p-4 text-sm leading-relaxed text-indigo-950">{basket.explanation}</p>
+          <p className="rounded-2xl border border-teal/30 bg-teal-tint p-4 text-sm leading-relaxed text-navy">{basket.explanation}</p>
 
           {basket.alternatives.length > 0 && (
             <section>
@@ -259,9 +266,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Summary({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-2xl p-5 shadow-sm ${highlight ? "bg-indigo-50 ring-1 ring-indigo-100" : "border border-slate-200 bg-white"}`}>
+    <div className={`rounded-2xl p-5 shadow-sm ${highlight ? "border border-teal/30 bg-teal-tint" : "border border-slate-200 bg-white"}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`tabular mt-1 text-2xl font-bold capitalize ${highlight ? "text-indigo-700" : "text-slate-900"}`}>{value}</p>
+      <p className={`tabular mt-1 text-2xl font-bold capitalize ${highlight ? "text-teal-text" : "text-navy"}`}>{value}</p>
     </div>
   );
 }
