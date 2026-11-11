@@ -127,8 +127,10 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
     return <Badge tone="success">✓ Approved</Badge>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-500">Not ready</span>;
-  const approvedSuppliers = suppliers.filter((supplier) => supplier.status === "approved");
-  const selectedSupplier = supplierChoices[data.case.case_id] ?? "";
+  // The purchase order goes to the supplier the basket's items come from.
+  const basketSuppliers = new Set(data.case.commerce?.items.map((item) => item.merchant_id) ?? []);
+  const approvedSuppliers = suppliers.filter((supplier) => supplier.status === "approved" && (basketSuppliers.size === 0 || basketSuppliers.has(supplier.supplier_id)));
+  const selectedSupplier = supplierChoices[data.case.case_id] ?? (approvedSuppliers.length === 1 ? approvedSuppliers[0]!.supplier_id : "");
   return (
     <span className="flex h-full min-w-64 items-center gap-2">
       <select
@@ -153,7 +155,7 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
       >
         {approval?.state === "pending" ? "Approving…" : approval?.state === "error" ? "Retry" : "Approve"}
       </button>
-      {approvedSuppliers.length === 0 && <span className="text-xs text-slate-500">No approved suppliers</span>}
+      {approvedSuppliers.length === 0 && <span className="text-xs text-slate-500" title="Approve the basket's supplier on the Suppliers page first">Basket supplier not approved</span>}
       {approval?.state === "error" && (
         <span className="truncate text-xs text-red-700" title={approval.message}>
           {approval.message}

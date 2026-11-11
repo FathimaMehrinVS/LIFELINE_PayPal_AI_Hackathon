@@ -10,6 +10,7 @@ import { env } from "../config/env";
 import { getPrisma } from "../database/prisma";
 import { supplierCoversLocation } from "../modules/finance/route-catalogue";
 import type { CaseModules } from "./run-case";
+import { singleSupplierProducts } from "./supplier-choice";
 
 // Owner: Member 1. Connects the real modules (Members 1, 2 and 3) to the Orchestrator.
 
@@ -34,7 +35,12 @@ export const caseModules: CaseModules = {
   // the case, so it isn't stored twice as an unrelated request.
   buildBasket: async (input) => {
     const request = CommerceRequestSchema.parse(input);
-    const products = await productSource.search(request);
+    const found = await productSource.search(request);
+    // Only approved suppliers can receive the purchase order, so only their products go in the basket, all from one.
+    const approved = env.DATABASE_URL
+      ? new Set((await getPrisma().merchant.findMany({ where: { status: "APPROVED" }, select: { id: true } })).map((merchant) => merchant.id))
+      : null;
+    const products = approved ? singleSupplierProducts(found, request.needs, approved) : found;
     const ranking = await rankProducts(request, products);
     return buildBasket(request, products, ranking);
   },

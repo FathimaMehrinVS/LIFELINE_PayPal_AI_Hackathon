@@ -123,6 +123,15 @@ describe("NGO allocation approval", () => {
     expect(h.tx.purchaseOrder.create).not.toHaveBeenCalled();
   });
 
+  it("refuses a supplier that the basket's items don't come from", async () => {
+    const h = setup();
+    h.assistance.basket.items = [{ id: "item_1", merchantId: "another_supplier" }];
+    const response = await request(h.app).post("/api/allocations/approve").send(validRequest);
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("supplier this basket");
+    expect(h.tx.aidAllocation.create).not.toHaveBeenCalled();
+  });
+
   it("rejects a case that is not awaiting approval or lacks a basket", async () => {
     const h = setup({ caseStatus: "ANALYZED" });
     const response = await request(h.app).post("/api/allocations/approve").send(validRequest);

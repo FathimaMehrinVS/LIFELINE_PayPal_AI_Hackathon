@@ -144,6 +144,11 @@ export async function approveAllocation(
       if (campaign.currency !== currency) throw new HttpError("VALIDATION_ERROR", "Plan currency must match the campaign currency");
       if (!merchant) throw new HttpError("NOT_FOUND", "Supplier not found");
       if (merchant.status !== "APPROVED") throw new HttpError("VALIDATION_ERROR", "Only an approved supplier can receive a purchase order");
+      // The purchase order must go to the supplier the basket's items were chosen from.
+      const basketSuppliers = new Set(assistance.basket.items.map((item) => (item as { merchantId?: string }).merchantId).filter(Boolean));
+      if (basketSuppliers.size > 0 && !basketSuppliers.has(merchant.id)) {
+        throw new HttpError("VALIDATION_ERROR", "Choose the supplier this basket's items come from");
+      }
       const supplierIncidents = await tx.supplierIncident.findMany({
         where: { merchantId: merchant.id, status: "OPEN" },
         select: { description: true },
