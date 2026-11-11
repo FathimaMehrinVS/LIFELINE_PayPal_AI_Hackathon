@@ -23,3 +23,13 @@ describe("local partner route", () => {
     expect(supplierCoversLocation("Kochi", ["Kochi District"])).toBe(false);
   });
 });
+
+describe("partner coverage with labelled demo areas", () => {
+  it("matches a family's place name against an area labelled (synthetic)", async () => {
+    const { supplierCoversLocation } = await import("../../apps/api/src/modules/finance/route-catalogue");
+    expect(supplierCoversLocation("Demo Town", ["Demo Town (synthetic)"])).toBe(true);
+    expect(supplierCoversLocation("Kochi, Demo Town", ["Demo Town (synthetic)"])).toBe(true);
+    expect(supplierCoversLocation("Far Hill Village", ["Demo Town (synthetic)"])).toBe(false);
+    expect(supplierCoversLocation("Demo", ["Demo Town (synthetic)"])).toBe(false);
+  });
+});

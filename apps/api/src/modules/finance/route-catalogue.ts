@@ -50,7 +50,8 @@ const DEMO_ROUTE_CATALOGUE: readonly FinancialRoute[] = [
 
 /** Exact normalized area matching avoids claiming coverage based on a loose substring match. */
 export function supplierCoversLocation(location: string, serviceAreas: readonly string[]): boolean {
-  const normalize = (value: string) => value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
+  // "(synthetic)" only labels demo data in the UI; it isn't part of the place name a family would give.
+  const normalize = (value: string) => value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ").replace(/\s*\(synthetic\)$/, "");
   const caseAreas = new Set(location.split(",").map(normalize).filter(Boolean));
   return serviceAreas.some((area) => caseAreas.has(normalize(area)));
 }
