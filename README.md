@@ -6,8 +6,8 @@
 > LIFELINE never decides who deserves aid.
 
 LIFELINE helps small NGOs turn a messy emergency report into a verified, costed, NGO-approved aid plan that donors can
-fund through PayPal, and it records every step until the goods reach the family. Families need no bank account, no
-PayPal account and no LIFELINE login.
+fund through PayPal, and it records every step until the goods reach the family. Families need no bank account and no
+PayPal account: a relative, volunteer or NGO worker can report for them.
 
 **Live app:** https://lifeline-pay-pal-ai-hackathon-wwr2.vercel.app
 **API:** https://lifeline-api-i269.onrender.com/health (free hosting sleeps when idle; the first request can take up to a minute)
@@ -16,6 +16,7 @@ PayPal account and no LIFELINE login.
 
 ## Contents
 
+- [For judges: try it](#for-judges-try-it)
 - [The problem](#the-problem)
 - [How LIFELINE works](#how-lifeline-works)
 - [Who uses it](#who-uses-it)
@@ -36,6 +37,37 @@ PayPal account and no LIFELINE login.
 - [Further documentation](#further-documentation)
 
 ---
+
+## For judges: try it
+
+Open the **[live app](https://lifeline-pay-pal-ai-hackathon-wwr2.vercel.app)**. The API runs on Render's free plan, so
+if it has been idle, the first page can take up to a minute to load. After that it is fast.
+
+All accounts and data below are test-only. Every family, place and supplier is synthetic, and every payment is
+PayPal Sandbox money.
+
+| Account | Email | Password | Use it to |
+|---|---|---|---|
+| NGO staff | `athirav183+judgengo@gmail.com` | `Summit-Judge-8377` | Review cases, approve plans, issue pickup codes, record supplier payments |
+| Delivery partner | `athirav183+judgepartner@gmail.com` | `River-Judge-1518` | Record preparation and handover for assigned deliveries |
+| Donor | Sign up with any email | Your choice | Fund an approved plan. Every new account is a donor |
+| PayPal Sandbox buyer | `sb-guaxq53836714@personal.example.com` | `12345678` | Log in on the PayPal checkout window when funding a plan |
+
+Use a private window for the partner account, so its sign-in doesn't replace the NGO one.
+
+### A five-minute walkthrough
+
+1. **Report.** Sign in with any account (a new donor account works, or the NGO login), choose **Request Assistance**
+   and describe a situation in your own words, for example a flooded household that needs food and water and has no
+   working bank nearby.
+2. **Review (NGO).** Sign in as NGO staff. Open **Assistance Cases**: the AI has pulled out needs, urgency and missing
+   details, and the rules have compared routes and costed a basket. Pick an approved supplier and approve the plan.
+3. **Fund (donor).** Sign in as a donor, open **Approved Plans**, choose the plan and pay with the PayPal Sandbox
+   buyer account. The server confirms the capture with PayPal before recording it.
+4. **Deliver.** As NGO staff, assign the delivery partner on **Delivery Tracking** and issue a one-time pickup code.
+   As the partner, record preparation, then enter the pickup code at handover.
+5. **Check the records.** As NGO staff, see the donation and the separate supplier payment on **Payments**, and every
+   step on **Audit Logs**.
 
 ## The problem
 
@@ -72,7 +104,7 @@ flowchart LR
 
 | Role | How they get it | Can do |
 |---|---|---|
-| **Family** | No account needed | Report a need. |
+| **Family** | No account needed | Gets help. A relative, volunteer or NGO worker reports for them from any account. |
 | **Donor** | Automatic for every new account | Fund approved plans and follow their progress. Sees no family details. |
 | **Partner** | Given by NGO staff on **Team & Access** | Record preparation and handover for deliveries assigned to them. |
 | **NGO staff** | Given by NGO staff on **Team & Access** | Review cases, verify suppliers, approve plans, manage payments, deliveries and access. |
@@ -115,7 +147,7 @@ language, and can be changed on Profile. Payments always stay in the plan's own 
 | Supabase Postgres and Auth | **Real** | All records, sign-in, and roles. Row-level security is on for every table. |
 | Channel3 product search | **Real** | Used first, with a synthetic local registry as fallback. |
 | Exchange rates | **Real** | European Central Bank reference rates, display only. |
-| PayPal Orders and webhooks | **Sandbox-tested** | A €25 donation was captured, and both webhooks arrived signature-verified on the deployed API. |
+| PayPal Orders and webhooks | **Sandbox-tested** | Donations of €25 and €35.18 were captured, and the webhooks arrived signature-verified on the deployed API. |
 | Purchase orders, delivery, pickup codes | **Sandbox-tested** | A funded plan was assigned, prepared, handed over and confirmed end to end on 11 Nov. |
 | Supplier payment | **Simulated** | Recorded against the purchase order and labelled. No money is sent. |
 | Suppliers, routes and fees | **Synthetic** | Labelled "(synthetic)" or "illustrative" in the UI. |
@@ -274,7 +306,7 @@ After pushing to `main`, check that both services deployed the new commit. If th
 npm test
 ```
 
-343 tests across 44 files cover the situation agent, orchestration, finance rules, route and partner eligibility,
+364 tests across 46 files cover the situation agent, orchestration, finance rules, route and partner eligibility,
 baskets, approvals, purchase orders, fulfilment rules and pickup codes, PayPal capture and webhooks, donor privacy,
 suppliers and their verification checklist, team access, rate limits and security headers, and currency conversion.
 Tests never call live services: PayPal, Channel3, the LLM and the database are replaced by fakes. A separate script
