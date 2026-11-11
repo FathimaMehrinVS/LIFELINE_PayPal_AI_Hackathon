@@ -22,7 +22,7 @@ export interface CaseRow {
 /** The saved approval, so a refresh loses nothing. A status the browser has just set takes priority. */
 export function savedApproval(item: CaseResult): Approval | undefined {
   const allocation = item.operations?.allocation;
-  return allocation && (allocation.status === "approved" || allocation.status === "disbursed") ? { state: "approved", result: allocation } : undefined;
+  return allocation && (allocation.status === "approved" || allocation.status === "disbursed" || allocation.status === "completed") ? { state: "approved", result: allocation } : undefined;
 }
 
 export function savedDisbursement(item: CaseResult): Disbursement | undefined {

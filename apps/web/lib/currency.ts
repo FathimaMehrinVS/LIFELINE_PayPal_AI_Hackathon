@@ -62,6 +62,12 @@ export function approximateInDisplay(amount: number, currency: string): string |
   return converted === null ? null : `≈ ${format(converted, target, true)}`;
 }
 
+/** "≈ ₹2,633" alone, for narrow table columns. The full figure belongs in a tooltip (use formatMoney). */
+export function formatMoneyShort(amount: number | null | undefined, currency: string | null | undefined): string {
+  if (amount === null || amount === undefined || !currency) return formatMoney(amount, currency);
+  return approximateInDisplay(amount, currency) ?? format(amount, currency);
+}
+
 /** "≈ ₹2,633 (€25.00)" for a viewer in India, "€25.00" for one in Germany. */
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined): string {
   if (amount === null || amount === undefined) return "";

@@ -15,6 +15,7 @@ import { Badge, type BadgeTone } from "@/components/ui";
 import type { Supplier } from "@lifeline/contracts";
 import type { RiskLevel } from "@lifeline/contracts";
 import { type CaseRow, STATUS_LABELS, caseRef, fundingState, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
+import { formatMoneyShort } from "@/lib/currency";
 
 // Owner: Member 1. NGO case grid (AG Grid Community).
 
@@ -121,6 +122,7 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
   if (!data) return null;
   const { approval } = data;
   if (approval?.state === "approved") {
+    if (approval.result.status === "completed") return <Badge tone="success">✓ Delivered</Badge>;
     if (approval.result.status === "disbursed") {
       return <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated" title="Simulated demo disbursement; no money was transferred">Demo disbursed</span>;
     }
@@ -252,7 +254,8 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         colId: "sent",
         type: "rightAligned",
         valueGetter: (p) => p.data?.case.situation.budget,
-        valueFormatter: (p) => formatMoney(p.value, p.data?.case.situation.currency),
+        valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.situation.currency),
+        tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.situation.currency),
         filter: "agNumberColumnFilter",
         width: 92,
       },
@@ -262,7 +265,8 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         headerTooltip: "What arrives after the route's fees",
         type: "rightAligned",
         valueGetter: (p) => (p.data ? recommendedRoute(p.data.case)?.usable_value : undefined),
-        valueFormatter: (p) => formatMoney(p.value, p.data?.case.finance?.currency),
+        valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.finance?.currency),
+        tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.finance?.currency),
         width: 92,
       },
       {
@@ -270,7 +274,8 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         colId: "basket",
         type: "rightAligned",
         valueGetter: (p) => p.data?.case.commerce?.total,
-        valueFormatter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
+        valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.commerce?.currency),
+        tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
         width: 92,
       },
       {
