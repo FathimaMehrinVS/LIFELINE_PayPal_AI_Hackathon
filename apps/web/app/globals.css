@@ -126,6 +126,13 @@
 }
 
 @layer base {
+  /* Tailwind v4 no longer gives buttons a pointer cursor; clickable things should look clickable. */
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), [role="tab"], [role="radio"], select, summary, label[for] {
+    cursor: pointer;
+  }
+  button:disabled, [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
   :focus-visible {
     outline: 2px solid var(--color-teal);
     outline-offset: 2px;

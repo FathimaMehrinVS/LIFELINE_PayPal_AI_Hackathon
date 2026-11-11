@@ -9,6 +9,7 @@ import { formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashbo
 import { ACCESS_ANSWERS, type Choice, NEED_LABELS, NEED_OPTIONS, type ReporterRole, accessSentence } from "./answers";
 import { MISSING_QUESTIONS, SituationResultView } from "./situation-result";
 import { ListenButton } from "./voice";
+import { CheckIcon } from "@/components/icons";
 
 // Owner: Member 1. The answer to "can we help, and how?" for one case, in plain words.
 
@@ -78,7 +79,7 @@ function Ready({ role, result }: { role: ReporterRole; result: CaseResult }) {
     <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
       <div className="flex items-center gap-3 bg-emerald-50 px-5 py-4">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white" aria-hidden="true">
-          ✓
+          <CheckIcon className="h-5 w-5" />
         </span>
         <div className="flex-1">
           <h2 className="text-lg font-semibold text-emerald-900">{reviewer ? "A plan is ready for your review" : "We found a way to help"}</h2>

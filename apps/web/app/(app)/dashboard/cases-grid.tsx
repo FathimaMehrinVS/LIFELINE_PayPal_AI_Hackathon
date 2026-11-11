@@ -16,6 +16,7 @@ import type { Supplier } from "@lifeline/contracts";
 import type { RiskLevel } from "@lifeline/contracts";
 import { type CaseRow, STATUS_LABELS, caseRef, fundingState, URGENCY_RANK, formatMoney, recommendedRoute, routeName } from "./case-row";
 import { formatMoneyShort } from "@/lib/currency";
+import { CheckIcon } from "@/components/icons";
 
 // Owner: Member 1. NGO case grid (AG Grid Community).
 
@@ -122,11 +123,11 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
   if (!data) return null;
   const { approval } = data;
   if (approval?.state === "approved") {
-    if (approval.result.status === "completed") return <Badge tone="success">✓ Delivered</Badge>;
+    if (approval.result.status === "completed") return <Badge tone="success"><CheckIcon className="h-3 w-3" /> Delivered</Badge>;
     if (approval.result.status === "disbursed") {
       return <span className="rounded-full border border-dashed border-simulated bg-simulated-tint px-3 py-1 text-xs font-semibold text-simulated" title="Simulated demo disbursement; no money was transferred">Demo disbursed</span>;
     }
-    return <Badge tone="success">✓ Approved</Badge>;
+    return <Badge tone="success"><CheckIcon className="h-3 w-3" /> Approved</Badge>;
   }
   if (data.case.status !== "complete") return <span className="text-xs text-slate-500">Not ready</span>;
   // The purchase order goes to the supplier the basket's items come from.

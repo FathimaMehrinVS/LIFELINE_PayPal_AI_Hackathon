@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CaseResult, CommerceResult, NeedCategory } from "@lifeline/contracts";
-import { BasketIcon } from "@/components/icons";
+import { BasketIcon, CheckIcon } from "@/components/icons";
 import { Badge, fieldClass } from "@/components/ui";
 import { api } from "@/services/api";
 import { caseRef, formatMoney, recommendedRoute, routeName, sourceLabel } from "../dashboard/case-row";
@@ -66,7 +66,7 @@ function CaseBasket({ item }: { item: CaseResult }) {
         <div className="flex flex-wrap gap-2">
           {item.situation.needs.map((need) => {
             const unmet = commerce.unmet_needs.includes(need);
-            return <span key={need} className={`rounded-md px-2.5 py-1 text-sm font-semibold capitalize ${unmet ? "bg-warning-tint text-warning" : "bg-success-tint text-success"}`}>{unmet ? needLabel(need) + " · not covered" : `✓ ${needLabel(need)}`}</span>;
+            return <span key={need} className={`rounded-md px-2.5 py-1 text-sm font-semibold capitalize ${unmet ? "bg-warning-tint text-warning" : "bg-success-tint text-success"}`}>{unmet ? needLabel(need) + " · not covered" : <span className="inline-flex items-center gap-1"><CheckIcon className="h-3.5 w-3.5" />{needLabel(need)}</span>}</span>;
           })}
         </div>
       </section>

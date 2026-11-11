@@ -47,7 +47,7 @@ export default function DonationReturnPage() {
       <Card className="mt-7 p-7">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-5">
           <div><p className="text-sm text-slate-600">Amount</p><p className="tabular text-3xl font-extrabold text-navy">{amount} <span className="text-lg font-semibold text-slate-600">{donation.currency}</span></p></div>
-          <Badge tone="success" className="px-3 py-1 text-sm">✓ Payment status: Captured</Badge>
+          <Badge tone="success" className="px-3 py-1 text-sm"><CheckIcon className="h-3.5 w-3.5" /> Payment status: Captured</Badge>
         </div>
         <dl className="mt-5 grid gap-4 sm:grid-cols-3">
           <div><dt className="text-sm text-slate-600">Donation reference</dt><dd className="break-all font-mono text-sm font-bold text-navy">{donation.donation_id}</dd></div>

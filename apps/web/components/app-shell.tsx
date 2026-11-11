@@ -205,7 +205,7 @@ function WorkspaceFrame({ path, children }: { path: string; children: ReactNode 
                   href={href}
                   onClick={() => setMenuOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-medium ${active ? "border-teal bg-slate-800 text-white" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}
+                  className={`flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${active ? "border-teal bg-slate-800 text-white" : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"}`}
                 >
                   <Icon className="h-5 w-5" /> {label}
                 </Link>
