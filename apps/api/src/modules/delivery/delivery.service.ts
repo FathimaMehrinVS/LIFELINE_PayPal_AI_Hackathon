@@ -51,6 +51,7 @@ function toRecord(allocation: any): DeliveryRecord {
     fulfilment_status: order ? order.fulfilmentStatus.toLowerCase() : null,
     merchant: order?.merchant ? { merchant_id: order.merchant.id, name: order.merchant.name } : null,
     partner: order?.partnerUser ? { user_id: order.partnerUser.id, name: order.partnerUser.name, email: order.partnerUser.email } : null,
+    pickup_code_issued: Boolean(order?.pickupCodeHash),
     expected_items: (allocation.request.basket?.items ?? []).map((item: { id: string; name: string; quantity: number }) => ({ basket_item_id: item.id, name: item.name, quantity: item.quantity })),
     events: (order?.events ?? []).map((event: { status: string; actorId: string | null; note: string | null; evidenceType: string | null; deliveredItems: Prisma.JsonValue | null; createdAt: Date }) => ({
       status: event.status.toLowerCase(),
@@ -175,7 +176,7 @@ export async function submitDeliveryEvent(
 ): Promise<DeliveryRecord> {
   if (actor.role !== "PARTNER" && actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only an NGO or assigned supplier can submit delivery updates");
   const db = getDatabase();
-  return db.$transaction(async (tx) => {
+  const outcome = await db.$transaction(async (tx): Promise<DeliveryRecord | { failure: "locked" | "invalid"; attempts: number }> => {
     const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
     if (!allocation) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
     const order = allocation.purchaseOrder;
@@ -214,12 +215,28 @@ export async function submitDeliveryEvent(
       throw new HttpError("VALIDATION_ERROR", "Delivered items can only be recorded with the handover");
     }
 
-    const pickupCode = requestedStatus === "READY" ? createPickupCode() : null;
+    // The family proves collection: the partner can only record a handover with the code the NGO gave the family.
+    if (requestedStatus === "HANDED_OVER") {
+      if (!order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "The NGO hasn't created a pickup code for this delivery yet");
+      if (!input.pickup_code) throw new HttpError("VALIDATION_ERROR", "Enter the pickup code the family gives you");
+      if (order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
+        await tx.auditLog.create({ data: { actorId: actor.id, action: "purchase_order.pickup_code_locked", entityType: "PurchaseOrder", entityId: order.id, details: { allocation_id: allocation.id, attempts: order.pickupAttempts } } });
+        return { failure: "locked" as const, attempts: order.pickupAttempts };
+      }
+      if (!verifyPickupCode(input.pickup_code, order.pickupCodeHash)) {
+        const attempt = order.pickupAttempts + 1;
+        await tx.purchaseOrder.updateMany({ where: { id: order.id, pickupAttempts: order.pickupAttempts }, data: { pickupAttempts: { increment: 1 } } });
+        await tx.auditLog.create({ data: { actorId: actor.id, action: "purchase_order.pickup_code_rejected", entityType: "PurchaseOrder", entityId: order.id, details: { allocation_id: allocation.id, attempts: attempt } } });
+        return { failure: "invalid" as const, attempts: attempt };
+      }
+    }
+
     const changed = await tx.purchaseOrder.updateMany({
       where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus },
       data: {
         fulfilmentStatus: requestedStatus,
-        ...(pickupCode ? { pickupCodeHash: pickupCode.hash, pickupAttempts: 0 } : {}),
+        // A code works once.
+        ...(requestedStatus === "HANDED_OVER" ? { pickupCodeHash: null } : {}),
       },
     });
     if (changed.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
@@ -227,7 +244,7 @@ export async function submitDeliveryEvent(
       purchaseOrderId: order.id,
       status: requestedStatus,
       actorId: actor.id,
-      evidenceType: requestedStatus === "HANDED_OVER" ? "SUPPLIER_CONFIRMATION" : null,
+      evidenceType: requestedStatus === "HANDED_OVER" ? "PICKUP_CODE" : null,
       note: input.note || null,
       deliveredItems: requestedStatus === "HANDED_OVER" ? savedItems as Prisma.InputJsonValue : Prisma.DbNull,
     } });
@@ -240,7 +257,38 @@ export async function submitDeliveryEvent(
     } });
     const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
     if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
-    return { ...toRecord(updated), ...(pickupCode ? { pickup_code: pickupCode.code } : {}) };
+    return toRecord(updated);
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  // Thrown outside the transaction, so the counted wrong attempt is kept.
+  if ("failure" in outcome) {
+    if (outcome.failure === "locked") throw new HttpError("VALIDATION_ERROR", "Too many incorrect pickup codes. Ask the NGO to create a new code for the family.", { attempts: outcome.attempts });
+    throw new HttpError("VALIDATION_ERROR", "That pickup code is not correct. Check it with the family.", { attempts: outcome.attempts, remaining_attempts: Math.max(0, MAX_PICKUP_CODE_ATTEMPTS - outcome.attempts) });
+  }
+  return outcome;
+}
+
+/**
+ * The NGO creates the family's one-time pickup code and passes it to them by phone, SMS or on paper. The partner never
+ * sees it. Creating a new code replaces the old one and resets the attempt count.
+ */
+export async function issuePickupCode(allocationId: string, actor: AuthSession, getDatabase: typeof getPrisma = getPrisma): Promise<DeliveryRecord> {
+  if (actor.role !== "NGO") throw new HttpError("FORBIDDEN", "Only NGO staff can create a pickup code");
+  const db = getDatabase();
+  return db.$transaction(async (tx) => {
+    const allocation = await tx.aidAllocation.findUnique({ where: { id: allocationId }, include: allocationInclude });
+    const order = allocation?.purchaseOrder;
+    if (!allocation || !order) throw new HttpError("NOT_FOUND", "Delivery assignment not found");
+    if (!order.partnerUserId) throw new HttpError("VALIDATION_ERROR", "Assign a partner before creating a pickup code");
+    if (!["AWAITING_ACCEPTANCE", "ACCEPTED", "PREPARING", "READY", "DISPATCHED"].includes(order.fulfilmentStatus)) {
+      throw new HttpError("VALIDATION_ERROR", "A pickup code can only be created before the handover");
+    }
+    const pickup = createPickupCode();
+    const changed = await tx.purchaseOrder.updateMany({ where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus }, data: { pickupCodeHash: pickup.hash, pickupAttempts: 0 } });
+    if (changed.count !== 1) throw new HttpError("VALIDATION_ERROR", "Delivery state changed; reload and try again");
+    await tx.auditLog.create({ data: { actorId: actor.id, action: "purchase_order.pickup_code_issued", entityType: "PurchaseOrder", entityId: order.id, details: { allocation_id: allocation.id, replaced_previous: Boolean(order.pickupCodeHash) } } });
+    const updated = await tx.aidAllocation.findUnique({ where: { id: allocation.id }, include: allocationInclude });
+    if (!updated) throw new HttpError("NOT_FOUND", "Assistance allocation not found");
+    return { ...toRecord(updated), pickup_code: pickup.code };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
@@ -262,15 +310,19 @@ export async function verifyDelivery(
     if (!order || allocation.request.status !== "APPROVED" || order.fulfilmentStatus !== "HANDED_OVER") {
       throw new HttpError("VALIDATION_ERROR", "Only a handed-over delivery for an approved case can be confirmed");
     }
-    if (!order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "No active pickup code is available for this order");
-    if (order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
+    const handoverEvent = [...order.events].reverse().find((event) => event.status === "HANDED_OVER");
+    // New handovers already checked the family's code. Older ones still need it entered here.
+    const checkedAtHandover = handoverEvent?.evidenceType === "PICKUP_CODE";
+    if (!checkedAtHandover && !order.pickupCodeHash) throw new HttpError("VALIDATION_ERROR", "No active pickup code is available for this order");
+    if (!checkedAtHandover && !input.pickup_code) throw new HttpError("VALIDATION_ERROR", "Enter the 8-digit pickup code");
+    if (!checkedAtHandover && order.pickupAttempts >= MAX_PICKUP_CODE_ATTEMPTS) {
       await tx.auditLog.create({ data: {
         actorId: actor.id, action: "purchase_order.pickup_code_locked", entityType: "PurchaseOrder", entityId: order.id,
         details: { allocation_id: allocation.id, attempts: order.pickupAttempts },
       } });
       return { failure: "locked" as const, attempts: order.pickupAttempts };
     }
-    if (!verifyPickupCode(input.pickup_code, order.pickupCodeHash)) {
+    if (!checkedAtHandover && !verifyPickupCode(input.pickup_code!, order.pickupCodeHash!)) {
       const attempt = order.pickupAttempts + 1;
       const incremented = await tx.purchaseOrder.updateMany({
         where: { id: order.id, fulfilmentStatus: "HANDED_OVER", pickupAttempts: order.pickupAttempts },

@@ -120,14 +120,76 @@ describe("assistance delivery verification", () => {
     for (const status of ["accepted", "preparing", "ready", "dispatched"] as const) {
       const response = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({ status });
       expect(response.status).toBe(200);
+      expect(response.body.pickup_code).toBeUndefined();
     }
+    const issued = await request(h.app).post("/api/deliveries/alloc-1/pickup-code").set("Authorization", "Bearer ngo").send({});
+    expect(issued.status).toBe(201);
     const handover = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({
-      status: "handed_over", delivered_items: [{ basket_item_id: "basket-item-1", quantity: 2 }], note: "Handed over at partner point",
+      status: "handed_over", delivered_items: [{ basket_item_id: "basket-item-1", quantity: 2 }], note: "Handed over at partner point", pickup_code: issued.body.pickup_code,
     });
     expect(handover.status).toBe(200);
     expect(handover.body.fulfilment_status).toBe("handed_over");
     expect(handover.body.events.at(-1)).toMatchObject({ status: "handed_over", actor_id: "partner-1", delivered_items: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 2 }] });
     expect(h.tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ actorId: "partner-1", action: "delivery.handover_recorded" }) }));
+  });
+
+  it("gives the pickup code to the NGO only, once, and never to the partner", async () => {
+    const allocation = makeAllocation({ purchaseOrder: {
+      id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "READY", pickupCodeHash: null, pickupAttempts: 3, events: [],
+      merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" },
+      partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" },
+    } });
+    const h = setup({ allocation });
+    expect((await request(h.app).post("/api/deliveries/alloc-1/pickup-code").set("Authorization", "Bearer partner").send({})).status).toBe(403);
+    const issued = await request(h.app).post("/api/deliveries/alloc-1/pickup-code").set("Authorization", "Bearer ngo").send({});
+    expect(issued.status).toBe(201);
+    expect(issued.body.pickup_code).toMatch(/^\d{8}$/);
+    expect(issued.body.pickup_code_issued).toBe(true);
+    expect(allocation.purchaseOrder.pickupAttempts).toBe(0);
+    expect(allocation.purchaseOrder.pickupCodeHash).not.toContain(issued.body.pickup_code);
+    expect(h.tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ actorId: "ngo-1", action: "purchase_order.pickup_code_issued" }) }));
+  });
+
+  it("refuses a handover without the family's code, and counts a wrong one", async () => {
+    const pickup = createPickupCode();
+    const allocation = makeAllocation({ purchaseOrder: {
+      id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "DISPATCHED", pickupCodeHash: pickup.hash, pickupAttempts: 0, events: [],
+      merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" },
+      partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" },
+    } });
+    const h = setup({ allocation });
+    const body = { status: "handed_over", delivered_items: [{ basket_item_id: "basket-item-1", quantity: 2 }] };
+    const missing = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send(body);
+    expect(missing.status).toBe(400);
+    expect(missing.body.error.message).toContain("pickup code");
+    const wrong = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({ ...body, pickup_code: pickup.code === "00000000" ? "11111111" : "00000000" });
+    expect(wrong.status).toBe(400);
+    expect(wrong.body.error.details.remaining_attempts).toBe(4);
+    expect(allocation.purchaseOrder.pickupAttempts).toBe(1);
+    expect(allocation.purchaseOrder.fulfilmentStatus).toBe("DISPATCHED");
+  });
+
+  it("refuses a handover before the NGO has created a code", async () => {
+    const allocation = makeAllocation({ purchaseOrder: {
+      id: "po-1", partnerUserId: "partner-1", fulfilmentStatus: "DISPATCHED", pickupCodeHash: null, pickupAttempts: 0, events: [],
+      merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" },
+      partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" },
+    } });
+    const h = setup({ allocation });
+    const response = await request(h.app).post("/api/deliveries/alloc-1/events").set("Authorization", "Bearer partner").send({ status: "handed_over", delivered_items: [{ basket_item_id: "basket-item-1", quantity: 2 }], pickup_code: "12345678" });
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain("hasn't created a pickup code");
+  });
+
+  it("lets the NGO confirm a handover that was proven with the family's code, without re-entering it", async () => {
+    const handoverEvent = { status: "HANDED_OVER", actorId: "partner-1", note: null, evidenceType: "PICKUP_CODE", deliveredItems: [{ basket_item_id: "basket-item-1", name: "Water container", quantity: 2 }], createdAt: new Date("2026-11-09T10:00:00Z") };
+    const order = { id: "po-1", allocationId: "alloc-1", merchantId: "merchant-1", partnerUserId: "partner-1", fulfilmentStatus: "HANDED_OVER", pickupCodeHash: null, pickupAttempts: 0, merchant: { id: "merchant-1", name: "Approved Supplier", status: "APPROVED" }, partnerUser: { id: "partner-1", name: "Local Partner", email: "partner@example.test" }, events: [handoverEvent] };
+    const allocation = makeAllocation({ purchaseOrder: order });
+    const h = setup({ allocation });
+    h.tx.aidAllocation.findUnique.mockResolvedValueOnce(allocation).mockImplementation(async () => ({ ...allocation, status: "COMPLETED", purchaseOrder: { ...order, fulfilmentStatus: "RECIPIENT_CONFIRMED" } }));
+    const response = await request(h.app).post("/api/deliveries/alloc-1/verify").set("Authorization", "Bearer ngo").send({ note: "Checked with the family" });
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ allocation_status: "completed", fulfilment_status: "recipient_confirmed" });
   });
 
   it("allows only the assigned partner to submit the next lifecycle update", async () => {

@@ -96,6 +96,7 @@ export const api = {
   listDeliveryPartners: () => get<DeliveryPartner[]>("/api/deliveries/partners"),
   assignDelivery: (body: AssignDeliveryRequest) => post<DeliveryRecord>("/api/deliveries", body),
   submitDeliveryEvent: (allocationId: string, body: SubmitDeliveryEventRequest) => post<DeliveryRecord>(`/api/deliveries/${encodeURIComponent(allocationId)}/events`, body),
+  issuePickupCode: (allocationId: string) => post<DeliveryRecord>(`/api/deliveries/${encodeURIComponent(allocationId)}/pickup-code`),
   verifyDelivery: (allocationId: string, body: VerifyDeliveryRequest) => post<DeliveryRecord>(`/api/deliveries/${encodeURIComponent(allocationId)}/verify`, body),
   /** With `replaces`, re-runs a case that needed information, keeping its id. */
   createCase: (body: SituationRequest, replaces?: string) =>

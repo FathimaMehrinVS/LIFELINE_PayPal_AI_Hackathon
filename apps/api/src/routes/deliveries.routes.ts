@@ -2,7 +2,7 @@ import { AssignDeliveryRequestSchema, SubmitDeliveryEventRequestSchema, VerifyDe
 import { Router } from "express";
 import { getRequestSession } from "../auth/role-guard";
 import { getPrisma } from "../database/prisma";
-import { assignDelivery, getDeliveryRecord, listAssignedDeliveries, listDeliveryAllocations, listDeliveryPartners, submitDeliveryEvent, verifyDelivery } from "../modules/delivery/delivery.service";
+import { assignDelivery, getDeliveryRecord, issuePickupCode, listAssignedDeliveries, listDeliveryAllocations, listDeliveryPartners, submitDeliveryEvent, verifyDelivery } from "../modules/delivery/delivery.service";
 import { validateBody } from "../middleware/validate";
 import { HttpError } from "../utils/http-error";
 
@@ -34,6 +34,10 @@ export function createDeliveryRouter(getDatabase: typeof getPrisma = getPrisma) 
     const session = getRequestSession(res);
     if (session.role !== "PARTNER") throw new HttpError("FORBIDDEN", "Only an assigned PARTNER can submit delivery updates");
     res.json(await submitDeliveryEvent(String(req.params.allocationId), req.body, session, getDatabase));
+  });
+
+  router.post("/:allocationId/pickup-code", async (req, res) => {
+    res.status(201).json(await issuePickupCode(String(req.params.allocationId), getRequestSession(res), getDatabase));
   });
 
   router.post("/:allocationId/verify", validateBody(VerifyDeliveryRequestSchema), async (req, res) => {

@@ -21,11 +21,14 @@ export const SubmitDeliveryEventRequestSchema = z.object({
   status: z.enum(["accepted", "preparing", "ready", "dispatched", "handed_over", "issue_reported"]),
   note: z.string().trim().max(500).optional(),
   delivered_items: z.array(DeliveredItemSchema).min(1).max(100).optional(),
+  /** The family's one-time code, required to record a handover. The NGO gave it to the family, not to the partner. */
+  pickup_code: z.string().regex(/^\d{8}$/, "Enter the 8-digit pickup code").optional(),
 });
 export type SubmitDeliveryEventRequest = z.infer<typeof SubmitDeliveryEventRequestSchema>;
 
 export const VerifyDeliveryRequestSchema = z.object({
-  pickup_code: z.string().regex(/^\d{8}$/, "Enter the 8-digit pickup code"),
+  /** Only needed for older handovers recorded before the family's code was checked at handover. */
+  pickup_code: z.string().regex(/^\d{8}$/, "Enter the 8-digit pickup code").optional(),
   note: z.string().trim().max(500).optional(),
   accept_shortfall: z.boolean().optional(),
   shortfall_reason: z.string().trim().min(1).max(500).optional(),
@@ -69,7 +72,9 @@ export const DeliveryRecordSchema = z.object({
   partner: z.object({ user_id: z.string(), name: z.string(), email: z.string() }).nullable(),
   expected_items: z.array(DeliveryBasketItemSchema),
   events: z.array(DeliveryEventSchema),
-  /** Returned only once, when READY is first recorded. Never stored in the database. */
+  /** Whether the NGO has created a pickup code that hasn't been used yet. */
+  pickup_code_issued: z.boolean(),
+  /** Returned once, to the NGO, when it creates a code. Only a hash is stored. */
   pickup_code: z.string().optional(),
 });
 export type DeliveryRecord = z.infer<typeof DeliveryRecordSchema>;
