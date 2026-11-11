@@ -134,6 +134,13 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
   const basketSuppliers = new Set(data.case.commerce?.items.map((item) => item.merchant_id) ?? []);
   const approvedSuppliers = suppliers.filter((supplier) => supplier.status === "approved" && (basketSuppliers.size === 0 || basketSuppliers.has(supplier.supplier_id)));
   const selectedSupplier = supplierChoices[data.case.case_id] ?? (approvedSuppliers.length === 1 ? approvedSuppliers[0]!.supplier_id : "");
+  // Nothing to order: say why instead of offering an approval that can't work.
+  if (!data.case.commerce || data.case.commerce.items.length === 0) {
+    return <span className="text-xs text-slate-600" title="No approved supplier sells these items in this currency. Plans are funded in EUR.">No items in basket</span>;
+  }
+  if (approvedSuppliers.length === 0) {
+    return <span className="text-xs text-warning" title="Complete this supplier's checks and approve it on the Suppliers page">Basket supplier not approved yet</span>;
+  }
   return (
     <span className="flex h-full min-w-64 items-center gap-2">
       <select
@@ -158,7 +165,6 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
       >
         {approval?.state === "pending" ? "Approving…" : approval?.state === "error" ? "Retry" : "Approve"}
       </button>
-      {approvedSuppliers.length === 0 && <span className="text-xs text-slate-500" title="Approve the basket's supplier on the Suppliers page first">Basket supplier not approved</span>}
       {approval?.state === "error" && (
         <span className="truncate text-xs text-red-700" title={approval.message}>
           {approval.message}
@@ -258,7 +264,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.situation.currency),
         tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.situation.currency),
         filter: "agNumberColumnFilter",
-        width: 92,
+        width: 116,
       },
       {
         headerName: "Usable",
@@ -268,7 +274,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         valueGetter: (p) => (p.data ? recommendedRoute(p.data.case)?.usable_value : undefined),
         valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.finance?.currency),
         tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.finance?.currency),
-        width: 92,
+        width: 116,
       },
       {
         headerName: "Basket",
@@ -277,7 +283,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         valueGetter: (p) => p.data?.case.commerce?.total,
         valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.commerce?.currency),
         tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
-        width: 92,
+        width: 116,
       },
       {
         headerName: "Supplier",
