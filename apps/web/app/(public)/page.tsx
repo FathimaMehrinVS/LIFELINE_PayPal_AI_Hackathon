@@ -3,7 +3,7 @@
 import type { CaseResult } from "@lifeline/contracts";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRightIcon, BasketIcon, BrainIcon, CheckIcon, CoinsIcon, HeartHandIcon, RouteIcon, ShieldCheckIcon, UsersIcon } from "@/components/icons";
+import { ArrowRightIcon, BasketIcon, BrainIcon, CheckIcon, HeartHandIcon, ShieldCheckIcon, UsersIcon } from "@/components/icons";
 import { Badge, Overline, button } from "@/components/ui";
 import { api } from "@/services/api";
 
@@ -17,21 +17,26 @@ const JOURNEY = [
   { title: "Delivery", text: "Recorded step by step until received", who: "Partner", Icon: BasketIcon },
 ];
 
-const DIFFERENT = [
-  { title: "AI-powered needs assessment", text: "People describe their situation in their own words. LIFELINE structures the needs, flags urgency and asks only what's missing, and never guesses.", Icon: BrainIcon },
-  { title: "Rules before money", text: "Fees, budgets and approvals are decided by plain rules, not by AI. An AI can explain a result but can never change it.", Icon: RouteIcon },
-  { title: "Transparent payments", text: "Donations, supplier payments and delivery are recorded separately, so nobody mistakes money received for aid delivered.", Icon: CoinsIcon },
+/** The same problem, before and after. Each row is something LIFELINE actually does. */
+const COMPARISON = [
+  { topic: "The report", without: "A rushed call or message, with key details missing.", with: "Needs, urgency and access are pulled out. Only real gaps are asked, one at a time." },
+  { topic: "Reaching the family", without: "Money is sent where the bank is closed, or fees take a fifth of it.", with: "Rules compare every route, including goods handed over by a local partner." },
+  { topic: "The supplier", without: "Whoever answers the phone first.", with: "Only suppliers with six recorded verification checks." },
+  { topic: "The donor", without: "A general appeal with no clear destination.", with: "An approved, itemised plan, with no family details shown." },
+  { topic: "Proof", without: "Marked done as soon as money leaves.", with: "Each step is recorded, and a one-time pickup code confirms the handover." },
 ];
 
+/** The same five steps as the journey card, with who does what. */
 const STEPS = [
-  { title: "Report a need", text: "A family, a volunteer or an NGO worker describes the situation by text, taps or voice, in their language." },
-  { title: "Assess & approve", text: "AI structures the request, rules check how money can reach the family, and NGO staff approve the plan." },
-  { title: "Plan & fund", text: "An itemised basket becomes an approved aid plan that donors can fund through PayPal Sandbox." },
-  { title: "Deliver & confirm", text: "The supplier is paid as a separate step, and goods are recorded until the family has received them." },
+  { title: "Report", who: "Family or NGO", text: "Describe what happened by voice, taps or text, in any language. One question per screen, and no account or bank needed for the family." },
+  { title: "AI assessment", who: "AI, checked by rules", text: "AI pulls out needs, urgency and access. Anything not said stays unknown. Rules compare routes and cost a basket." },
+  { title: "NGO approval", who: "NGO", text: "A person reviews the plan and approves it with a verified supplier. AI can't approve anything." },
+  { title: "Funding", who: "Donor", text: "Donors fund the approved plan through PayPal Sandbox. The server confirms each payment with PayPal." },
+  { title: "Delivery", who: "Partner, then NGO", text: "The partner records each step. The NGO confirms the handover with a one-time pickup code." },
 ];
 
 const TRUST = [
-  { title: "Donation ≠ supplier payment", text: "A captured donation never marks a supplier as paid. Each is its own record." },
+  { title: "A donation isn't a supplier payment", text: "A captured donation never marks a supplier as paid. Each is its own record." },
   { title: "No early ticks", text: "A later stage is shown as pending until someone has actually recorded it." },
   { title: "Privacy by default", text: "Donors see anonymised summaries. Names and addresses stay with the NGO." },
   { title: "AI never decides who gets aid", text: "AI organises information and flags urgency. A person approves every allocation." },
@@ -82,28 +87,42 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-[1200px] space-y-16 px-4 py-16 sm:px-6">
         <section>
-          <Overline>What makes it different</Overline>
-          <h2 className="mt-1 text-[28px] font-bold text-navy">Built for accountability at every step</h2>
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
-            {DIFFERENT.map(({ title, text, Icon }) => (
-              <article key={title} className="rounded-2xl border border-slate-200 bg-white p-6">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-tint text-teal-text"><Icon className="h-5 w-5" /></span>
-                <h3 className="mt-4 text-lg font-semibold text-navy">{title}</h3>
-                <p className="mt-2 text-sm text-slate-600">{text}</p>
-              </article>
-            ))}
+          <Overline>What changes</Overline>
+          <h2 className="mt-1 text-[28px] font-bold text-navy">The same emergency, without and with LIFELINE</h2>
+          <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="hidden grid-cols-[180px_1fr_1fr] border-b border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-600 md:grid">
+              <span className="px-5 py-3">&nbsp;</span>
+              <span className="px-5 py-3">Without LIFELINE</span>
+              <span className="border-l border-slate-200 bg-teal-tint/60 px-5 py-3 text-teal-text">With LIFELINE</span>
+            </div>
+            <dl>
+              {COMPARISON.map(({ topic, without, with: withLifeline }) => (
+                <div key={topic} className="grid border-b border-slate-100 last:border-0 md:grid-cols-[180px_1fr_1fr]">
+                  <dt className="px-5 pt-4 text-sm font-bold text-navy md:py-4">{topic}</dt>
+                  <dd className="flex gap-2 px-5 py-2 text-sm text-slate-600 md:py-4">
+                    <span className="md:hidden font-semibold text-slate-500">Without:</span>
+                    <span>{without}</span>
+                  </dd>
+                  <dd className="flex gap-2 bg-teal-tint/40 px-5 py-3 text-sm text-navy md:border-l md:border-slate-200 md:py-4">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-teal-text" />
+                    <span>{withLifeline}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 
         <section id="how">
           <Overline>How LIFELINE works</Overline>
-          <h2 className="mt-1 text-[28px] font-bold text-navy">Four steps, each one recorded</h2>
-          <ol className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map(({ title, text }, index) => (
+          <h2 className="mt-1 text-[28px] font-bold text-navy">Five steps, each one recorded</h2>
+          <ol className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            {STEPS.map(({ title, who, text }, index) => (
               <li key={title} className="border-t-2 border-navy pt-4">
                 <p className="text-xs font-bold text-teal-text">{String(index + 1).padStart(2, "0")}</p>
                 <h3 className="mt-1 font-semibold text-navy">{title}</h3>
-                <p className="mt-1 text-sm text-slate-600">{text}</p>
+                <p className="mt-0.5 text-[13px] font-medium text-slate-500">{who}</p>
+                <p className="mt-2 text-sm text-slate-600">{text}</p>
               </li>
             ))}
           </ol>
