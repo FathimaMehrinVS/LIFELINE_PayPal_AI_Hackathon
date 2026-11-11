@@ -149,7 +149,7 @@ function ApprovalCell({ data, suppliers, supplierChoices, onChooseSupplier, onAp
         disabled={approvedSuppliers.length === 0}
         onClick={(event) => event.stopPropagation()}
         onChange={(event) => onChooseSupplier(data.case.case_id, event.target.value)}
-        className="max-w-36 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-navy disabled:bg-slate-100"
+        className="w-40 max-w-40 truncate rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-navy disabled:bg-slate-100"
       >
         <option value="">Choose supplier</option>
         {approvedSuppliers.map((supplier) => <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>)}
@@ -184,13 +184,15 @@ interface CasesGridProps {
   onApprove: (row: CaseRow, supplierId: string) => void;
   onSelect: (row: CaseRow) => void;
   onVisibleCount: (count: number) => void;
+  /** Money columns (route, amounts, funding, supplier payment) are hidden in the compact view. */
+  showMoney: boolean;
 }
 
 function SituationCell({ value }: ICellRendererParams<CaseRow>) {
   return <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug">{value}</span></span>;
 }
 
-export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplierChoices, onChooseSupplier, onApprove, onSelect, onVisibleCount }: CasesGridProps) {
+export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplierChoices, onChooseSupplier, onApprove, onSelect, onVisibleCount, showMoney }: CasesGridProps) {
   const columnDefs = useMemo<ColDef<CaseRow>[]>(
     () => [
       {
@@ -266,6 +268,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Route",
+        hide: !showMoney,
         colId: "route",
         valueGetter: (p) => {
           const route = p.data && recommendedRoute(p.data.case);
@@ -275,6 +278,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Sent",
+        hide: !showMoney,
         colId: "sent",
         type: "rightAligned",
         valueGetter: (p) => p.data?.case.situation.budget,
@@ -285,6 +289,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Usable",
+        hide: !showMoney,
         colId: "usable",
         headerTooltip: "What arrives after the route's fees",
         type: "rightAligned",
@@ -295,6 +300,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Basket",
+        hide: !showMoney,
         colId: "basket",
         type: "rightAligned",
         valueGetter: (p) => p.data?.case.commerce?.total,
@@ -304,6 +310,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Funding",
+        hide: !showMoney,
         colId: "funding",
         valueGetter: (p) => (p.data ? fundingState(p.data.case)?.label ?? "" : ""),
         cellRenderer: FundingCell,
@@ -311,6 +318,7 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       },
       {
         headerName: "Supplier payment",
+        hide: !showMoney,
         colId: "payment",
         headerTooltip: "Recorded separately from donations",
         valueGetter: (p) => (p.data?.disbursement?.state === "complete" ? p.data.disbursement.result.mode : ""),
@@ -325,10 +333,10 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         cellRendererParams: { suppliers, supplierChoices, onChooseSupplier, onApprove },
         sortable: false,
         pinned: "right",
-        width: 280,
+        width: 300,
       },
     ],
-    [suppliers, supplierChoices, onChooseSupplier, onApprove],
+    [suppliers, supplierChoices, onChooseSupplier, onApprove, showMoney],
   );
 
   const isExternalFilterPresent = useCallback(() => statusFilter !== "all", [statusFilter]);

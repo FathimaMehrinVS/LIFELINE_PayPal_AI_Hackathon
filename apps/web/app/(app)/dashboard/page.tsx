@@ -124,6 +124,15 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState<number | null>(null);
+  // The compact view keeps the table readable; the choice is remembered on this device.
+  const [showMoney, setShowMoney] = useState(false);
+  useEffect(() => {
+    try { if (window.localStorage.getItem("lifeline.cases.money") === "1") setShowMoney(true); } catch { /* storage unavailable: start compact */ }
+  }, []);
+  const toggleMoney = (on: boolean) => {
+    setShowMoney(on);
+    try { window.localStorage.setItem("lifeline.cases.money", on ? "1" : "0"); } catch { /* storage unavailable: keep it for this visit */ }
+  };
   const [confirming, setConfirming] = useState<{ row: CaseRow; supplierId: string } | null>(null);
 
   const refresh = useCallback(async () => {
@@ -231,7 +240,13 @@ export default function DashboardPage() {
         })}
       </nav>
 
-      <input type="search" value={quickFilter} onChange={(e) => setQuickFilter(e.target.value)} placeholder="Search by location, need or situation" className={`${fieldClass} mt-4`} />
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <input type="search" value={quickFilter} onChange={(e) => setQuickFilter(e.target.value)} placeholder="Search by location, need or situation" aria-label="Search cases" className={`${fieldClass} min-w-64 flex-1`} />
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-navy hover:bg-slate-50">
+          <input type="checkbox" checked={showMoney} onChange={(event) => toggleMoney(event.target.checked)} className="h-4 w-4 accent-teal-700" />
+          Show money details
+        </label>
+      </div>
 
       {error && <p role="alert" className="mt-4 rounded-xl border border-critical/30 bg-critical-tint p-4 text-sm text-critical">{error}</p>}
 
@@ -246,7 +261,7 @@ export default function DashboardPage() {
       )}
 
       <div className={`mt-4 grid items-start gap-5 ${selected ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""} ${visible === 0 ? "hidden" : ""}`}>
-        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} suppliers={suppliers} supplierChoices={supplierChoices} onChooseSupplier={onChooseSupplier} onApprove={askToApprove} onSelect={(row) => setSelectedId(row.case.case_id)} onVisibleCount={setVisible} />
+        <CasesGrid rows={rows} quickFilter={quickFilter} statusFilter={statusFilter} suppliers={suppliers} supplierChoices={supplierChoices} onChooseSupplier={onChooseSupplier} onApprove={askToApprove} onSelect={(row) => setSelectedId(row.case.case_id)} showMoney={showMoney} onVisibleCount={setVisible} />
         {selected && <CasePanel row={selected} onClose={() => setSelectedId(null)} onDisburse={onDisburse} />}
       </div>
       <ConfirmDialog
