@@ -266,7 +266,7 @@ Secrets live only in `.env` (API) and `apps/web/.env.local` (web), and both are 
 | Supabase Auth | Supabase dashboard | Add the Vercel address under Authentication → URL Configuration. |
 | PayPal webhook | PayPal developer dashboard | Point it at `https://<api>/api/payments/webhooks/paypal` with *Checkout order approved*, *Payment capture completed* and *Payment capture denied*, then set `PAYPAL_WEBHOOK_ID` on Render. |
 
-Both services redeploy automatically when `main` changes.
+After pushing to `main`, check that both services deployed the new commit. If they didn't, use **Manual Deploy → Deploy latest commit** on Render and **Redeploy** on Vercel.
 
 ## Testing
 
