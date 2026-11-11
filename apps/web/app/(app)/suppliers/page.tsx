@@ -26,11 +26,11 @@ function BusinessCell({ data }: ICellRendererParams<Supplier>) {
 }
 
 function CategoriesCell({ value }: ICellRendererParams<Supplier>) {
-  return <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug">{value}</span></span>;
+  return <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug">{value || "—"}</span></span>;
 }
 
 function StatusCell({ data }: ICellRendererParams<Supplier>) {
-  return data ? <Badge tone={STATUS_TONE[data.status]}>{STATUS_LABEL[data.status]}</Badge> : null;
+  return data ? <span className="flex h-full items-center"><Badge tone={STATUS_TONE[data.status]}>{STATUS_LABEL[data.status]}</Badge></span> : null;
 }
 
 function PerformanceCell({ data }: ICellRendererParams<Supplier>) {
@@ -134,15 +134,15 @@ export default function SuppliersPage() {
   ];
 
   const columns = useMemo<ColDef<Supplier>[]>(() => [
-    { headerName: "Business", valueGetter: (p) => `${p.data?.name} ${p.data?.location}`, cellRenderer: BusinessCell, flex: 2, minWidth: 260, tooltipValueGetter: (p) => p.data?.name },
-    { headerName: "Categories", valueGetter: (p) => p.data?.categories.map(needName).join(", "), cellRenderer: CategoriesCell, minWidth: 110, flex: 1, tooltipValueGetter: (p) => p.value },
-    { headerName: "Trust status", colId: "status", valueGetter: (p) => p.data?.status, cellRenderer: StatusCell, width: 112 },
+    { headerName: "Business", valueGetter: (p) => `${p.data?.name} ${p.data?.location}`, cellRenderer: BusinessCell, flex: 1.4, minWidth: 240, tooltipValueGetter: (p) => p.data?.name },
+    { headerName: "Categories", valueGetter: (p) => p.data?.categories.map(needName).join(", "), cellRenderer: CategoriesCell, minWidth: 150, flex: 1, tooltipValueGetter: (p) => p.value },
+    { headerName: "Status", colId: "status", valueGetter: (p) => p.data?.status, cellRenderer: StatusCell, width: 124, headerTooltip: "Trust status: only approved suppliers can receive orders" },
     { headerName: "Orders", valueGetter: (p) => p.data?.scorecard.orders_completed, type: "rightAligned", width: 84, headerTooltip: "Completed orders: confirmed by the recipient" },
-    { headerName: "Performance", colId: "score", valueGetter: (p) => p.data?.scorecard.score ?? -1, cellRenderer: PerformanceCell, width: 140, sort: "desc", headerTooltip: "Weighted by the number of finished orders, so one good order can't outrank a long record" },
+    { headerName: "Performance", colId: "score", valueGetter: (p) => p.data?.scorecard.score ?? -1, cellRenderer: PerformanceCell, width: 156, sort: "desc", headerTooltip: "Weighted by the number of finished orders, so one good order can't outrank a long record" },
     { headerName: "Complaints", valueGetter: (p) => p.data?.scorecard.open_complaints, cellRenderer: ComplaintsCell, width: 112 },
-    { headerName: "Payment", valueGetter: (p) => p.data?.accepts.join(", ") || "—", width: 118 },
-    { headerName: "Decided", valueGetter: (p) => shortDate(p.data?.status_changed_at), width: 108 },
-    { headerName: "", colId: "review", cellRenderer: ReviewCell, sortable: false, resizable: false, width: 98, pinned: "right" },
+    { headerName: "Payment", valueGetter: (p) => p.data?.accepts.join(", ") || "—", cellRenderer: CategoriesCell, width: 150, tooltipValueGetter: (p) => p.value },
+    { headerName: "Decided", valueGetter: (p) => shortDate(p.data?.status_changed_at), width: 124 },
+    { headerName: "", colId: "review", cellRenderer: ReviewCell, sortable: false, resizable: false, width: 112, pinned: "right" },
   ], []);
 
   const passes = useCallback((node: IRowNode<Supplier>) => node.data?.status === filter, [filter]);
