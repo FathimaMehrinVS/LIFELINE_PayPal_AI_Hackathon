@@ -5,6 +5,7 @@ import { HttpError } from "../../utils/http-error";
 import type { AuthSession } from "../../auth/session";
 import { canTransitionFulfilment, type FulfilmentStatus } from "../../rules/fulfilment";
 import { createPickupCode, MAX_PICKUP_CODE_ATTEMPTS, verifyPickupCode } from "../procurement/pickup-code";
+import { DEMO_HISTORY_PREFIX } from "../plans/plan.service";
 
 type Database = ReturnType<typeof getPrisma>;
 type Transaction = Prisma.TransactionClient;
@@ -72,9 +73,10 @@ function ensureFunding(allocation: { amount: Prisma.Decimal; currency: string },
 
 export async function listDeliveryAllocations(db: Database): Promise<DeliveryRecord[]> {
   const rows = await db.aidAllocation.findMany({
-    where: { status: { in: ["APPROVED", "DISBURSED", "COMPLETED"] } },
+    // Seeded supplier history isn't real assistance, so it never appears as a delivery to manage.
+    where: { status: { in: ["APPROVED", "DISBURSED", "COMPLETED"] }, NOT: { id: { startsWith: DEMO_HISTORY_PREFIX } } },
     include: allocationInclude,
-    orderBy: { approvedAt: "desc" },
+    orderBy: { approvedAt: { sort: "desc", nulls: "last" } },
   });
   return rows.map(toRecord);
 }
