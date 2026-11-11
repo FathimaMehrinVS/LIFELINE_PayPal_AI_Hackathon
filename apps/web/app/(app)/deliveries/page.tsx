@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthProfile } from "@/components/auth-session";
 import { Badge, Card, Overline, fieldClass, button } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
-import { caseRef } from "../dashboard/case-row";
+import { caseRef, formatMoney } from "../dashboard/case-row";
 
 const NEXT: Record<string, { status: "accepted" | "preparing" | "ready" | "dispatched" | "handed_over"; label: string }> = {
   awaiting_acceptance: { status: "accepted", label: "Accept assignment" },
@@ -15,10 +15,7 @@ const NEXT: Record<string, { status: "accepted" | "preparing" | "ready" | "dispa
   dispatched: { status: "handed_over", label: "Record handover" },
 };
 
-const money = (amount: number, currency: string) => {
-  try { return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount); }
-  catch { return `${amount.toFixed(2)} ${currency}`; }
-};
+const money = (amount: number, currency: string) => formatMoney(amount, currency);
 
 function DeliveryHistory({ record }: { record: DeliveryRecord }) {
   return record.events.length ? <ol className="mt-3 space-y-2 border-l-2 border-slate-200 pl-4">{record.events.map((event, index) => <li key={`${event.status}-${event.at}-${index}`} className="text-sm"><p className="font-semibold capitalize text-navy">{event.status.replaceAll("_", " ")}</p><p className="text-slate-600">{new Date(event.at).toLocaleString()} · actor {event.actor_id ?? "not available"}</p>{event.note && <p className="mt-1 text-slate-600">{event.note}</p>}{event.delivered_items.length > 0 && <ul className="mt-1 text-slate-600">{event.delivered_items.map((item) => <li key={item.basket_item_id}>{item.quantity} × {item.name}</li>)}</ul>}</li>)}</ol> : <p className="mt-3 text-sm text-slate-500">No delivery updates recorded yet.</p>;

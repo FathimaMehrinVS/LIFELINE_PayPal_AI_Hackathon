@@ -53,6 +53,15 @@ function format(amount: number, currency: string, approximate = false): string {
 let display: { currency: string | null; fx: FxRates | null } = { currency: null, fx: null };
 export const setDisplayCurrency = (currency: string | null, fx: FxRates | null) => { display = { currency, fx }; };
 
+/** "≈ ₹3,705" in the viewer's currency, or null when it's the same currency or there's no rate. For amounts that must
+ * stay primary in their own currency, such as what PayPal will charge. */
+export function approximateInDisplay(amount: number, currency: string): string | null {
+  const target = display.currency;
+  if (!target || target === currency) return null;
+  const converted = convert(amount, currency, target, display.fx);
+  return converted === null ? null : `≈ ${format(converted, target, true)}`;
+}
+
 /** "≈ ₹2,633 (€25.00)" for a viewer in India, "€25.00" for one in Germany. */
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined): string {
   if (amount === null || amount === undefined) return "";

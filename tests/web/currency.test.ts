@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { convert, detectCurrency, formatMoney, setDisplayCurrency } from "../../apps/web/lib/currency";
+import { approximateInDisplay, convert, detectCurrency, formatMoney, setDisplayCurrency } from "../../apps/web/lib/currency";
 
 const fx = { rates: { EUR: 1, INR: 105.3315, USD: 1.1214 }, date: "2026-11-10", source: "European Central Bank" };
 
@@ -29,6 +29,13 @@ describe("display currency", () => {
     expect(text.startsWith("≈ ")).toBe(true);
     expect(text).toContain("2,633");
     expect(text).toMatch(/\(€25\.00\)$/);
+  });
+
+  it("gives an approximate figure only when the viewer's currency differs", () => {
+    setDisplayCurrency("INR", fx);
+    expect(approximateInDisplay(35.18, "EUR")).toMatch(/^≈ .*3,706$/);
+    setDisplayCurrency("EUR", fx);
+    expect(approximateInDisplay(35.18, "EUR")).toBeNull();
   });
 
   it("shows the amount unchanged in its own currency, or when no rate exists", () => {

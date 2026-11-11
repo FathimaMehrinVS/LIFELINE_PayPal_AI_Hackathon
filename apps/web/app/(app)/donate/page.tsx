@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Card, Choice, button, fieldClass } from "@/components/ui";
+import { approximateInDisplay } from "@/lib/currency";
 import { api } from "@/services/api";
 import { caseRef } from "../dashboard/case-row";
 import { parseDonationTarget, type DonationTarget } from "./donation-target";
@@ -87,7 +88,10 @@ export default function DonatePage() {
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Donation amount">
                 {presets.map((value) => (
                   <Choice key={value} selected={entered === value} onClick={() => setAmount(value.toFixed(2))} className="justify-center rounded-xl px-3 py-4 text-base font-bold">
-                    {value === target.amount ? `Full · ${money(value)}` : money(value)}
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>{value === target.amount ? `Full · ${money(value)}` : money(value)}</span>
+                      {approximateInDisplay(value, target.currency) && <span className="text-xs font-medium text-slate-500">{approximateInDisplay(value, target.currency)}</span>}
+                    </span>
                   </Choice>
                 ))}
               </div>
@@ -103,6 +107,7 @@ export default function DonatePage() {
             <p className="mt-2 rounded-xl border border-dashed border-simulated bg-simulated-tint p-4 text-center text-sm text-simulated">You'll approve this on PayPal's Sandbox page, so no real money moves. LIFELINE never collects card or account details.</p>
             <button disabled={busy || !target} className={`${button.primary} mt-4 w-full py-3.5 text-base`}>{busy ? "Connecting to PayPal…" : "Continue with PayPal"}</button>
             <p className="mt-3 text-center text-[13px] text-slate-600">Processed by PayPal Sandbox · No assistance payment is made by creating this donation.</p>
+            {target && approximateInDisplay(target.amount, target.currency) && <p className="mt-2 text-center text-[13px] text-slate-600">PayPal charges in {target.currency}. If your PayPal account uses another currency, PayPal converts it and shows the exact amount before you approve.</p>}
           </Card>
         </form>
 
@@ -111,7 +116,7 @@ export default function DonatePage() {
             <div className="flex flex-wrap gap-2"><Badge tone="human">NGO approved</Badge>{target && <Badge tone="neutral"><span className="font-mono">{caseRef(target.caseId)}</span></Badge>}</div>
             <h2 className="mt-3 text-lg font-bold text-navy">The plan you are funding</h2>
             {target ? <dl className="mt-3 flex justify-between text-sm font-bold text-navy"><dt>Approved amount</dt><dd className="tabular">{money(target.amount)}</dd></dl> : <p className="mt-2 text-sm text-slate-600">Choose an approved plan first.</p>}
-            {target && <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 p-4"><span className="font-semibold text-navy">You pay today</span><span className="tabular text-2xl font-extrabold text-navy">{entered > 0 ? money(entered) : "—"}</span></div>}
+            {target && <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 p-4"><span className="font-semibold text-navy">You pay today</span><span className="text-right"><span className="tabular block text-2xl font-extrabold text-navy">{entered > 0 ? money(entered) : "—"}</span>{entered > 0 && target && approximateInDisplay(entered, target.currency) && <span className="tabular block text-sm text-slate-600">{approximateInDisplay(entered, target.currency)} in your currency</span>}</span></div>}
           </Card>
           <Card className="p-5">
             <h2 className="font-bold text-navy">What happens next</h2>
