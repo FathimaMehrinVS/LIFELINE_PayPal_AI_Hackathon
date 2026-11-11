@@ -54,7 +54,7 @@ flowchart LR
   B --> C[3 Verify<br/>rules compare routes<br/>and cost a basket]
   C --> D[4 Decide<br/>NGO approves with a<br/>verified supplier]
   D --> E[5 Fund<br/>donor pays via<br/>PayPal Sandbox]
-  E --> F[6 Deliver<br/>partner hands over,<br/>pickup code checked]
+  E --> F[6 Deliver<br/>family gives the partner<br/>their pickup code]
   F --> G[7 Prove<br/>every step recorded<br/>and audited]
 ```
 
@@ -65,7 +65,7 @@ flowchart LR
 | 3 | **Verify** | Rules | Code compares delivery routes (bank, PayPal, cash agent, local partner) on fees, usable value and access, then builds a capped basket of essentials. |
 | 4 | **Decide** | NGO reviewer | A person approves the plan and picks an approved supplier. The amount is worked out from the basket and route, and a purchase order is created. AI cannot approve anything. |
 | 5 | **Fund** | Donor | The donor sees an anonymised plan and pays through PayPal Sandbox. The server confirms the capture with PayPal, and PayPal's signed webhook confirms it again. |
-| 6 | **Deliver** | Partner, then NGO | The partner accepts, prepares and marks the order ready, which issues a one-time pickup code. After handover, the NGO verifies with the code. |
+| 6 | **Deliver** | NGO, family, partner | The NGO creates a one-time pickup code and gives it to the family by phone, SMS or on paper. The partner never sees it. At collection the family gives the code to the partner, who must enter it to record the handover; wrong codes are counted and lock after five. The NGO then confirms the delivery. |
 | 7 | **Prove** | Everyone | Donors see only recorded steps. A captured donation is never shown as a supplier payment or a delivery. |
 
 ## Who uses it
@@ -94,7 +94,7 @@ Tracking** and Admins on **Manage Accounts**.
 | Product Baskets | `/commerce` | NGO | The essentials chosen for a case, and a quick planner. |
 | Suppliers | `/suppliers` | NGO | Directory with performance scores. Each supplier has a six-point **verification checklist** that must be complete before approval. |
 | Payments | `/payments` | NGO | Donations in and supplier payments out, kept separate. |
-| Delivery Tracking | `/deliveries` | NGO, partner | Assign partners, record handover, verify with the pickup code. |
+| Delivery Tracking | `/deliveries` | NGO, partner | Assign partners, create the family's pickup code, record the handover with it, confirm delivery. |
 | Audit Logs | `/audit` | NGO | Who did what and when, plus supplier incidents. |
 | Team & Access | `/team` | NGO | Give partner or NGO access. Every change is audited. |
 | Approved Plans | `/plans` | Donor, NGO | Anonymised plans with funding progress. |
@@ -116,7 +116,7 @@ language, and can be changed on Profile. Payments always stay in the plan's own 
 | Channel3 product search | **Real** | Used first, with a synthetic local registry as fallback. |
 | Exchange rates | **Real** | European Central Bank reference rates, display only. |
 | PayPal Orders and webhooks | **Sandbox-tested** | A €25 donation was captured, and both webhooks arrived signature-verified on the deployed API. |
-| Purchase orders, delivery, pickup codes | **Implemented** | Covered by tests; an end-to-end run needs a fully funded plan. |
+| Purchase orders, delivery, pickup codes | **Sandbox-tested** | A funded plan was assigned, prepared, handed over and confirmed end to end on 11 Nov. |
 | Supplier payment | **Simulated** | Recorded against the purchase order and labelled. No money is sent. |
 | Suppliers, routes and fees | **Synthetic** | Labelled "(synthetic)" or "illustrative" in the UI. |
 

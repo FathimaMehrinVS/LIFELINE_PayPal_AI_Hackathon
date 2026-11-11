@@ -15,6 +15,6 @@ sleeps when idle.
 | 1:45 | Approved Plans | The plan, with amounts in the viewer's currency | "Donors see the need, items, cost and progress. Never a name, address or the family's words." |
 | 2:00 | PayPal Sandbox | Pay as the Sandbox buyer, then the confirmation | "Our server confirms the capture with PayPal, and PayPal's signed webhook confirms it again." |
 | 2:20 | Payments | The captured donation, and supplier payments shown separately | "A donation is never shown as a supplier payment or a delivery." |
-| 2:35 | Delivery Tracking | Only if tested: handover and NGO verification | "Every step until the family collects is recorded. Unrecorded steps stay unrecorded." |
+| 2:35 | Delivery Tracking | NGO creates the pickup code; partner enters the family's code at handover; NGO confirms | "The NGO gives the family a one-time code. Only the right family can give it to the partner, so the handover is proven." |
 | 2:50 | Audit Logs | Recent events | "Every approval and change is recorded. Simulated steps are labelled." |
 | 2:55 | Close | Home | "AI understands, rules verify, NGOs decide, donors fund." |

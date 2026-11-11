@@ -12,7 +12,7 @@ Last checked: 10 Nov 2026.
 | PayPal Orders (donor checkout) | sandbox-tested | A €25 EUR donation was approved by a Sandbox buyer and captured on 10 Nov. The server confirms the capture with PayPal before recording it. |
 | PayPal donation webhooks | sandbox-tested | Registered for the Render API. "Order approved" and "capture completed" arrived and passed signature verification on 10 Nov. |
 | Exchange rates | real | Daily European Central Bank reference rates, used only to show amounts in the viewer's currency. Plans are approved and paid in EUR. |
-| Purchase orders, delivery and pickup codes | implemented; not externally verified | Built and covered by tests. An end-to-end run needs a fully funded plan. |
+| Purchase orders, delivery and pickup codes | sandbox-tested | On 11 Nov a fully funded plan was assigned to a partner, prepared, handed over and confirmed. Since then the pickup code goes to the family via the NGO and is checked at handover. |
 | Supplier payment | simulated | Recorded against the purchase order with `Payout.mode = SIMULATED`. No money is sent. |
 | Render (API) and Vercel (web) | deployed | Running from `main`. |
 
