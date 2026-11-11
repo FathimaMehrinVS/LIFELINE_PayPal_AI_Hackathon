@@ -66,7 +66,7 @@ function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => 
       {approved && (
         <section className="rounded-xl border border-dashed border-simulated bg-simulated-tint p-4 text-sm text-simulated">
           <Badge tone="simulated">Simulated</Badge>
-          {approved.status === "approved" && row.disbursement?.state !== "complete" ? (
+          {(approved.status === "approved" || approved.status === "completed") && row.disbursement?.state !== "complete" ? (
             <>
               <p className="mt-2">Records an internal demo state only. No money is sent through PayPal or to anyone.</p>
               {row.disbursement?.state === "error" && <p role="alert" className="mt-2 text-critical">{row.disbursement.message}</p>}
@@ -74,12 +74,14 @@ function CasePanel({ row, onClose, onDisburse }: { row: CaseRow; onClose: () => 
                 Payment reference
                 <input value={reference} onChange={(event) => setReference(event.target.value)} maxLength={120} placeholder="Invoice or payment reference" className={`${fieldClass} mt-1`} />
               </label>
-              <button type="button" disabled={row.disbursement?.state === "pending" || !reference.trim() || !approved.purchase_order_id} onClick={() => onDisburse(row, reference.trim())} className={`${button.secondary} mt-3 w-full`}>
+              <button type="button" disabled={row.disbursement?.state === "pending" || !reference.trim() || !(approved.purchase_order_id ?? row.case.operations?.delivery?.purchase_order_id)} onClick={() => onDisburse(row, reference.trim())} className={`${button.secondary} mt-3 w-full`}>
                 {row.disbursement?.state === "pending" ? "Recording demo state…" : "Record simulated supplier payment"}
               </button>
             </>
           ) : (
-            <p role="status" className="mt-2">{(row.disbursement?.state === "complete" && row.disbursement.result.notice) || "Simulated disbursement recorded. No PayPal payout was sent and no money was transferred."}</p>
+            <p role="status" className="mt-2">{row.disbursement?.state === "complete"
+              ? (row.disbursement.result.notice || `Simulated supplier payment recorded${row.disbursement.result.reference ? ` (reference ${row.disbursement.result.reference})` : ""}. No PayPal payout was sent and no money was transferred.`)
+              : "No supplier payment has been recorded for this plan."}</p>
           )}
         </section>
       )}
@@ -176,7 +178,7 @@ export default function DashboardPage() {
 
   const onDisburse = useCallback(async (row: CaseRow, reference: string) => {
     const approval = row.approval;
-    if (approval?.state !== "approved" || approval.result.status !== "approved") return;
+    if (approval?.state !== "approved" || (approval.result.status !== "approved" && approval.result.status !== "completed")) return;
     const { case_id } = row.case;
     setDisbursements((current) => ({ ...current, [case_id]: { state: "pending" } }));
     try {

@@ -97,6 +97,22 @@ describe("simulated assistance disbursement", () => {
     expect(h.tx.payout.create).not.toHaveBeenCalled();
   });
 
+  it("records a supplier paid against an invoice after delivery, and keeps the plan completed", async () => {
+    const h = setup({ allocationStatus: "COMPLETED" });
+    h.allocation.request.status = "COMPLETED";
+    const response = await request(h.app).post("/api/payments/payouts").send(requestBody);
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({ purchase_order_id: "purchase-order-1", mode: "simulated", status: "completed" });
+    expect(h.allocation.status).toBe("COMPLETED");
+  });
+
+  it("still refuses a completed plan's payment when captured funds don't cover it", async () => {
+    const h = setup({ allocationStatus: "COMPLETED", captured: "10.00" });
+    h.allocation.request.status = "COMPLETED";
+    expect((await request(h.app).post("/api/payments/payouts").send(requestBody)).status).toBe(400);
+    expect(h.tx.payout.create).not.toHaveBeenCalled();
+  });
+
   it("rejects a case that is no longer approved", async () => {
     const h = setup();
     h.allocation.request.status = "AWAITING_APPROVAL";

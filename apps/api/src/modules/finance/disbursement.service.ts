@@ -59,10 +59,11 @@ export async function simulateAllocationDisbursement(
       }
       throw new HttpError("VALIDATION_ERROR", "A supplier payment already exists for this purchase order");
     }
-    if (!(["APPROVED", "DISBURSED"].includes(allocation.status))) {
+    // A supplier is often paid against an invoice after delivery, so a completed plan can still record its payment.
+    if (!(["APPROVED", "DISBURSED", "COMPLETED"].includes(allocation.status))) {
       throw new HttpError("VALIDATION_ERROR", "Only an approved allocation can receive a supplier payment");
     }
-    if (allocation.request.status !== "APPROVED") {
+    if (allocation.request.status !== "APPROVED" && allocation.request.status !== "COMPLETED") {
       throw new HttpError("VALIDATION_ERROR", "The allocation does not have a valid approved assistance case");
     }
     if (order.merchant.status !== "APPROVED") {
@@ -106,10 +107,10 @@ export async function simulateAllocationDisbursement(
       });
     }
 
-    const transition = await tx.aidAllocation.updateMany({
-      where: { id: allocation.id, status: "APPROVED" },
-      data: { status: "DISBURSED" },
-    });
+    // An approved plan becomes disbursed; a completed one stays completed.
+    const transition = allocation.status === "COMPLETED"
+      ? await tx.aidAllocation.updateMany({ where: { id: allocation.id, status: "COMPLETED" }, data: { status: "COMPLETED" } })
+      : await tx.aidAllocation.updateMany({ where: { id: allocation.id, status: "APPROVED" }, data: { status: "DISBURSED" } });
     if (transition.count !== 1) {
       throw new HttpError("VALIDATION_ERROR", "Allocation status changed during payment; review and try again");
     }
