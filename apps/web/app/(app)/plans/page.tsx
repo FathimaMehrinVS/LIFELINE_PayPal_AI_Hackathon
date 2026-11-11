@@ -8,6 +8,7 @@ import { Badge, Card, button, fieldClass } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
 import { formatMoney } from "../dashboard/case-row";
 import { formatDate, FundingBar, needLabel, PRIVACY_NOTE, URGENCY_ORDER, UrgencyBadge } from "./plan-parts";
+import { Pager, usePaged } from "@/components/pager";
 
 // Owner: Member 1. Approved plans, styled from "LIFELINE Screen Designs" page 22. Only recorded plans and payments appear.
 
@@ -63,6 +64,7 @@ export default function ApprovedPlansPage() {
       .sort(SORTERS[sort]);
   }, [open, need, query, sort]);
 
+  const plansPage = usePaged(shown, 9);
   const captured = contributions.filter((item) => item.status === "captured");
   const currencies = [...new Set(captured.map((item) => item.currency))];
   const given = currencies.length === 1 ? formatMoney(captured.reduce((sum, item) => sum + item.amount, 0), currencies[0]!) : currencies.length === 0 ? "Nothing yet" : "Multiple currencies";
@@ -108,7 +110,8 @@ export default function ApprovedPlansPage() {
 
           {shown.length === 0
             ? <Card className="mt-5 p-8 text-center"><h2 className="font-bold text-navy">{open.length === 0 ? "No approved plans yet" : "No plans match your search"}</h2><p className="mt-1 text-sm text-slate-600">{open.length === 0 ? "Plans appear here after an NGO approves them." : "Try a different need or search term."}</p></Card>
-            : <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map((plan) => <PlanCard key={plan.plan_id} plan={plan} />)}</div>}
+            : <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{plansPage.pageItems.map((plan) => <PlanCard key={plan.plan_id} plan={plan} />)}</div>}
+          <Pager paged={plansPage} label="Approved plans" />
 
           {completed.length > 0 && (
             <section className="mt-10">

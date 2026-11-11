@@ -6,6 +6,7 @@ import { useAuthProfile } from "@/components/auth-session";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge, type BadgeTone, Card, EmptyState, button, fieldClass } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
+import { Pager, usePaged } from "@/components/pager";
 
 // Owner: Member 1. NGO staff give people access here instead of running a terminal command. Each change is audited.
 
@@ -40,6 +41,7 @@ export default function TeamPage() {
       .filter((member) => !text || `${member.email} ${member.name}`.toLowerCase().includes(text));
   }, [members, filter, search]);
 
+  const memberPage = usePaged(shown, 10);
   const count = (value: Filter) => (members ?? []).filter((member) => (value === "pending" ? member.role === null : member.role === value)).length;
   const filters: { value: Filter; label: string }[] = [
     { value: "all", label: `All ${members?.length ?? 0}` },
@@ -91,7 +93,7 @@ export default function TeamPage() {
           ) : (
             <Card className="overflow-hidden">
               <ul className="divide-y divide-slate-100">
-                {shown.map((member) => {
+                {memberPage.pageItems.map((member) => {
                   const isMe = member.id === me.id;
                   const isAdmin = member.role === "ADMIN";
                   const choice: TeamRole = choices[member.id] ?? (member.role && member.role !== "ADMIN" ? member.role : "DONOR");
@@ -118,6 +120,7 @@ export default function TeamPage() {
                   );
                 })}
               </ul>
+              <div className="border-t border-slate-200 px-4"><Pager paged={memberPage} label="Accounts" /></div>
             </Card>
           )}
         </>

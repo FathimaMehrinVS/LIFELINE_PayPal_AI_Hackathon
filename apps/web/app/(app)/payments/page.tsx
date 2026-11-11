@@ -6,6 +6,7 @@ import { Badge, type BadgeTone, Card } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
 import { caseRef, formatMoney } from "../dashboard/case-row";
 import { formatDateTime } from "../plans/plan-parts";
+import { Pager, usePaged } from "@/components/pager";
 
 // Owner: Member 1. Styled from "LIFELINE Screen Designs" page 17. Reads the recorded donations and supplier payments.
 
@@ -44,6 +45,9 @@ export default function PaymentsPage() {
     api.getLedger().then(setLedger).catch((cause: unknown) => setError(cause instanceof ApiRequestError ? cause.message : "Could not load payments."));
   }, []);
 
+  const donationPage = usePaged(ledger?.donations ?? [], 10);
+  const payoutPage = usePaged(ledger?.payouts ?? [], 10);
+
   return (
     <div className="space-y-5">
       <div>
@@ -72,7 +76,7 @@ export default function PaymentsPage() {
                 <table className="w-full text-sm">
                   <thead><tr className="border-y border-slate-200 bg-slate-50 text-left text-[13px] text-slate-600"><th className={TH}>Donation</th><th className={TH}>Donor ref.</th><th className={TH}>Plan / case</th><th className={`${TH} text-right`}>Amount</th><th className={TH}>PayPal capture</th><th className={TH}>Status</th><th className={TH}>Confirmation</th></tr></thead>
                   <tbody>
-                    {ledger.donations.map((row) => (
+                    {donationPage.pageItems.map((row) => (
                       <tr key={row.id} className="border-b border-slate-100 last:border-0">
                         <td className={`${TD} font-bold text-navy`}>{row.reference}</td><td className={`${TD} text-slate-600`}>{row.donor}</td>
                         <td className={`${TD} font-mono text-[13px] text-slate-600`}>{row.plan_reference ?? "—"}{row.case_id ? ` · ${caseRef(row.case_id)}` : ""}</td>
@@ -84,6 +88,7 @@ export default function PaymentsPage() {
                     ))}
                   </tbody>
                 </table>
+                <div className="border-t border-slate-200 px-4"><Pager paged={donationPage} label="Donations" /></div>
               </div>
             )}
           </Card>
@@ -95,7 +100,7 @@ export default function PaymentsPage() {
                 <table className="w-full text-sm">
                   <thead><tr className="border-y border-slate-200 bg-slate-50 text-left text-[13px] text-slate-600"><th className={TH}>Payment</th><th className={TH}>Plan</th><th className={TH}>Supplier</th><th className={`${TH} text-right`}>Amount</th><th className={TH}>Reference</th><th className={TH}>Status</th></tr></thead>
                   <tbody>
-                    {ledger.payouts.map((row) => (
+                    {payoutPage.pageItems.map((row) => (
                       <tr key={row.id} className="border-b border-slate-100 last:border-0">
                         <td className={`${TD} font-bold text-navy`}>{row.reference}</td><td className={`${TD} font-mono text-[13px] text-slate-600`}>{row.plan_reference}</td>
                         <td className={`${TD} text-slate-600`}>{row.supplier ?? "—"}</td>
@@ -106,6 +111,7 @@ export default function PaymentsPage() {
                     ))}
                   </tbody>
                 </table>
+                <div className="border-t border-slate-200 px-4"><Pager paged={payoutPage} label="Supplier payments" /></div>
               </div>
             )}
           </Card>

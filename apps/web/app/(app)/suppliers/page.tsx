@@ -191,6 +191,9 @@ export default function SuppliersPage() {
           rowHeight={62}
           tooltipShowDelay={300}
           domLayout="autoHeight"
+          pagination
+          paginationPageSize={20}
+          paginationPageSizeSelector={[10, 20, 50]}
           suppressNoRowsOverlay
           onModelUpdated={(event) => setVisible(event.api.getDisplayedRowCount())}
         />

@@ -7,6 +7,7 @@ import { Badge, Card, Overline, fieldClass, button } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
 import { caseRef, formatMoney } from "../dashboard/case-row";
 import { CheckIcon } from "@/components/icons";
+import { Pager, usePaged } from "@/components/pager";
 
 const NEXT: Record<string, { status: "accepted" | "preparing" | "ready" | "dispatched" | "handed_over"; label: string }> = {
   awaiting_acceptance: { status: "accepted", label: "Accept assignment" },
@@ -87,6 +88,7 @@ export default function DeliveriesPage() {
     } finally { setBusy(null); }
   }
 
+  const deliveryPage = usePaged(records ?? [], 5);
   const ngo = profile.role === "NGO";
   const partner = profile.role === "PARTNER";
   if (!ngo && !partner) return <Card className="p-6"><h1 className="text-xl font-bold text-navy">Delivery access is restricted</h1><p className="mt-2 text-sm text-slate-600">Only an NGO reviewer or an assigned partner can access delivery records.</p></Card>;
@@ -98,7 +100,7 @@ export default function DeliveriesPage() {
       {message && <p role="status" className="rounded-xl border border-success/30 bg-success-tint p-4 text-sm text-success">{message}</p>}
       {records === null && !error && <p className="text-slate-600">Loading delivery records…</p>}
       {records?.length === 0 && <Card className="p-6"><h2 className="font-bold text-navy">{ngo ? "No eligible allocations yet" : "No deliveries assigned"}</h2><p className="mt-1 text-sm text-slate-600">{ngo ? "An allocation appears here after NGO approval." : "An NGO will assign an approved and funded assistance allocation to your partner profile."}</p></Card>}
-      {records?.map((record) => {
+      {records && records.length > 0 && deliveryPage.pageItems.map((record) => {
         const key = record.allocation_id;
         const next = NEXT[record.fulfilment_status ?? ""];
         const handedOver = [...record.events].reverse().find((event) => event.status === "handed_over");
@@ -155,6 +157,7 @@ export default function DeliveriesPage() {
           </Card>
         );
       })}
+      <Pager paged={deliveryPage} label="Deliveries" />
     </div>
   );
 }

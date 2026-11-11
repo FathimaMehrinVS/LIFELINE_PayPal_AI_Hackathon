@@ -4,6 +4,7 @@ import type { AuditEntry, AuditRecords, Incident } from "@lifeline/contracts";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, type BadgeTone, Card } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
+import { Pager, usePaged } from "@/components/pager";
 
 // Owner: Member 1. Styled from "LIFELINE Screen Designs" page 19. Shows the latest entries in the audit table.
 
@@ -33,6 +34,8 @@ export default function AuditPage() {
 
   const shown = useMemo(() => (records?.entries ?? []).filter((entry) => filter === "all" || entry.category === filter), [records, filter]);
   const selected = shown.find((entry) => entry.id === selectedId) ?? shown[0];
+  const eventPage = usePaged(shown, 15);
+  const incidentPage = usePaged(records?.incidents ?? [], 10);
   const openIncidents = records?.incidents.filter((incident) => incident.status === "open").length ?? 0;
 
   return (
@@ -56,7 +59,7 @@ export default function AuditPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-slate-50"><tr className="border-b border-slate-200 text-left text-[13px] text-slate-600"><th className={TH}>Event</th><th className={TH}>Actor</th><th className={TH}>Action</th><th className={TH}>Subject</th><th className={TH}>Timestamp (UTC)</th></tr></thead>
                     <tbody>
-                      {shown.map((entry) => {
+                      {eventPage.pageItems.map((entry) => {
                         const active = entry.id === selected?.id;
                         return (
                           <tr key={entry.id} onClick={() => setSelectedId(entry.id)} className={`cursor-pointer border-b border-slate-100 last:border-0 ${active ? "bg-teal-tint/60" : "hover:bg-slate-50"}`}>
@@ -70,6 +73,7 @@ export default function AuditPage() {
                       })}
                     </tbody>
                   </table>
+                  <div className="sticky bottom-0 border-t border-slate-200 bg-white px-4"><Pager paged={eventPage} label="Audit events" /></div>
                 </div>
               )}
             </Card>
@@ -101,7 +105,7 @@ export default function AuditPage() {
                 <table className="w-full text-sm">
                   <thead><tr className="border-y border-slate-200 bg-slate-50 text-left text-[13px] text-slate-600"><th className={TH}>Incident</th><th className={TH}>Supplier</th><th className={TH}>Severity</th><th className={TH}>Status</th><th className={TH}>Recorded</th></tr></thead>
                   <tbody>
-                    {records.incidents.map((incident) => (
+                    {incidentPage.pageItems.map((incident) => (
                       <tr key={incident.id} className="border-b border-slate-100 last:border-0">
                         <td className="px-4 py-3 text-navy">{incident.description}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-slate-600">{incident.supplier}</td>
@@ -112,6 +116,7 @@ export default function AuditPage() {
                     ))}
                   </tbody>
                 </table>
+                <div className="border-t border-slate-200 px-4"><Pager paged={incidentPage} label="Incidents" /></div>
               </div>
             )}
           </Card>

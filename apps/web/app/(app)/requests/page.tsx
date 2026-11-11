@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Badge, type BadgeTone, Card, Overline, button } from "@/components/ui";
 import { ApiRequestError, api } from "@/services/api";
 import { caseRef } from "../dashboard/case-row";
+import { Pager, usePaged } from "@/components/pager";
 
 const STATUS: Record<CaseResult["status"], { label: string; tone: BadgeTone }> = {
   complete: { label: "Reviewed", tone: "success" },
@@ -16,6 +17,7 @@ const STATUS: Record<CaseResult["status"], { label: string; tone: BadgeTone }> =
 export default function MyRequestsPage() {
   const [cases, setCases] = useState<CaseResult[] | null>(null);
   const [error, setError] = useState("");
+  const requestPage = usePaged(cases ?? [], 10);
   useEffect(() => {
     api.listMyCases().then(setCases).catch((cause: unknown) => setError(cause instanceof ApiRequestError ? cause.message : "Could not load your requests."));
   }, []);
@@ -37,7 +39,7 @@ export default function MyRequestsPage() {
       )}
       {!!cases?.length && (
         <div className="grid gap-4">
-          {cases.map((item) => (
+          {requestPage.pageItems.map((item) => (
             <Card key={item.case_id} className="p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-mono text-[13px] font-bold text-teal-text">{caseRef(item.case_id)}</span>
@@ -47,6 +49,7 @@ export default function MyRequestsPage() {
               <p className="mt-1 text-sm text-slate-600">{item.situation.location ?? "Location pending"} · {item.situation.needs.join(", ").replaceAll("_", " ") || "Needs being reviewed"}</p>
             </Card>
           ))}
+          <Pager paged={requestPage} label="Requests" />
         </div>
       )}
     </section>

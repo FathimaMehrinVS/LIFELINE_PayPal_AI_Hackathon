@@ -354,6 +354,9 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
       rowHeight={56}
       tooltipShowDelay={300}
       domLayout="autoHeight"
+      pagination
+      paginationPageSize={20}
+      paginationPageSizeSelector={[10, 20, 50]}
       suppressNoRowsOverlay
       onModelUpdated={(event) => onVisibleCount(event.api.getDisplayedRowCount())}
     />
