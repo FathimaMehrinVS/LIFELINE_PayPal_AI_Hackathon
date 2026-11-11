@@ -248,6 +248,22 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         width: 122,
       },
       {
+        headerName: "Supplier",
+        colId: "supplier",
+        valueGetter: (p) => p.data?.case.operations?.delivery?.merchant_name ?? "",
+        cellRenderer: SupplierCell,
+        tooltipValueGetter: (p) => p.value,
+        width: 150,
+      },
+      {
+        headerName: "Delivery",
+        colId: "delivery",
+        headerTooltip: "Only recorded delivery steps",
+        valueGetter: (p) => p.data?.case.operations?.delivery?.fulfilment_status ?? "",
+        cellRenderer: DeliveryCell,
+        width: 140,
+      },
+      {
         headerName: "Route",
         colId: "route",
         valueGetter: (p) => {
@@ -284,22 +300,6 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         valueFormatter: (p) => formatMoneyShort(p.value, p.data?.case.commerce?.currency),
         tooltipValueGetter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
         width: 116,
-      },
-      {
-        headerName: "Supplier",
-        colId: "supplier",
-        valueGetter: (p) => p.data?.case.operations?.delivery?.merchant_name ?? "",
-        cellRenderer: SupplierCell,
-        tooltipValueGetter: (p) => p.value,
-        width: 150,
-      },
-      {
-        headerName: "Delivery",
-        colId: "delivery",
-        headerTooltip: "Only recorded delivery steps",
-        valueGetter: (p) => p.data?.case.operations?.delivery?.fulfilment_status ?? "",
-        cellRenderer: DeliveryCell,
-        width: 140,
       },
       {
         headerName: "Funding",
