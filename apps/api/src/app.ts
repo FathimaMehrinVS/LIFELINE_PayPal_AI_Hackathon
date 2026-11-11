@@ -3,6 +3,7 @@ import express from "express";
 import { env } from "./config/env";
 import { createRoleGuard, type SessionResolver } from "./auth/role-guard";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { byAccountOrAddress, rateLimit, securityHeaders } from "./middleware/rate-limit";
 import { allocationRouter } from "./routes/allocation.routes";
 import { authRouter } from "./routes/auth.routes";
 import { adminRouter } from "./routes/admin.routes";
@@ -23,6 +24,10 @@ import { teamRouter } from "./routes/team.routes";
 export function createApp(dependencies: { resolveSession?: SessionResolver } = {}) {
   const app = express();
   const requireRoles = createRoleGuard(dependencies.resolveSession);
+  // Render puts one proxy in front of the API, so the caller's address is the first forwarded one.
+  app.set("trust proxy", 1);
+  app.disable("x-powered-by");
+  app.use(securityHeaders);
 
   app.use(cors({ origin: env.WEB_ORIGIN }));
   mountPaypalWebhookRoute(app);
@@ -32,12 +37,16 @@ export function createApp(dependencies: { resolveSession?: SessionResolver } = {
     res.json({ status: "ok" });
   });
 
-  app.use("/api/auth", authRouter);
+  // Each report can make several AI calls, so it gets the tightest limit.
+  const aiLimit = rateLimit({ name: "report", windowMs: 60_000, max: 6, keyFor: byAccountOrAddress });
+  app.use("/api", rateLimit({ name: "API", windowMs: 60_000, max: 240 }));
+  app.use("/api/auth", rateLimit({ name: "sign-in", windowMs: 60_000, max: 30 }), authRouter);
   app.use("/api/admin", requireRoles("ADMIN"), adminRouter);
-  app.use("/api/situation", requireRoles("NGO", "DONOR", "PARTNER"), situationRouter);
+  app.use("/api/situation", requireRoles("NGO", "DONOR", "PARTNER"), aiLimit, situationRouter);
   app.use("/api/finance", requireRoles("NGO", "DONOR", "PARTNER"), financeRouter);
   app.use("/api/commerce", requireRoles("NGO", "DONOR", "PARTNER"), commerceRouter);
-  app.use("/api/cases", requireRoles("NGO", "DONOR", "PARTNER"), casesRouter);
+  // Only creating a case runs the AI; reading the list stays under the general limit.
+  app.use("/api/cases", requireRoles("NGO", "DONOR", "PARTNER"), (req, res, next) => (req.method === "POST" && req.path === "/" ? aiLimit(req, res, next) : next()), casesRouter);
   app.use("/api/suppliers", requireRoles("NGO"), suppliersRouter);
   app.use("/api/allocations", requireRoles("NGO"), allocationRouter);
   app.use("/api/deliveries", requireRoles("NGO", "PARTNER"), deliveriesRouter);

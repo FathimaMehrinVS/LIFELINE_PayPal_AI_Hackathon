@@ -49,6 +49,7 @@ const TOPICS: { key: string; label: string; test: (message: string, location: st
 function errorMessage(err: unknown) {
   if (err instanceof ApiRequestError) {
     if (err.status === 400) return "Please describe the situation in a few words.";
+    if (err.status === 429) return "Too many reports in a short time. Please wait a minute and try again.";
     if (err.status === 502) return "The AI service is busy right now. Please try again in a minute.";
     return err.message;
   }

@@ -61,6 +61,7 @@ export const ErrorCodeSchema = z.enum([
   "CONFLICT",
   "NOT_FOUND",
   "NOT_IMPLEMENTED",
+  "RATE_LIMITED",
   "UPSTREAM_ERROR",
   "INTERNAL_ERROR",
 ]);
