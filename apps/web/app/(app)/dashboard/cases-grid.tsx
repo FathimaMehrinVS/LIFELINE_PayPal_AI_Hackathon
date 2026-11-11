@@ -89,6 +89,27 @@ function NeedsCell({ data }: ICellRendererParams<CaseRow>) {
   return <span className="capitalize text-slate-600">{data?.case.situation.needs.map((need) => need.replace("_", " ")).join(", ")}</span>;
 }
 
+const DELIVERY: Record<string, { label: string; tone: BadgeTone }> = {
+  awaiting_acceptance: { label: "Awaiting supplier", tone: "neutral" },
+  accepted: { label: "Accepted", tone: "info" },
+  preparing: { label: "Preparing", tone: "info" },
+  ready: { label: "Ready", tone: "info" },
+  dispatched: { label: "Dispatched", tone: "info" },
+  handed_over: { label: "Handed over", tone: "warning" },
+  verified: { label: "Verified", tone: "success" },
+  recipient_confirmed: { label: "Delivered", tone: "success" },
+  issue_reported: { label: "Problem reported", tone: "critical" },
+};
+
+function SupplierCell({ value }: ICellRendererParams<CaseRow>) {
+  return value ? <span className="flex h-full items-center"><span className="line-clamp-2 whitespace-normal leading-snug text-navy">{value}</span></span> : <span className="text-slate-500">—</span>;
+}
+
+function DeliveryCell({ value }: ICellRendererParams<CaseRow>) {
+  const state = value ? DELIVERY[value as string] : undefined;
+  return state ? <Badge tone={state.tone}>{state.label}</Badge> : <span className="text-slate-500">—</span>;
+}
+
 interface ApprovalCellProps extends ICellRendererParams<CaseRow> {
   suppliers: Supplier[];
   supplierChoices: Record<string, string>;
@@ -249,6 +270,22 @@ export function CasesGrid({ rows, quickFilter, statusFilter, suppliers, supplier
         valueGetter: (p) => p.data?.case.commerce?.total,
         valueFormatter: (p) => formatMoney(p.value, p.data?.case.commerce?.currency),
         width: 92,
+      },
+      {
+        headerName: "Supplier",
+        colId: "supplier",
+        valueGetter: (p) => p.data?.case.operations?.delivery?.merchant_name ?? "",
+        cellRenderer: SupplierCell,
+        tooltipValueGetter: (p) => p.value,
+        width: 150,
+      },
+      {
+        headerName: "Delivery",
+        colId: "delivery",
+        headerTooltip: "Only recorded delivery steps",
+        valueGetter: (p) => p.data?.case.operations?.delivery?.fulfilment_status ?? "",
+        cellRenderer: DeliveryCell,
+        width: 140,
       },
       {
         headerName: "Funding",

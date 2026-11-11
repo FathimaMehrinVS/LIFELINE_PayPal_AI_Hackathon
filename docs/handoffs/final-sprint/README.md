@@ -46,7 +46,7 @@ Status: `todo` · `doing` · `blocked` · `done`
 | M1-3 | NGO amount, household details, kits, real quantities | Member 1 | 9 Nov | none | done |
 | M1-4 | Supplier API, AG Grid page, seed data, scorecard | Member 1 | 9 Nov | M1-1 | done |
 | M1-5 | NGO-first request page | Member 1 | 9 Nov | M1-3 | done |
-| M1-6 | Dashboard: saved status, new columns, timeline | Member 1 | 10 Nov | M2-3, M2-4 | doing |
+| M1-6 | Dashboard: saved status, new columns, timeline | Member 1 | 10 Nov | M2-3, M2-4 | done |
 | M1-7 | Donor plans list and progress page | Member 1 | 10 Nov | M1-6 | done |
 | M1-8 | Deploy to Render; register PayPal webhook | Member 1 | 11 Nov | M3-2 helps | doing |
 | M1-9 | README, status doc, demo script, video, Devpost | Member 1 | 12 Nov | all | doing |
@@ -141,6 +141,7 @@ Add newest first.
 
 | Date | Who | What changed | Affects |
 |---|---|---|---|
+| 11 Nov | Member 1 | M1-6 done: Supplier and Delivery columns on Assistance Cases. API now has rate limits (6 reports a minute per account, 30 sign-in calls a minute, 240 API calls a minute) and security headers. Team & Access (NGO staff) can no longer change a LIFELINE Admin account | Everyone |
 | 10 Nov | Member 1 | M3-2 done: first PayPal Sandbox capture succeeded (€25, EUR) and both webhooks arrived signature-verified on Render. The fix was a new Sandbox app on a business account that accepts EUR. Deployed on Render and Vercel. Row-level security is on for every table. Amounts now show in each viewer's currency (display only). M1-6 left: Supplier and Delivery columns. M1-8 left: `GEMINI_API_KEY` on Render | Everyone |
 | 10 Nov | Member 2 | M2-6: open supplier incidents explicitly reporting payment/account detail conflicts now produce HIGH_RISK and block approval and simulated payment. Price outlier comparison was cut per the handoff cut order | M1, M2 |
 | 10 Nov | Member 2 | Connected supplier-aware partner routing, cost-derived NGO approval, purchase orders, append-only fulfilment, one-time pickup-code confirmation, simulated supplier payments, and the initial case risk-level display | M1, M2, M3 |
