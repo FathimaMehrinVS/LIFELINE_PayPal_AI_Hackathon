@@ -9,6 +9,51 @@ import { caseRef, formatMoney } from "../dashboard/case-row";
 import { CheckIcon } from "@/components/icons";
 import { Pager, usePaged } from "@/components/pager";
 
+/** The family's message. No names, places or amounts, so it is safe to send by SMS or read aloud. */
+function familyMessage(code: string) {
+  return `LIFELINE: your pickup code is ${code}. Give it to the delivery partner only when you receive your goods. Don't share it with anyone else.`;
+}
+
+/** Shows a just-created pickup code once, split for reading aloud, with ready-made ways to send it to the family. */
+function PickupCodeShare({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const spaced = code.length === 8 ? `${code.slice(0, 4)} ${code.slice(4)}` : code;
+  const message = familyMessage(spaced);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div role="status" className="mt-3 rounded-lg border border-teal/30 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">One-time pickup code</p>
+      <p className="mt-1 font-mono text-4xl font-bold tracking-[0.18em] text-teal-text" aria-label={`Pickup code ${code.split("").join(" ")}`}>{spaced}</p>
+      <p className="mt-2 text-sm text-slate-700">
+        Shown <strong>only now</strong>. LIFELINE keeps just a scrambled version, so nobody can read it back later.
+        Give it to the family. <strong>Don&apos;t share it with the partner.</strong>
+      </p>
+      <div className="mt-3 rounded-lg bg-slate-50 p-3">
+        <p className="text-xs font-semibold text-slate-500">Message for the family</p>
+        <p className="mt-1 text-sm text-navy">{message}</p>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={() => void copy()} className={button.secondary}>
+          {copied ? <><CheckIcon className="h-4 w-4" /> Copied</> : "Copy message"}
+        </button>
+        <a href={`sms:?&body=${encodeURIComponent(message)}`} className={button.secondary}>Open in SMS</a>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">The message has no names, places or amounts, so it&apos;s safe to send or read out over the phone.</p>
+      <span className="sr-only" aria-live="polite">{copied ? "Message copied" : ""}</span>
+    </div>
+  );
+}
+
 const NEXT: Record<string, { status: "accepted" | "preparing" | "ready" | "dispatched" | "handed_over"; label: string }> = {
   awaiting_acceptance: { status: "accepted", label: "Accept assignment" },
   accepted: { status: "preparing", label: "Start preparation" },
@@ -126,10 +171,7 @@ export default function DeliveriesPage() {
               <div className="mt-4 rounded-xl border border-teal/30 bg-teal-tint/40 p-4">
                 <p className="font-semibold text-navy">Pickup code for the family</p>
                 {pickupCodes[key] ? (
-                  <div role="status">
-                    <p className="mt-1 font-mono text-3xl font-bold tracking-[0.25em] text-teal-text">{pickupCodes[key]}</p>
-                    <p className="mt-1 text-sm text-slate-700">Give this to the family by phone, SMS or on paper. <strong>Don&apos;t share it with the partner.</strong> It&apos;s shown only now.</p>
-                  </div>
+                  <PickupCodeShare code={pickupCodes[key]} />
                 ) : (
                   <p className="mt-1 text-sm text-slate-700">{record.pickup_code_issued ? "A code has been given to the family. Create a new one only if they lost it; the old code then stops working." : "The family gives this code to the partner when they collect the goods. It proves the right family received them."}</p>
                 )}
