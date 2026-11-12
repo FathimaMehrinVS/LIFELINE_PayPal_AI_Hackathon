@@ -324,6 +324,7 @@ docs/                     Architecture, integration status, demo script, handoff
 
 ## Further documentation
 
+- [Beginner's guide to using LIFELINE](docs/user-guide.md)
 - [Integration status: what is real, sandboxed and simulated](docs/integration-status.md)
 - [Project overview](docs/project-overview.md)
 - [Demo script](docs/demo-script.md)
