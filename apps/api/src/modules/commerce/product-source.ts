@@ -1,5 +1,6 @@
 import type { Availability, CommerceRequest, NeedCategory } from "@lifeline/contracts";
 import { env } from "../../config/env";
+import { TtlCache } from "../../utils/ttl-cache";
 import registry from "./registry.json";
 
 export type ProductCandidate = {
@@ -81,7 +82,15 @@ const NEED_QUERIES: Record<NeedCategory, string> = {
 
 type Channel3SearchResponse = { products?: unknown[] };
 
+/** How long one Channel3 answer is reused. Products and prices change slowly; this saves quota and seconds. */
+const CHANNEL3_CACHE_MS = 10 * 60_000;
+
 export class Channel3Source implements ProductSource {
+  /** Successful answers only, keyed by search and currency. A failed or empty call is retried next time. */
+  private readonly answers = new TtlCache<string, unknown[]>(CHANNEL3_CACHE_MS, 200);
+  /** Calls already on their way, so ten clicks at once make one request. */
+  private readonly inFlight = new Map<string, Promise<unknown[] | null>>();
+
   constructor(private readonly apiKey = env.CHANNEL3_API_KEY, private readonly fetchImpl: typeof fetch = fetch) {}
   /** One search per need: a single combined search mostly returns whichever need ranks highest. */
   async search(request: CommerceRequest): Promise<ProductCandidate[]> {
@@ -91,16 +100,39 @@ export class Channel3Source implements ProductSource {
     return [...new Map(results.flat().map((product) => [product.id, product])).values()];
   }
 
+  /** Raw Channel3 products for one need, from the cache when possible. Null means the call failed. */
+  private async fetchProducts(apiKey: string, need: NeedCategory, currency: string): Promise<unknown[] | null> {
+    const key = `${need}|${currency}`;
+    const cached = this.answers.get(key);
+    if (cached) return cached;
+    const pending = this.inFlight.get(key);
+    if (pending) return pending;
+    const call = (async () => {
+      try {
+        const response = await this.fetchImpl("https://api.trychannel3.com/v1/search", {
+          method: "POST", headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ query: NEED_QUERIES[need], limit: 10, config: { currency } }),
+          signal: AbortSignal.timeout(8_000),
+        });
+        if (!response.ok) return null;
+        const products = ((await response.json()) as Channel3SearchResponse).products ?? [];
+        if (products.length > 0) this.answers.set(key, products);
+        return products;
+      } catch {
+        return null;
+      } finally {
+        this.inFlight.delete(key);
+      }
+    })();
+    this.inFlight.set(key, call);
+    return call;
+  }
+
   private async searchNeed(apiKey: string, request: CommerceRequest, need: NeedCategory): Promise<ProductCandidate[]> {
     try {
-      const response = await this.fetchImpl("https://api.trychannel3.com/v1/search", {
-        method: "POST", headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: NEED_QUERIES[need], limit: 10, config: { currency: request.currency } }),
-        signal: AbortSignal.timeout(8_000),
-      });
-      if (!response.ok) return [];
-      const body = await response.json() as Channel3SearchResponse;
-      return (body.products ?? []).flatMap((raw): ProductCandidate[] => {
+      const products = await this.fetchProducts(apiKey, need, request.currency);
+      if (!products) return [];
+      return products.flatMap((raw): ProductCandidate[] => {
         if (!raw || typeof raw !== "object") return [];
         const item = raw as { id?: unknown; title?: unknown; description?: unknown; category?: unknown; offers?: unknown[]; url?: unknown };
         const offer = item.offers?.find((value) => value && typeof value === "object") as { price?: { price?: unknown; amount?: unknown; currency?: unknown; currency_code?: unknown }; url?: unknown; availability?: unknown; merchant?: { name?: unknown; domain?: unknown }; domain?: unknown } | undefined;

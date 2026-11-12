@@ -56,6 +56,34 @@ describe("commerce product sources", () => {
     expect(new Set(products.map((product) => product.id)).size).toBe(products.length);
   });
 
+  it("reuses a Channel3 answer instead of searching again", async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify(channel3Fixture), { status: 200 }));
+    const source = new Channel3Source("test-key", fetchMock);
+    const first = await source.search({ ...request, needs: ["shelter"] });
+    const again = await source.search({ ...request, needs: ["shelter"] });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(again).toEqual(first);
+    await source.search({ ...request, needs: ["shelter"], currency: "USD" });
+    expect(fetchMock).toHaveBeenCalledTimes(2); // A different currency is a different search.
+  });
+
+  it("shares one call between searches made at the same time", async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify(channel3Fixture), { status: 200 }));
+    const source = new Channel3Source("test-key", fetchMock);
+    await Promise.all([1, 2, 3].map(() => source.search({ ...request, needs: ["shelter"] })));
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("never caches a failed Channel3 call", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 503 }))
+      .mockImplementation(async () => new Response(JSON.stringify(channel3Fixture), { status: 200 }));
+    const source = new Channel3Source("test-key", fetchMock);
+    expect(await source.search({ ...request, needs: ["shelter"] })).toEqual([]);
+    expect((await source.search({ ...request, needs: ["shelter"] })).length).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   describe("which online products count as essentials", () => {
     const needs = ["food", "water", "medicine", "baby_supplies"] as const;
 
